@@ -124,7 +124,7 @@
     <IncludePath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\include;D:\Code\On_the_fly_SfM\thirdparty\Python\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include;C:\Users\WTG\env\Python\include;$(VcpkgManifestRoot)\vcpkg_installed\x64-windows\include\eigen3;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\WTG\env\Python\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include;$(VcpkgManifestRoot)\vcpkg_installed\x64-windows\include\eigen3;$(IncludePath)</IncludePath>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug2|x64'">

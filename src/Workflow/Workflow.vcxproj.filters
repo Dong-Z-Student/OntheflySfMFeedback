@@ -15,13 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Workflow.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Reconstructor.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Receiver.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,5 +29,37 @@
     <ClCompile Include="Receiver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ReadTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ExtractTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PythonTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Receiver.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="ReadTask.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="BaseTask.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="Workflow.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="WorkData.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="ExtractTask.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="PythonTask.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
   </ItemGroup>
 </Project>

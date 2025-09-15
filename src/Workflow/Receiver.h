@@ -1,56 +1,30 @@
 #pragma once
-#include <windows.h>
-#include <string>
-#include <chrono>
-#include <thread>
-#include <iostream>
-#include <functional>
 #include <atomic>
+#include <chrono>
+#include <iostream>
+#include <QObject>
+#include <QString>
+#include <string>
+#include <thread>
+#include <windows.h>
 
-
-
-class Receiver
+class Receiver : public QObject
 {
+	Q_OBJECT
 public:
-	using CallbackFunction = std::function<void(const std::string&)>;
-	Receiver(CallbackFunction callback);
+	explicit Receiver(QObject* parent = nullptr);
+	~Receiver();
+
+public slots:
 	void Start();
 	void Stop();
 
-
-
-
-
+signals:
+	void newDataReceived(const QString& value);
 
 private:
-	CallbackFunction callback;
 	std::string ReadRegistryValue();
 	void ClearRegistryValue();
 	std::thread loopThread;
 	std::atomic<bool> running = false;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
