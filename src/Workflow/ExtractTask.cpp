@@ -1,8 +1,8 @@
-#include "../Feature/Bitmap.h"
+Ôªø#include "../Feature/Bitmap.h"
 #include "ExtractTask.h"
 #include "WorkData.h"
 
-// TODO: “Ï≥£¥¶¿Ì
+// TODO: ÂºÇÂ∏∏Â§ÑÁêÜ
 void ExtractTask::run()
 {
 	std::string imagePathstr = imagePath.toStdString();

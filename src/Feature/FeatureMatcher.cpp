@@ -1,5 +1,5 @@
-﻿#include "FeatureMatcher.h"
-#include "../Scene/Database.h"
+﻿#include "../Scene/Database.h"
+#include "FeatureMatcher.h"
 #include "PyLoader.h"
 using namespace std;
 
@@ -10,7 +10,7 @@ Eigen::MatrixXi ComputeSiftDistanceMatrix(
 	const FeatureDescriptors& descriptors2,
 	const std::function<bool(float, float, float, float)>& guided_filter)
 {
-	if (guided_filter != nullptr) 
+	if (guided_filter != nullptr)
 	{
 		CHECK_NOTNULL(keypoints1);
 		CHECK_NOTNULL(keypoints2);
@@ -327,45 +327,26 @@ CSIFTCPUMatcher::FlannIndexType CSIFTCPUMatcher::BuildFlannIndex(const FeatureDe
 	return index;
 }
 
-size_t CSIFTGPUMatcher::lastDescriptors1Index = std::numeric_limits<size_t>::max();
-size_t CSIFTGPUMatcher::lastDescriptors2Index = std::numeric_limits<size_t>::max();
-bool CSIFTGPUMatcher::isUploadDescriptors1 = true;
-bool CSIFTGPUMatcher::isUploadDescriptors2 = true;
 CSIFTGPUMatcher::CSIFTGPUMatcher(const CSIFTMatchingOptions& options)
 {
 	options.CheckOptions();
 	this->options = options;
 
-	SiftGPU siftGPU;
-	siftGPU.SetVerbose(0);
 	siftMatchGPU = SiftMatchGPU(options.maxNumMatches);
 
 	int gpuIndex = SetBestCudaDevice();
 	siftMatchGPU.SetLanguage(SiftMatchGPU::SIFTMATCH_CUDA_DEVICE0 + gpuIndex);
 	CHECK(siftMatchGPU.VerifyContextGL() != 0);
 
-	CHECK(siftMatchGPU.Allocate(options.maxNumMatches, options.doCrossCheck), "Allocate ERROR: Not enough GPU memory!");
 	siftMatchGPU.gpu_index = gpuIndex;
-
-	lastDescriptors1Index = std::numeric_limits<size_t>::max();
-	lastDescriptors2Index = std::numeric_limits<size_t>::max();
-	isUploadDescriptors1 = true;
-	isUploadDescriptors2 = true;
 }
 FeatureMatches CSIFTGPUMatcher::Match(const FeatureDescriptors& descriptors1, const FeatureDescriptors& descriptors2)
 {
 	CHECK(descriptors1.cols() == 128 && descriptors2.cols() == 128);
 	CHECK(descriptors1.rows() != 0 && descriptors2.rows() != 0);
 
-	if (isUploadDescriptors1)
-	{
-		siftMatchGPU.SetDescriptors(0, descriptors1.rows(), descriptors1.data());
-	}
-	if (isUploadDescriptors2)
-	{
-		siftMatchGPU.SetDescriptors(1, descriptors2.rows(), descriptors2.data());
-	}
-	isUploadDescriptors1 = isUploadDescriptors2 = true; // 每Match一次之后都要求外部程序重新判断是否要上传新的descriptors
+	siftMatchGPU.SetDescriptors(0, descriptors1.rows(), descriptors1.data());
+	siftMatchGPU.SetDescriptors(1, descriptors2.rows(), descriptors2.data());
 
 	FeatureMatches matches;
 	matches.resize(static_cast<size_t>(options.maxNumMatches));
@@ -382,7 +363,7 @@ FeatureMatches CSIFTGPUMatcher::Match(const FeatureDescriptors& descriptors1, co
 			<< std::endl;
 		matches.clear();
 	}
-	else 
+	else
 	{
 		CHECK_LE(num_matches, matches.size());
 		matches.resize(num_matches);
@@ -391,26 +372,26 @@ FeatureMatches CSIFTGPUMatcher::Match(const FeatureDescriptors& descriptors1, co
 }
 
 CPythonMatcher::CPythonMatcher() {
-	
+
 }
-FeatureMatches CPythonMatcher::Match(const std::size_t imageID1 , const std::size_t imageID2){
-	PyObject* Arg1 = PyTuple_Pack(1 , PyUnicode_FromString(to_string(imageID1).c_str()));
-	PyObject* feat1 = PyObject_CallObject(PyLoader::LocalFeatureReadFunc , Arg1);
-	PyObject* Arg2 = PyTuple_Pack(1 , PyUnicode_FromString(to_string(imageID2).c_str()));
-	PyObject* feat2 = PyObject_CallObject(PyLoader::LocalFeatureReadFunc , Arg2);
-	PyObject* Arg3 = PyTuple_Pack(2,feat1,feat2);
-	PyObject* matchesResultPtr = PyObject_CallObject(PyLoader::LocalMatcherFunc , Arg3);
+FeatureMatches CPythonMatcher::Match(const std::size_t imageID1, const std::size_t imageID2) {
+	PyObject* Arg1 = PyTuple_Pack(1, PyUnicode_FromString(to_string(imageID1).c_str()));
+	PyObject* feat1 = PyObject_CallObject(PyLoader::LocalFeatureReadFunc, Arg1);
+	PyObject* Arg2 = PyTuple_Pack(1, PyUnicode_FromString(to_string(imageID2).c_str()));
+	PyObject* feat2 = PyObject_CallObject(PyLoader::LocalFeatureReadFunc, Arg2);
+	PyObject* Arg3 = PyTuple_Pack(2, feat1, feat2);
+	PyObject* matchesResultPtr = PyObject_CallObject(PyLoader::LocalMatcherFunc, Arg3);
 	Py_XDECREF(Arg1); Py_XDECREF(Arg2); Py_XDECREF(Arg3);
 	FeatureMatches matches;
 	if (matchesResultPtr) {
-		PyArrayObject* npArray = reinterpret_cast<PyArrayObject*>( matchesResultPtr );
+		PyArrayObject* npArray = reinterpret_cast<PyArrayObject*>(matchesResultPtr);
 		npy_intp* shape = PyArray_SHAPE(npArray);
 		const size_t num_matches = shape[0];
 		matches.resize(num_matches);
 		for (npy_intp i = 0; i < shape[0]; ++i) {
-			int x_value = *reinterpret_cast<int*>( PyArray_GETPTR2(npArray , i , 0) );
-			int y_value = *reinterpret_cast<int*>( PyArray_GETPTR2(npArray , i , 1) );
-			matches[i] = FeatureMatch(x_value,y_value);
+			int x_value = *reinterpret_cast<int*>(PyArray_GETPTR2(npArray, i, 0));
+			int y_value = *reinterpret_cast<int*>(PyArray_GETPTR2(npArray, i, 1));
+			matches[i] = FeatureMatch(x_value, y_value);
 		}
 		Py_XDECREF(npArray);
 	}
@@ -431,7 +412,7 @@ std::vector<image_t> CGlobalFeatureRetriever::Retrieve(image_t imageID)
 	std::vector<float> distances;
 	std::vector<faiss::idx_t> indices;
 	database->HNSW(globalFeature, topN + 1, distances, indices);
-	
+
 	std::vector<image_t> result(0);
 	result.reserve(topN);
 	for (faiss::idx_t index : indices)

@@ -1,10 +1,10 @@
 ﻿#pragma once
-#include "Common.h"
-#include "../Base/types.h"
-#include <Eigen/Geometry>
-#include <glog/logging.h>
-#include <flann/flann.hpp>
 #include "../../thirdparty/SIFTGPU/SiftGPU.h"
+#include "../Base/types.h"
+#include "Common.h"
+#include <Eigen/Geometry>
+#include <flann/flann.hpp>
+#include <glog/logging.h>
 #include <Python.h>
 
 // SIFT特征匹配器的选项参数
@@ -86,8 +86,6 @@ public:
 	explicit CSIFTGPUMatcher(const CSIFTMatchingOptions& options);
 	FeatureMatches Match(const FeatureDescriptors& descriptors1, const FeatureDescriptors& descriptors2);
 
-	static size_t lastDescriptors1Index, lastDescriptors2Index;
-	static bool isUploadDescriptors1, isUploadDescriptors2;
 private:
 	CSIFTMatchingOptions options;
 	SiftMatchGPU siftMatchGPU;
@@ -96,7 +94,7 @@ private:
 class CPythonMatcher final {
 public:
 	explicit CPythonMatcher();
-	FeatureMatches Match(const std::size_t imageID1 , const std::size_t imageID2);
+	FeatureMatches Match(const std::size_t imageID1, const std::size_t imageID2);
 };
 
 class Database;

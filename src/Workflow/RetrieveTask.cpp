@@ -18,7 +18,7 @@ void RetrieveTask::run()
 	std::string output = "[Retrieval] Result: " + m_data->DatabaseReadImage(imageID).Name() + " -> ";
 	for (image_t i = 0; i < retrievalResult.size(); i++)
 	{
-		//SIFTMatchGPUTasks.push({ retrievalResult[i], imageID });
+		emit retrieveTaskFinished(retrievalResult[i], imageID);
 
 		output += m_data->DatabaseReadImage(retrievalResult[i]).Name();
 		if (static_cast<size_t>(i) + 2 <= retrievalResult.size())

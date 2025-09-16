@@ -14,7 +14,7 @@ public:
 
 	void run() override;
 signals:
-	void retrieveTaskFinished(QString p_imagePath);
+	void retrieveTaskFinished(quint32 p_imageID1, quint32 p_imageID2);
 
 private:
 	QString imagePath;

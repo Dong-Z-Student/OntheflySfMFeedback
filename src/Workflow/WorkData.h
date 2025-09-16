@@ -111,13 +111,47 @@ public:
 
 	void DatabaseWriteMatches(image_t id1, image_t id2, FeatureMatches& matches) {
 		QWriteLocker locker(&m_database_lock);
+		database->WriteMatches(id1, id2, matches);
+	}
 
+	bool DatabaseExistsMatches(image_t id1, image_t id2) {
+		QReadLocker locker(&m_database_lock);
+		return database->ExistsMatches(id1, id2);
+	}
+
+	FeatureMatches DatabaseReadMatches(image_t id1, image_t id2) {
+		QReadLocker locker(&m_database_lock);
+		return database->ReadMatches(id1, id2);
+	}
+
+	FeatureKeypoints DatabaseReadKeypoints(image_t imageid) {
+		QReadLocker locker(&m_database_lock);
+		return database->ReadKeypoints(imageid);
+	}
+
+	void DatabaseWriteTwoViewGeometry(image_t id1, image_t id2, const TwoViewGeometry& twoviewgeo) {
+		QWriteLocker locker(&m_database_lock);
+		database->WriteTwoViewGeometry(id1, id2, twoviewgeo);
+	}
+
+	bool DatabaseExistsInlierMatches(image_t id1, image_t id2) {
+		QReadLocker locker(&m_database_lock);
+		return database->ExistsInlierMatches(id1, id2);
+	}
+
+	TwoViewGeometry DatabaseReadTwoViewGeometry(image_t id1, image_t id2) {
+		return database->ReadTwoViewGeometry(id1, id2);
 	}
 
 	//// === Image 相关操作 ===
 	image_t getImageID(const std::string imagePath) {
 		QReadLocker locker(&m_imageidpath_lock);
 		return allImagePaths.at(imagePath);
+	}
+
+	std::string getImagePath(const image_t imageID) {
+		QReadLocker locker(&m_imageidpath_lock);
+		return allImages.at(imageID);
 	}
 
 	void addImageMap(image_t imageid, std::string imagepath) {

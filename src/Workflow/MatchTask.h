@@ -8,20 +8,17 @@ class MatchTask : public BaseTask
 public:
 	explicit MatchTask(
 		WorkData* data,
-		QString p_imagePath,
-		QString p_secondImagePath,
+		quint32 p_imageID1,
+		quint32 p_imageID2,
 		QObject* parent = nullptr)
 		: BaseTask(data, parent)
-		, imagePath(p_imagePath)
-		, secondImagePath(p_secondImagePath) {}
-	~MatchTask() override {
-
-	}
+		, imageID1(p_imageID1)
+		, imageID2(p_imageID2) {}
 	void run() override;
 signals:
-	void matchTaskFinished(QString p_imagePath, QString p_secondImagePath);
+	void matchTaskFinished(quint32 p_imageID1, quint32 p_imageID2);
 
 private:
-	QString imagePath;
-	QString secondImagePath;
+	quint32 imageID1;
+	quint32 imageID2;
 };

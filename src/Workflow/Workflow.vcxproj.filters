@@ -44,6 +44,12 @@
     <ClCompile Include="MatchTask.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="EstimateTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ReconstructTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Receiver.h">
@@ -71,6 +77,12 @@
       <Filter>头文件</Filter>
     </QtMoc>
     <QtMoc Include="MatchTask.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="EstimateTask.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="ReconstructTask.h">
       <Filter>头文件</Filter>
     </QtMoc>
   </ItemGroup>

@@ -3,11 +3,9 @@
 #include "MatchTask.h"
 #include "WorkData.h"
 
+
 void MatchTask::run()
 {
-	image_t imageID1 = m_data->getImageID(imagePath.toStdString());
-	image_t imageID2 = m_data->getImageID(secondImagePath.toStdString());
-
 	Timer SIFTMatchingTimer;
 	SIFTMatchingTimer.Start();
 
@@ -18,32 +16,19 @@ void MatchTask::run()
 
 	FeatureMatches matches;
 	CSIFTGPUMatcher* SIFTGPUMatcher = new CSIFTGPUMatcher(options);
-	CSIFTGPUMatcher::isUploadDescriptors1 = (CSIFTGPUMatcher::lastDescriptors1Index != imageID1);
-	CSIFTGPUMatcher::isUploadDescriptors2 = (CSIFTGPUMatcher::lastDescriptors2Index != imageID2);
 	matches = SIFTGPUMatcher->Match(descriptors1, descriptors2);
-	CSIFTGPUMatcher::lastDescriptors1Index = imageID1;
-	CSIFTGPUMatcher::lastDescriptors2Index = imageID2;
-
 	if (!matches.empty())
 	{
 		m_data->DatabaseWriteMatches(imageID1, imageID2, matches);
 	}
-	return true;
-	if (CWorkflow::SIFTMatch(*database, matchingPair.first, matchingPair.second, options))
-	{
-		const size_t numMatches = (database->ExistsMatches(matchingPair.first, matchingPair.second) ? database->ReadMatches(matchingPair.first, matchingPair.second).size() : 0);
-		LOG(INFO) << "[MatchGPU] " << matchingPair.first << " - " << matchingPair.second << ": " << numMatches;
+	bool existsMatches = m_data->DatabaseExistsMatches(imageID1, imageID2);
+	const size_t numMatches = (existsMatches ? m_data->DatabaseReadMatches(imageID1, imageID2).size() : 0);
+	LOG(INFO) << "[SIFTMatchGPU] " << imageID1 << " - " << imageID2 << ": " << numMatches;
 
-		const size_t SIFTMatchingTime = SIFTMatchingTimer.ElapsedMicroSeconds() / 1000;
-		SIFTMatchingTimes.at(matchingPair.second) += SIFTMatchingTime;
+	const size_t SIFTMatchingTime = SIFTMatchingTimer.ElapsedMicroSeconds() / 1000;
+	m_data->SIFTMatchingTimes.at(imageID2) += SIFTMatchingTime;
 
-		estimateTasks.push(matchingPair);
-	}
-	else
-	{
-		LOG(INFO) << "SIFTMatchGPUTasks warning!";
-		reconstructionTasks.insert(matchingPair.second);
-	}
+	emit matchTaskFinished(imageID1, imageID2);
 
 	delete SIFTGPUMatcher;
 }

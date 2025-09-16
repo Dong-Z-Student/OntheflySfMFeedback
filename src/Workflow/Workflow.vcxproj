@@ -27,6 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="ReconstructTask.h" />
     <QtMoc Include="RetrieveTask.h" />
     <QtMoc Include="WorkData.h" />
     <QtMoc Include="Receiver.h" />
@@ -35,16 +36,19 @@
     <QtMoc Include="ExtractTask.h" />
     <QtMoc Include="PythonTask.h" />
     <QtMoc Include="MatchTask.h" />
+    <QtMoc Include="EstimateTask.h" />
     <ClInclude Include="Reconstructor.h" />
     <QtMoc Include="Workflow.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="EstimateTask.cpp" />
     <ClCompile Include="ExtractTask.cpp" />
     <ClCompile Include="MatchTask.cpp" />
     <ClCompile Include="PythonTask.cpp" />
     <ClCompile Include="ReadTask.cpp" />
     <ClCompile Include="Receiver.cpp" />
     <ClCompile Include="Reconstructor.cpp" />
+    <ClCompile Include="ReconstructTask.cpp" />
     <ClCompile Include="RetrieveTask.cpp" />
     <ClCompile Include="Workflow.cpp" />
   </ItemGroup>
@@ -274,12 +278,12 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <FloatingPointModel>Fast</FloatingPointModel>
       <OpenMPSupport>true</OpenMPSupport>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <SupportJustMyCode>false</SupportJustMyCode>
       <AdditionalIncludeDirectories>GeneratedFiles\$(ConfigurationName);GeneratedFiles;</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8</AdditionalOptions>

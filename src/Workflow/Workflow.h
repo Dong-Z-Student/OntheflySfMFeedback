@@ -3,7 +3,9 @@
 #define WORKFLOW_H
 
 #include "../Scene/Database.h"
+#include "EstimateTask.h"
 #include "ExtractTask.h"
+#include "MatchTask.h"
 #include "PythonTask.h"
 #include "ReadTask.h"
 #include "Reconstructor.h"
@@ -31,6 +33,9 @@ private:
 	QThreadPool* m_extract_threadPool;
 	QThreadPool* m_gextract_threadPool;
 	QThreadPool* m_retrieve_threadPool;
+	QThreadPool* m_match_threadPool;
+	QThreadPool* m_estimate_threadPool;
+	QThreadPool* m_reconstruct_threadPool;
 
 
 public slots:
@@ -38,6 +43,9 @@ public slots:
 	void onReadTaskFinished(quint32 imageid, QString p_imagePath);
 	void onLocalFeatureExtractFinished(QString p_imagePath);
 	void onGlobalFeatureExtractFinished(QString p_imagePath);
+	void onRetrieveTaskFinished(quint32 imageID1, quint32 imageID2);
+	void onMatchTaskFinished(quint32 imageID1, quint32 imageID2);
+	void onReconstructFinished(quint32 imageID);
 };
 
 #endif // WORKFLOW_H
