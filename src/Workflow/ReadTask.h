@@ -6,7 +6,7 @@ class ReadTask : public BaseTask
 	Q_OBJECT
 
 public:
-	explicit ReadTask(WorkData* data, std::string& p_imagePath, QObject* parent = nullptr)
+	explicit ReadTask(WorkData* data, QString p_imagePath, QObject* parent = nullptr)
 		: BaseTask(data, parent),
 		imagePath(p_imagePath) {}
 
@@ -16,5 +16,5 @@ signals:
 	void readTaskDone(quint32 imageID, QString p_imagePath);
 
 private:
-	std::string imagePath;
+	QString imagePath;
 };

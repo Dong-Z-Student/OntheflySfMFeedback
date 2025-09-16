@@ -9,12 +9,14 @@ WorkFlow::WorkFlow(QObject* parent)
 	, m_workData(new WorkData(this))
 	, m_read_threadPool(new QThreadPool(this))
 	, m_extract_threadPool(new QThreadPool(this))
-	, m_python_threadPool(new QThreadPool(this))
+	, m_gextract_threadPool(new QThreadPool(this))
+	, m_retrieve_threadPool(new QThreadPool(this))
 {
 	LoadPython();
 	m_read_threadPool->setMaxThreadCount(1);
 	m_extract_threadPool->setMaxThreadCount(3);
-	m_python_threadPool->setMaxThreadCount(1);
+	m_gextract_threadPool->setMaxThreadCount(1);
+	m_retrieve_threadPool->setMaxThreadCount(4);
 }
 
 WorkFlow::~WorkFlow()
@@ -22,7 +24,8 @@ WorkFlow::~WorkFlow()
 	delete m_workData;
 	delete m_read_threadPool;
 	delete m_extract_threadPool;
-	delete m_python_threadPool;
+	delete m_gextract_threadPool;
+	delete m_retrieve_threadPool;
 }
 
 void WorkFlow::setData(Reconstructor* p_reconstructor, Database* p_database)
@@ -40,24 +43,34 @@ void WorkFlow::LoadPython()
 		CGlobalFeatureExtractor* globalFeatureExtractor = new CGlobalFeatureExtractor();
 		CGlobalFeatureRetriever* globalFeatureRetriever = new CGlobalFeatureRetriever(m_workData->getDatabase(), retrievalTopN);
 #endif
-		m_workData->setPythonFunc(globalFeatureExtractor, globalFeatureRetriever);
+		m_workData->setGlobalFeatureFunc(globalFeatureExtractor, globalFeatureRetriever);
 		}
 	);
 }
 
 void WorkFlow::onProcessNewImage(const QString& value) {
-	std::string valuestr = value.toStdString();
-	ReadTask* m_readTask = new ReadTask(m_workData, valuestr, this);
+	ReadTask* m_readTask = new ReadTask(m_workData, value, this);
 	connect(m_readTask, &ReadTask::readTaskDone, this, &WorkFlow::onReadTaskFinished);
 	m_read_threadPool->start(m_readTask);
 }
 
 void WorkFlow::onReadTaskFinished(quint32 imageid, QString p_imagePath)
 {
-	std::string imagePathStr = p_imagePath.toUtf8().constData();
-	ExtractTask* m_extractTask = new ExtractTask(m_workData, imagePathStr, imageid, this);
+	ExtractTask* m_extractTask = new ExtractTask(m_workData, p_imagePath, imageid, this);
+	connect(m_extractTask, &ExtractTask::localExtractFinished, this, &WorkFlow::onLocalFeatureExtractFinished);
 	m_extract_threadPool->start(m_extractTask);
-
-	PythonTask* m_pythonTask = new PythonTask(m_workData, p_imagePath, this);
-	m_python_threadPool->start(m_pythonTask);
 }
+
+void WorkFlow::onLocalFeatureExtractFinished(QString p_imagePath)
+{
+	PythonTask* m_gextractTask = new PythonTask(m_workData, p_imagePath, PythonTaskMode::GlobalFeatureExtract, this);
+	connect(m_gextractTask, &PythonTask::globalFeatureExtractFinished, this, &WorkFlow::onGlobalFeatureExtractFinished);
+	m_gextract_threadPool->start(m_gextractTask);
+}
+
+void WorkFlow::onGlobalFeatureExtractFinished(QString p_imagePath)
+{
+	RetrieveTask* m_retrieveTask = new RetrieveTask(m_workData, p_imagePath, this);
+	m_retrieve_threadPool->start(m_retrieveTask);
+}
+

@@ -27,21 +27,25 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="RetrieveTask.h" />
     <QtMoc Include="WorkData.h" />
     <QtMoc Include="Receiver.h" />
     <QtMoc Include="BaseTask.h" />
     <QtMoc Include="ReadTask.h" />
     <QtMoc Include="ExtractTask.h" />
     <QtMoc Include="PythonTask.h" />
+    <QtMoc Include="MatchTask.h" />
     <ClInclude Include="Reconstructor.h" />
     <QtMoc Include="Workflow.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ExtractTask.cpp" />
+    <ClCompile Include="MatchTask.cpp" />
     <ClCompile Include="PythonTask.cpp" />
     <ClCompile Include="ReadTask.cpp" />
     <ClCompile Include="Receiver.cpp" />
     <ClCompile Include="Reconstructor.cpp" />
+    <ClCompile Include="RetrieveTask.cpp" />
     <ClCompile Include="Workflow.cpp" />
   </ItemGroup>
   <ItemGroup>

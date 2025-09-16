@@ -7,7 +7,7 @@ class ExtractTask : public BaseTask
 
 public:
 	explicit ExtractTask(WorkData* data,
-		std::string& p_imagePath,
+		QString p_imagePath,
 		quint32 p_imageid,
 		QObject* parent = nullptr)
 		: BaseTask(data, parent)
@@ -15,9 +15,10 @@ public:
 		, imageid(p_imageid) {}
 
 	void run() override;
-
+signals:
+	void localExtractFinished(QString p_imagePath);
 
 private:
-	std::string imagePath;
+	QString imagePath;
 	quint32 imageid;
 };

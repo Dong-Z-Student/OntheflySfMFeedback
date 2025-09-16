@@ -13,17 +13,19 @@ void ReadTask::run()
 	Image image;
 	ImageReader* imageReader = new ImageReader();
 
+	std::string imagePathstr = imagePath.toStdString();
+
 	Timer imageReaderTimer;
 	imageReaderTimer.Start();
 
-	if (imageReader->Read(imagePath, camera, cameraModel, image, bitmap) == ImageReader::Status::SUCCESS)
+	if (imageReader->Read(imagePathstr, camera, cameraModel, image, bitmap) == ImageReader::Status::SUCCESS)
 	{
 		camera_t cameraID = m_data->DatabaseWriteCamera(camera);
 		camera.SetCameraId(cameraID);
 		image.SetCameraId(cameraID);
 		image_t imageID = m_data->DatabaseWriteImage(image);
 
-		m_data->addImageMap(imageID, imagePath);
+		m_data->addImageMap(imageID, imagePathstr);
 
 		const size_t readTime = imageReaderTimer.ElapsedMicroSeconds() / 1000;
 		m_data->SIFTExtractionTimes[imageID] = readTime;
@@ -34,9 +36,8 @@ void ReadTask::run()
 
 		m_data->WriteBitmap(bitmap, imageID);
 
-		m_data->setImageStatus(imagePath, CImageStatusFlag::CRead);
-		QString imagePathQstr = QString::fromUtf8(imagePath.c_str());
-		emit readTaskDone(imageID, imagePathQstr);
+		m_data->setImageStatus(imagePathstr, CImageStatusFlag::CRead);
+		emit readTaskDone(imageID, imagePath);
 	}
 	delete imageReader;
 }
