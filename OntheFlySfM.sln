@@ -23,7 +23,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Feature", "src\Feature\Feat
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Workflow", "src\Workflow\Workflow.vcxproj", "{9DDE63FA-AD61-4EF6-AA25-D0C33B2493F1}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtApplication", "src\QtApplication\QtApplication.vcxproj", "{C5C55048-D6EF-47BC-8050-009AC061C90B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UI", "src\UI\UI.vcxproj", "{C5C55048-D6EF-47BC-8050-009AC061C90B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

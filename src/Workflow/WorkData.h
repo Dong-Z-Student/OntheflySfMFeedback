@@ -6,7 +6,6 @@
 #include "../Feature/FeatureMatcher.h"
 #include "../Feature/ImageReader.h"
 #include "../Scene/Database.h"
-#include "Reconstructor.h"
 #include "tbb/concurrent_map.h"
 #include <QMutex>
 #include <QMutexLocker>
@@ -46,18 +45,15 @@ public:
 	explicit WorkData(QObject* parent = nullptr)
 		: QObject(parent),
 		database(nullptr),
-		reconstructor(nullptr),
 		globalFeatureExtractor(nullptr),
 		globalFeatureRetriever(nullptr) {}
 
-	void Initial(Reconstructor* p_reconstructor, Database* p_database) {
-		reconstructor = p_reconstructor;
+	void Initial(Database* p_database) {
 		database = p_database;
 	}
 
 	//// 对外提供公共资源操作方法
 	// set/get
-	Reconstructor* getReconstructor() const { return reconstructor; }
 	Database* getDatabase() const { return database; }
 	CGlobalFeatureExtractor* getGlobalFeatureExtractor() const { return globalFeatureExtractor; }
 	CGlobalFeatureRetriever* getGlobalFeatureRetriever() const { return globalFeatureRetriever; }
@@ -193,7 +189,6 @@ public:
 
 private:
 	//// 工作变量
-	Reconstructor* reconstructor;
 	Database* database;
 	CGlobalFeatureExtractor* globalFeatureExtractor;
 	CGlobalFeatureRetriever* globalFeatureRetriever;

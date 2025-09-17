@@ -7,7 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A76301CC-4C3C-4E57-BCF4-CF30B6B1E01B}</ProjectGuid>
+    <ProjectGuid>{C5C55048-D6EF-47BC-8050-009AC061C90B}</ProjectGuid>
     <Keyword>QtVS_v304</Keyword>
     <WindowsTargetPlatformVersion Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">10.0</WindowsTargetPlatformVersion>
     <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
@@ -26,10 +26,10 @@
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
-    <QtInstall>5.12.12_msvc2017_64</QtInstall>
-    <QtModules>core;opengl;gui;widgets;concurrent;openglextensions</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
     <QtDeploy>true</QtDeploy>
+    <QtInstall>5.12.12_msvc2017_64</QtInstall>
+    <QtModules>core;opengl;gui;widgets;concurrent;openglextensions</QtModules>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
     <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
@@ -42,30 +42,25 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <IncludePath>C:\Users\WTG\env\Python\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include;$(VcpkgManifestRoot)\vcpkg_installed\x64-windows\include\eigen3;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\WTG\env\Python\libs;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\lib\x64;$(LibraryPath)</LibraryPath>
     <CopyCppRuntimeToOutputDir>true</CopyCppRuntimeToOutputDir>
+    <IncludePath>C:\Users\WTG\env\Python\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include;$(VcpkgManifestRoot)\vcpkg_installed\x64-windows\include\eigen3;$(oneTBBIncludeDir);$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\WTG\env\Python\libs;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\lib\x64;$(oneTBBLibDir);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <MinimalRebuild>true</MinimalRebuild>
       <PreprocessorDefinitions>NOMINMAX;GLOG_NO_ABBREVIATED_SEVERITIES;GLOG_USE_GLOG_EXPORT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <AdditionalDependencies>python310.lib;Base.lib;Estimator.lib;Geometry.lib;Scene.lib;Feature.lib;Workflow.lib;SIFTGPU.lib;VLFeat.lib;cublas.lib;cublasLt.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;cufft.lib;cufftw.lib;cufilt.lib;curand.lib;cusolver.lib;cusolverMg.lib;cusparse.lib;nppc.lib;nppial.lib;nppicc.lib;nppidei.lib;nppif.lib;nppig.lib;nppim.lib;nppist.lib;nppisu.lib;nppitc.lib;npps.lib;nvblas.lib;nvJitLink.lib;nvJitLink_static.lib;nvjpeg.lib;nvml.lib;nvptxcompiler_static.lib;nvrtc-builtins_static.lib;nvrtc.lib;nvrtc_static.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <PropertyGroup Label="Vcpkg">
-    <VcpkgEnableManifest>true</VcpkgEnableManifest>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -76,34 +71,12 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <QtRcc Include="Resource.qrc" />
-  </ItemGroup>
-  <ItemGroup>
-    <QtTranslation Include="Translation_zh_CN.ts" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Colormap.h" />
-    <ClInclude Include="Common.h" />
-    <QtMoc Include="ImageListWidget.h" />
-    <QtMoc Include="ImageViewer.h" />
-    <QtMoc Include="LogWidget.h" />
-    <QtMoc Include="MainWindow.h" />
-    <QtMoc Include="MatchMatrixWidget.h" />
-    <QtMoc Include="MeshViewerWidget.h" />
-    <QtMoc Include="ModelViewerWidget.h" />
-    <ClInclude Include="Painter.h" />
-    <ClInclude Include="PointLinePainter.h" />
-    <QtMoc Include="ProjectWidget.h" />
-    <QtMoc Include="ReconstructionManagerWidget.h" />
-    <QtMoc Include="TestMainWindow.h" />
-  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Colormap.cpp" />
     <ClCompile Include="Common.cpp" />
@@ -113,13 +86,17 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="MatchMatrixWidget.cpp" />
-    <ClCompile Include="MeshViewerWidget.cpp" />
     <ClCompile Include="ModelViewerWidget.cpp" />
     <ClCompile Include="Painter.cpp" />
     <ClCompile Include="PointLinePainter.cpp" />
     <ClCompile Include="ProjectWidget.cpp" />
     <ClCompile Include="ReconstructionManagerWidget.cpp" />
-    <ClCompile Include="TestMainWindow.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="Resource.qrc" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtTranslation Include="Translation_zh_CN.ts" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\thirdparty\SIFTGPU\SIFTGPU.vcxproj">
@@ -147,9 +124,28 @@
       <Project>{9dde63fa-ad61-4ef6-aa25-d0c33b2493f1}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="MainWindow.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="LogWidget.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Colormap.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="Painter.h" />
+    <QtMoc Include="ModelViewerWidget.h" />
+    <QtMoc Include="MatchMatrixWidget.h" />
+    <QtMoc Include="ImageViewer.h" />
+    <ClInclude Include="PointLinePainter.h" />
+    <QtMoc Include="ProjectWidget.h" />
+    <QtMoc Include="ImageListWidget.h" />
+    <ClInclude Include="ReconstructionManagerWidget.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
     <Import Project="$(QtMsBuild)\qt.targets" />
   </ImportGroup>
-  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
 </Project>

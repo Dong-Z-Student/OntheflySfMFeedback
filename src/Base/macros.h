@@ -10,7 +10,7 @@
 #define IMAGE_LIST_NOT_FOLLOW			// 图像列表不跟随主窗口刷新
 // #define NO_MERGE						// 全局禁用模型合并功能
 // #define AUTO_RUN_IMAGES				// 自动运行图像处理流程，无需手动干预
-#define GaussianSplatting_Output		// 逐张注册影像输出重建结果
+// #define GaussianSplatting_Output		// 逐张注册影像输出重建结果
 
 // 算法特性选择
 // #define NOT_USE_GLOBAL_FEATURES		// 不使用全局特征进行匹配或重建

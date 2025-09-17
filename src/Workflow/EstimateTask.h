@@ -15,6 +15,7 @@ public:
 		, imageID1(p_imageID1)
 		, imageID2(p_imageID2) {}
 	void run() override;
+	void EstimateTwoViewGeometry();
 
 signals:
 	void estimateTaskFinished(quint32 p_imageID1, quint32 p_imageID2);

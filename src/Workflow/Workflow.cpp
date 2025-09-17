@@ -21,7 +21,7 @@ WorkFlow::WorkFlow(QObject* parent)
 	m_gextract_threadPool->setMaxThreadCount(1);
 	m_retrieve_threadPool->setMaxThreadCount(2);
 	m_match_threadPool->setMaxThreadCount(3);
-	m_estimate_threadPool->setMaxThreadCount(3);
+	m_estimate_threadPool->setMaxThreadCount(6);
 	m_reconstruct_threadPool->setMaxThreadCount(1);
 }
 
@@ -36,9 +36,9 @@ WorkFlow::~WorkFlow()
 	delete m_reconstruct_threadPool;
 }
 
-void WorkFlow::setData(Reconstructor* p_reconstructor, Database* p_database)
+void WorkFlow::setData(Database* p_database)
 {
-	m_workData->Initial(p_reconstructor, p_database);
+	m_workData->Initial(p_database);
 }
 
 void WorkFlow::LoadPython()
@@ -64,6 +64,7 @@ void WorkFlow::onProcessNewImage(const QString& value) {
 
 void WorkFlow::onReadTaskFinished(quint32 imageid, QString p_imagePath)
 {
+	emit readImageFinished(p_imagePath);
 	ExtractTask* m_extractTask = new ExtractTask(m_workData, p_imagePath, imageid, this);
 	connect(m_extractTask, &ExtractTask::localExtractFinished, this, &WorkFlow::onLocalFeatureExtractFinished);
 	m_extract_threadPool->start(m_extractTask);
@@ -92,11 +93,18 @@ void WorkFlow::onRetrieveTaskFinished(quint32 imageID1, quint32 imageID2) {
 void WorkFlow::onMatchTaskFinished(quint32 imageID1, quint32 imageID2)
 {
 	EstimateTask* m_estimateTask = new EstimateTask(m_workData, imageID1, imageID2);
-	connect(m_estimateTask, &EstimateTask::estimateAllFinished, this, &WorkFlow::onReconstructFinished);
+	connect(m_estimateTask, &EstimateTask::estimateAllFinished, this, &WorkFlow::onEstimateFinished);
 	m_estimate_threadPool->start(m_estimateTask);
+}
+
+void WorkFlow::onEstimateFinished(quint32 imageID) {
+	ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID);
+	connect(m_reconstructTask, &ReconstructTask::reconstructTaskFinished, this, &WorkFlow::onReconstructFinished);
+	m_reconstruct_threadPool->start(m_reconstructTask);
 }
 
 void WorkFlow::onReconstructFinished(quint32 imageID)
 {
-	LOG(INFO) << "Reconstruct finished!";
+	LOG(INFO) << "Reconstruct finished: " << imageID;
+	emit reconstructImageFinished();
 }

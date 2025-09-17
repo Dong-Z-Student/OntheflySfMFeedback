@@ -8,7 +8,7 @@
 #include "MatchTask.h"
 #include "PythonTask.h"
 #include "ReadTask.h"
-#include "Reconstructor.h"
+#include "ReconstructTask.h"
 #include "RetrieveTask.h"
 #include <QObject>
 #include <QString>
@@ -24,8 +24,23 @@ public:
 	explicit WorkFlow(QObject* parent = nullptr);
 	~WorkFlow();
 
-	void setData(Reconstructor* p_reconstructor, Database* p_database);
+	void setData(Database* p_database);
 	void LoadPython();
+
+
+signals:
+	void readImageFinished(QString p_imagePath);
+	void reconstructImageFinished();
+
+public slots:
+	void onProcessNewImage(const QString& value); // 传入影像，启动工作流
+	void onReadTaskFinished(quint32 imageid, QString p_imagePath);
+	void onLocalFeatureExtractFinished(QString p_imagePath);
+	void onGlobalFeatureExtractFinished(QString p_imagePath);
+	void onRetrieveTaskFinished(quint32 imageID1, quint32 imageID2);
+	void onMatchTaskFinished(quint32 imageID1, quint32 imageID2);
+	void onEstimateFinished(quint32 imageID);
+	void onReconstructFinished(quint32 imageID);
 
 private:
 	WorkData* m_workData;      // 共享数据
@@ -36,16 +51,6 @@ private:
 	QThreadPool* m_match_threadPool;
 	QThreadPool* m_estimate_threadPool;
 	QThreadPool* m_reconstruct_threadPool;
-
-
-public slots:
-	void onProcessNewImage(const QString& value); // 传入影像，启动工作流
-	void onReadTaskFinished(quint32 imageid, QString p_imagePath);
-	void onLocalFeatureExtractFinished(QString p_imagePath);
-	void onGlobalFeatureExtractFinished(QString p_imagePath);
-	void onRetrieveTaskFinished(quint32 imageID1, quint32 imageID2);
-	void onMatchTaskFinished(quint32 imageID1, quint32 imageID2);
-	void onReconstructFinished(quint32 imageID);
 };
 
 #endif // WORKFLOW_H

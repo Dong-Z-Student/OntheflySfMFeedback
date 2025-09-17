@@ -37,7 +37,6 @@
     <QtMoc Include="PythonTask.h" />
     <QtMoc Include="MatchTask.h" />
     <QtMoc Include="EstimateTask.h" />
-    <ClInclude Include="Reconstructor.h" />
     <QtMoc Include="Workflow.h" />
   </ItemGroup>
   <ItemGroup>
@@ -47,7 +46,6 @@
     <ClCompile Include="PythonTask.cpp" />
     <ClCompile Include="ReadTask.cpp" />
     <ClCompile Include="Receiver.cpp" />
-    <ClCompile Include="Reconstructor.cpp" />
     <ClCompile Include="ReconstructTask.cpp" />
     <ClCompile Include="RetrieveTask.cpp" />
     <ClCompile Include="Workflow.cpp" />

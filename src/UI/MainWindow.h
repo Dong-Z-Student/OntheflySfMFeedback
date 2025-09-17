@@ -1,108 +1,80 @@
-﻿#include <QMainWindow>
-#include "ImageListWidget.h"
-#include "LogWidget.h"
-#include "ModelViewerWidget.h"
-#include "ReconstructionManagerWidget.h"
-#include "ProjectWidget.h"
-#include "MatchMatrixWidget.h"
+#pragma once
 #include "../Workflow/Receiver.h"
 #include "../Workflow/Workflow.h"
-
+#include "ImageListWidget.h"
+#include "LogWidget.h"
+#include "MatchMatrixWidget.h"
+#include "ModelViewerWidget.h"
+#include "ProjectWidget.h"
+#include "ReconstructionManagerWidget.h"
+#include <QAction>
+#include <QMainWindow>
 #include <QMenu>
 #include <QToolBar>
-#include <QAction>
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
+class MainWindow : public QMainWindow {
+	Q_OBJECT
 public:
-    MainWindow(QWidget* parent = nullptr);
-    void RunFunc();
+	explicit MainWindow(QWidget* parent = nullptr);
+	~MainWindow();
 
-private:
-    LogWidget* logWidget = nullptr;
-    ReconstructionManagerWidget* reconstructionManagerWidget = nullptr;
-    ImageListWidget* imageListWidget = nullptr;
-    ProjectWidget* projectWidget = nullptr;
-    QTabWidget* tabWidget = nullptr;
-    ModelViewerWidget* modelViewerWidget = nullptr;
-    ShowMatchMatrixWidget* showMatchMatrixWidget = nullptr;
-    QLabel* statusLabel = nullptr;
-    QDockWidget* logWindowDock = nullptr;
-    QDockWidget* imageListWindowDock = nullptr;
-    QCheckBox* isTrackModelCheckBox = nullptr;;
+	void StartReceive();
+	void StopReceive();
+	void ProcessImage(const std::string& newImagePath);
 
-    QMenu* settingMenu = nullptr;
-    QMenu* projectMenu = nullptr;
-    QMenu* transmitMenu = nullptr;
-    QMenu* toolsMenu = nullptr;
-    QToolBar* settingToolBar = nullptr;
-    QToolBar* projectToolBar = nullptr;
-    QToolBar* transmitToolBar = nullptr;
-    QToolBar* reconstructToolBar = nullptr;
-    QToolBar* toolsToolBar = nullptr;
-
-    //Feedback
-    QToolBar* feedbackToolBar = nullptr;
-
-    Database* database = nullptr;
-    Reconstructor* reconstructor = nullptr;
-    ReconstructionManager* reconstructionManager = nullptr;
-    Receiver* receiver = nullptr;
-
-
-    QAction* newProjectAction = nullptr;                   // 弹出"创建新工程"对话框
-    QAction* startReceiveAction = nullptr;                 // 开始传输
-    QAction* stopReceiverAction = nullptr;                 // 停止传输
-    QAction* renderNowAction = nullptr;                    // 渲染模型
-    QAction* exportProjectAction = nullptr;                // 导出工程
-    QAction* showMatchMatrixAction = nullptr;
-
-    //QAction* switchHeatMapAction = nullptr;
-    //QAction* switchMeshlineAction = nullptr;
-    //QAction* switchGuidelineAction = nullptr;
-    bool showHeatMap = false;
-    bool showMeshline = false;
-    bool showGuideline = false;
-
-    std::mutex renderMutex;
-    bool isForcedRender = false;
-
-    void StartReceive();
-    void ProcessImage(const std::string& newImagePath);
-    void StopReceive();
-
-    void closeEvent(QCloseEvent* event) override;
-    void SetupWidgets();
-    void SetupActions();
-    void CreateMenus();
-    void CreateToolbar();
-    void CreateStatusbar();
-    void ChangeCurrentModel();
-    void ShowMatchMatrix();
-
-    void NewProject();
-    void ExportProject();
-    void ExportRunningProject();
-    void ExportModelOnRegisted();
-    void ChangeSelectModel();
-    void RenderNow();
-
-    void NewProject_SLOT();
-
-
+protected:
+	void closeEvent(QCloseEvent* event) override;
 
 private slots:
-    void UpdateStatusFromModelWidget(const QString& status);
-    void UpdateStatusFromMeshWidget(const QString& status);
-    void onTabChanged(int index);
+	void NewProject();
+	void ExportProject();
+	void ChangeCurrentModel();
+	void ShowMatchMatrix();
+	void ChangeSelectModel();
+	void RenderNow();
+	void NewProject_SLOT();
+	void onTabChanged(int index);
+
+	void addNewImageInWidget(QString p_imagePath);
+
+private:
+	void SetupWidgets();
+	void SetupActions();
+	void SetupConnections() const;
+	void CreateMenus();
+	void CreateToolbar();
+	void CreateStatusbar();
+	void RunFunc();
+	void ExportRunningProject();
+	void ExportModelOnRegisted();
+
+	Receiver* receiver;
+	Database* database;
+	ReconstructionManager* reconstructionManager;
+	WorkFlow* workflow;
+	ModelViewerWidget* modelViewerWidget;
+	ReconstructionManagerWidget* reconstructionManagerWidget;
+	ImageListWidget* imageListWidget;
+	LogWidget* logWidget;
+	ProjectWidget* projectWidget;
+	ShowMatchMatrixWidget* showMatchMatrixWidget;
+	QTabWidget* tabWidget;
+	QDockWidget* imageListWindowDock;
+	QDockWidget* logWindowDock;
+	QLabel* statusLabel;
+	QAction* newProjectAction;
+	QAction* exportProjectAction;
+	QAction* startReceiveAction;
+	QAction* stopReceiverAction;
+	QAction* renderNowAction;
+	QAction* showMatchMatrixAction;
+	QMenu* projectMenu;
+	QMenu* transmitMenu;
+	QToolBar* projectToolBar;
+	QToolBar* transmitToolBar;
+	QToolBar* reconstructToolBar;
+	QToolBar* feedbackToolBar;
+	QCheckBox* isTrackModelCheckBox;
+	bool isForcedRender = false;
+	std::mutex renderMutex;
 };
-
-
-
-
-
-
-
-
-

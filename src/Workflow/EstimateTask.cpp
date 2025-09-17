@@ -7,6 +7,32 @@ void EstimateTask::run()
 	Timer geometricVerificationTimer;
 	geometricVerificationTimer.Start();
 
+	EstimateTwoViewGeometry();
+
+	const size_t geometricVerificationTime = geometricVerificationTimer.ElapsedMicroSeconds() / 1000;
+	m_data->geometricVerificationTimes.at(imageID2) += geometricVerificationTime;
+
+	bool existInlierMatches = m_data->DatabaseExistsInlierMatches(imageID1, imageID2);
+	const size_t numInlierMatches = (existInlierMatches ? m_data->DatabaseReadTwoViewGeometry(imageID1, imageID2).inlier_matches.size() : 0);
+
+	LOG(INFO) << "[Estimate] " << imageID1 << " - " << imageID2 << ": " << numInlierMatches;
+
+	if (m_data->numMatchingPairs.at(imageID2) > 0)
+	{
+		m_data->numMatchingPairs.at(imageID2)--;
+	}
+	if (m_data->numMatchingPairs.at(imageID2) == 0)
+	{
+		std::string imagePath = m_data->getImagePath(imageID2);
+		m_data->setImageStatus(imagePath, CImageStatusFlag::CTwoViewGeometryEstimated);
+		LOG(INFO) << "[Estimate] Image " << imageID2 << " estimated finished!";
+
+		emit estimateAllFinished(imageID2);
+	}
+}
+
+void EstimateTask::EstimateTwoViewGeometry()
+{
 	const FeatureKeypoints keypoints1 = m_data->DatabaseReadKeypoints(imageID1);
 	const FeatureKeypoints keypoints2 = m_data->DatabaseReadKeypoints(imageID2);
 	if (keypoints1.empty() || keypoints2.empty() || !m_data->DatabaseExistsMatches(imageID1, imageID2))
@@ -39,26 +65,5 @@ void EstimateTask::run()
 	if (!twoViewGeometry.inlier_matches.empty())
 	{
 		m_data->DatabaseWriteTwoViewGeometry(imageID1, imageID2, twoViewGeometry);
-	}
-
-	const size_t geometricVerificationTime = geometricVerificationTimer.ElapsedMicroSeconds() / 1000;
-	m_data->geometricVerificationTimes.at(imageID2) += geometricVerificationTime;
-
-	bool existInlierMatches = m_data->DatabaseExistsInlierMatches(imageID1, imageID2);
-	const size_t numInlierMatches = (existInlierMatches ? m_data->DatabaseReadTwoViewGeometry(imageID1, imageID2).inlier_matches.size() : 0);
-
-	LOG(INFO) << "[Estimate] " << imageID1 << " - " << imageID2 << ": " << numInlierMatches;
-
-	if (m_data->numMatchingPairs.at(imageID2) > 0)
-	{
-		m_data->numMatchingPairs.at(imageID2)--;
-	}
-	if (m_data->numMatchingPairs.at(imageID2) == 0)
-	{
-		std::string imagePath = m_data->getImagePath(imageID2);
-		m_data->setImageStatus(imagePath, CImageStatusFlag::CTwoViewGeometryEstimated);
-		LOG(INFO) << "[Estimate] Image " << imageID2 << " estimated finished!";
-
-		emit estimateAllFinished(imageID2);
 	}
 }
