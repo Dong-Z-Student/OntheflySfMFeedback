@@ -1070,11 +1070,11 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 				plane_color = kSelectedImagePlaneColor;
 				frame_color = kSelectedImageFrameColor;
 			}
-			else if (image_id == Reconstructor::lastRegImageID)
+			/*else if (image_id == Reconstructor::lastRegImageID) TODO
 			{
 				plane_color = Eigen::Vector4f(0.1f, 1.0f, 0.0f, 0.6f);
 				frame_color = Eigen::Vector4f(0.8f, 0.1f, 0.0f, 1.0f);
-			}
+			}*/
 			else {
 				image_colormap_->ComputeColor(image, &plane_color, &frame_color);
 			}

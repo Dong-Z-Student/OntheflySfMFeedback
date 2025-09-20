@@ -23,7 +23,7 @@ void MatchTask::run()
 	}
 	bool existsMatches = m_data->DatabaseExistsMatches(imageID1, imageID2);
 	const size_t numMatches = (existsMatches ? m_data->DatabaseReadMatches(imageID1, imageID2).size() : 0);
-	LOG(INFO) << "[SIFTMatchGPU] " << imageID1 << " - " << imageID2 << ": " << numMatches;
+	//LOG(INFO) << "[SIFTMatchGPU] " << imageID1 << " - " << imageID2 << ": " << numMatches;
 
 	const size_t SIFTMatchingTime = SIFTMatchingTimer.ElapsedMicroSeconds() / 1000;
 	m_data->SIFTMatchingTimes.at(imageID2) += SIFTMatchingTime;

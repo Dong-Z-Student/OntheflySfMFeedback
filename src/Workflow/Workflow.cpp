@@ -1,4 +1,4 @@
-﻿#include "../Base/logging.h"
+﻿#include "glog/logging.h"
 #include "WorkData.h"
 #include "WorkFlow.h"
 
@@ -17,11 +17,11 @@ WorkFlow::WorkFlow(QObject* parent)
 {
 	LoadPython();
 	m_read_threadPool->setMaxThreadCount(1);
-	m_extract_threadPool->setMaxThreadCount(3);
+	m_extract_threadPool->setMaxThreadCount(2);
 	m_gextract_threadPool->setMaxThreadCount(1);
 	m_retrieve_threadPool->setMaxThreadCount(2);
 	m_match_threadPool->setMaxThreadCount(3);
-	m_estimate_threadPool->setMaxThreadCount(6);
+	m_estimate_threadPool->setMaxThreadCount(8);
 	m_reconstruct_threadPool->setMaxThreadCount(1);
 }
 
@@ -36,9 +36,9 @@ WorkFlow::~WorkFlow()
 	delete m_reconstruct_threadPool;
 }
 
-void WorkFlow::setData(Database* p_database)
+void WorkFlow::setData(Database* p_database, ReconstructionManager* p_modelManager)
 {
-	m_workData->Initial(p_database);
+	m_workData->Initial(p_database, p_modelManager);
 }
 
 void WorkFlow::LoadPython()
@@ -98,13 +98,27 @@ void WorkFlow::onMatchTaskFinished(quint32 imageID1, quint32 imageID2)
 }
 
 void WorkFlow::onEstimateFinished(quint32 imageID) {
-	ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID);
-	connect(m_reconstructTask, &ReconstructTask::reconstructTaskFinished, this, &WorkFlow::onReconstructFinished);
-	m_reconstruct_threadPool->start(m_reconstructTask);
+	ReconstructImage(imageID);
 }
 
-void WorkFlow::onReconstructFinished(quint32 imageID)
+void WorkFlow::onReconstructUpdated(quint32 imageID)
 {
-	LOG(INFO) << "Reconstruct finished: " << imageID;
-	emit reconstructImageFinished();
+	emit reconstructUpdated();
 }
+
+bool WorkFlow::ReconstructImage(quint32 imageID)
+{
+	if (m_workData->estimatedImageNum == 20) {
+		ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, -1, ReconstructType::AddModel, this);
+		connect(m_reconstructTask, &ReconstructTask::reconstructionInitial, this, &WorkFlow::onReconstructUpdated);
+		connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onReconstructUpdated);
+		m_reconstruct_threadPool->start(m_reconstructTask);
+	}
+	//if (m_workData->estimatedImageNum > 20) {
+	//	ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, 0, ReconstructType::AddImage, this);
+	//	connect(m_reconstructTask, &ReconstructTask::reconstructTaskFinished, this, &WorkFlow::onReconstructUpdated);
+	//	m_reconstruct_threadPool->start(m_reconstructTask);
+	//}
+	return false;
+}
+

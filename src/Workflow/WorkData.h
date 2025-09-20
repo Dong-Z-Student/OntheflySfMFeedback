@@ -1,11 +1,14 @@
 ﻿#ifndef WORKDATA_H
 #define WORKDATA_H
 
+#include "../Estimator/IncrementalMapper.h"
 #include "../Feature/Bitmap.h"
 #include "../Feature/FeatureExtractor.h"
 #include "../Feature/FeatureMatcher.h"
 #include "../Feature/ImageReader.h"
 #include "../Scene/Database.h"
+#include "../Scene/DatabaseCache.h"
+#include "../Scene/ReconstructionManager.h"
 #include "tbb/concurrent_map.h"
 #include <QMutex>
 #include <QMutexLocker>
@@ -45,24 +48,33 @@ public:
 	explicit WorkData(QObject* parent = nullptr)
 		: QObject(parent),
 		database(nullptr),
+		database_cache(std::make_shared<DatabaseCache>()),
+		modelManager(nullptr),
+		mapper(new IncrementalMapper(database_cache)),
+		estimatedImageNum(0),
 		globalFeatureExtractor(nullptr),
 		globalFeatureRetriever(nullptr) {}
 
-	void Initial(Database* p_database) {
+	void Initial(Database* p_database, ReconstructionManager* p_modelManager) {
 		database = p_database;
+		modelManager = p_modelManager;
 	}
 
 	//// 对外提供公共资源操作方法
 	// set/get
 	Database* getDatabase() const { return database; }
+	std::shared_ptr<const DatabaseCache> getDatabaseCache() const { return database_cache; }
+	ReconstructionManager* getModelManager() const { return modelManager; }
+	ReconstructionManager* getModelManager() { return modelManager; }
+	IncrementalMapper* getIncrementalMapper() { return mapper; }
 	CGlobalFeatureExtractor* getGlobalFeatureExtractor() const { return globalFeatureExtractor; }
 	CGlobalFeatureRetriever* getGlobalFeatureRetriever() const { return globalFeatureRetriever; }
-
 	void setGlobalFeatureFunc(CGlobalFeatureExtractor* p_globalFeatureExtractor,
 		CGlobalFeatureRetriever* p_globalFeatureRetriever) {
 		globalFeatureExtractor = p_globalFeatureExtractor;
 		globalFeatureRetriever = p_globalFeatureRetriever;
 	}
+
 
 	//// === Database 相关操作 ===
 	camera_t DatabaseWriteCamera(Camera camera) {
@@ -73,6 +85,11 @@ public:
 	image_t DatabaseWriteImage(Image image) {
 		QWriteLocker locker(&m_database_lock);
 		return database->WriteImage(image);
+	}
+
+	size_t DatabaseReadImageNum() {
+		QReadLocker locker(&m_database_lock);
+		return database->NumImages();
 	}
 
 	void DatabaseWriteKeypoints(image_t imageid, FeatureKeypoints& p_keypoints) {
@@ -139,6 +156,30 @@ public:
 		return database->ReadTwoViewGeometry(id1, id2);
 	}
 
+	//// === ModelManager 相关操作 ===
+	size_t ModelManagerGetNum() {
+		QReadLocker locker(&m_modelmanager_lock);
+		return modelManager->Size();
+	}
+
+	size_t ModelManagerAddModel() {
+		QWriteLocker locker(&m_modelmanager_lock);
+		return modelManager->Add();
+	}
+
+	//// === DatabaseCache 相关操作 ===
+	void RefreshCache(quint32 imageID) {
+		QReadLocker locker1(&m_database_lock);
+		QWriteLocker locker2(&m_databasecache_lock);
+
+		if (!DatabaseCache::Initialized()) {
+			database_cache->Create(*database);
+		}
+		else {
+			database_cache->AddImage(*database, imageID);
+		}
+	}
+
 	//// === Image 相关操作 ===
 	image_t getImageID(const std::string imagePath) {
 		QReadLocker locker(&m_imageidpath_lock);
@@ -177,6 +218,26 @@ public:
 		allBitmaps.erase(imageid);
 	}
 
+	//// === 模型锁相关操作 ===
+	QReadWriteLock& getModelLock(size_t model_index) {
+		if (model_index >= m_models_lock.size()) {
+			throw std::out_of_range("Model index out of range");
+		}
+		return m_models_lock[model_index];
+	}
+
+	const QReadWriteLock& getModelLock(size_t model_index) const {
+		if (model_index >= m_models_lock.size()) {
+			throw std::out_of_range("Model index out of range");
+		}
+		return m_models_lock[model_index];
+	}
+
+	size_t getMaxModelCount() const {
+		return m_models_lock.size();
+	}
+
+
 public:
 	//// 并发计时器
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> SIFTExtractionTimes;
@@ -184,12 +245,16 @@ public:
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> globalFeatureRetrievalTimes;
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> SIFTMatchingTimes;
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> geometricVerificationTimes;
-
+	//// 重建计数器
 	tbb::concurrent_unordered_map<size_t, std::atomic_size_t> numMatchingPairs;
+	std::atomic_int estimatedImageNum;
 
 private:
 	//// 工作变量
 	Database* database;
+	std::shared_ptr<DatabaseCache> database_cache;
+	ReconstructionManager* modelManager;
+	IncrementalMapper* mapper;
 	CGlobalFeatureExtractor* globalFeatureExtractor;
 	CGlobalFeatureRetriever* globalFeatureRetriever;
 
@@ -200,6 +265,9 @@ private:
 
 	//// 互斥锁
 	mutable QReadWriteLock m_database_lock;
+	mutable QReadWriteLock m_databasecache_lock;
+	mutable QReadWriteLock m_modelmanager_lock;
+	std::array<QReadWriteLock, 10> m_models_lock; // 最多支持10个子模型
 	mutable QReadWriteLock m_imageidpath_lock;
 	mutable QReadWriteLock m_bitmap_lock;
 	QMutex m_imagestatus_lock;

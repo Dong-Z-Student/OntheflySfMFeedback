@@ -15,7 +15,7 @@ void EstimateTask::run()
 	bool existInlierMatches = m_data->DatabaseExistsInlierMatches(imageID1, imageID2);
 	const size_t numInlierMatches = (existInlierMatches ? m_data->DatabaseReadTwoViewGeometry(imageID1, imageID2).inlier_matches.size() : 0);
 
-	LOG(INFO) << "[Estimate] " << imageID1 << " - " << imageID2 << ": " << numInlierMatches;
+	//LOG(INFO) << "[Estimate] " << imageID1 << " - " << imageID2 << ": " << numInlierMatches;
 
 	if (m_data->numMatchingPairs.at(imageID2) > 0)
 	{
@@ -27,6 +27,7 @@ void EstimateTask::run()
 		m_data->setImageStatus(imagePath, CImageStatusFlag::CTwoViewGeometryEstimated);
 		LOG(INFO) << "[Estimate] Image " << imageID2 << " estimated finished!";
 
+		m_data->estimatedImageNum++;
 		emit estimateAllFinished(imageID2);
 	}
 }

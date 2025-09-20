@@ -67,7 +67,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 	database = new Database();
 	reconstructionManager = new ReconstructionManager();
 	workflow = new WorkFlow(this);
-	workflow->setData(database);
+	workflow->setData(database, reconstructionManager);
 
 	SetupWidgets();
 	SetupActions();
@@ -79,6 +79,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
 MainWindow::~MainWindow()
 {
+	delete receiver;
+	delete database;
+	delete reconstructionManager;
+	delete workflow;
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
@@ -206,6 +210,7 @@ void MainWindow::CreateStatusbar() {
 void MainWindow::SetupConnections() const {
 	connect(receiver, &Receiver::newDataReceived, workflow, &WorkFlow::onProcessNewImage);
 	connect(workflow, &WorkFlow::readImageFinished, this, &MainWindow::addNewImageInWidget);
+	connect(workflow, &WorkFlow::reconstructUpdated, this, &MainWindow::RenderNow);
 }
 
 // ================= 业务逻辑 =================
@@ -218,7 +223,7 @@ void MainWindow::RunFunc() {
 		const QString imagePath = StdString2QString2(images[i]);
 		settings.setValue("NewImage", imagePath);
 
-		this_thread::sleep_for(chrono::milliseconds(1000));
+		this_thread::sleep_for(chrono::milliseconds(500));
 	}
 }
 
@@ -237,8 +242,8 @@ void MainWindow::StopReceive() {
 	stopReceiverAction->setEnabled(false);
 
 	std::thread tryMergeThread([&]() {
-		reconstructor->TryMergeModels();
-		reconstructor->FinalGlobalBA();
+		//reconstructor->TryMergeModels();
+		//reconstructor->FinalGlobalBA();
 		});
 	tryMergeThread.detach();
 }
@@ -321,7 +326,7 @@ void MainWindow::ExportModelOnRegisted() {
 
 // ================= UI交互相关 =================
 void MainWindow::ChangeCurrentModel() {
-	if (isTrackModelCheckBox->isChecked()) {
+	/*if (isTrackModelCheckBox->isChecked()) {
 		lock_guard<mutex> lock(renderMutex);
 		const int lastRegModelID = Reconstructor::lastRegModelID;
 		if (lastRegModelID >= 0 && lastRegModelID < reconstructionManager->Size()) {
@@ -333,7 +338,7 @@ void MainWindow::ChangeCurrentModel() {
 	else {
 		reconstructionManagerWidget->Update();
 		renderNowAction->trigger();
-	}
+	}*/
 }
 
 void MainWindow::ShowMatchMatrix() {
@@ -370,7 +375,11 @@ void MainWindow::RenderNow() {
 				reconstruction_idx = reconstructionManager->Size() - 1;
 			}
 		}
-		if (isTrackModelCheckBox->isChecked() || reconstruction_idx == reconstructor->lastRegModelID || isForcedRender) {
+		/*if (isTrackModelCheckBox->isChecked() || reconstruction_idx == reconstructor->lastRegModelID || isForcedRender) {
+			modelViewerWidget->reconstruction = reconstructionManager->Get(reconstruction_idx);
+			modelViewerWidget->ReloadReconstruction();
+		}*/
+		if (isTrackModelCheckBox->isChecked() || isForcedRender) {
 			modelViewerWidget->reconstruction = reconstructionManager->Get(reconstruction_idx);
 			modelViewerWidget->ReloadReconstruction();
 		}

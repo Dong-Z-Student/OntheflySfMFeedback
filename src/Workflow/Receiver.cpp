@@ -8,8 +8,6 @@ Receiver::Receiver(QObject* parent)
 Receiver::~Receiver()
 {
 	Stop();
-	if (loopThread.joinable())
-		loopThread.join();
 }
 
 void Receiver::Start()
@@ -17,6 +15,7 @@ void Receiver::Start()
 	if (running) return;
 	running = true;
 	loopThread = std::thread([this]() {
+		ClearRegistryValue();
 		while (running) {
 			std::string ss_value = ReadRegistryValue();
 			QString value = QString::fromStdString(ss_value);

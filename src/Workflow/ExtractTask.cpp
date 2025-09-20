@@ -1,6 +1,8 @@
-﻿#include "../Feature/Bitmap.h"
+﻿#include "../Base/timer.h"
+#include "../Feature/Bitmap.h"
 #include "ExtractTask.h"
 #include "WorkData.h"
+
 
 // TODO: 异常处理
 void ExtractTask::run()

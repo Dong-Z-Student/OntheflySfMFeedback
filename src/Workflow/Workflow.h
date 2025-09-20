@@ -3,6 +3,7 @@
 #define WORKFLOW_H
 
 #include "../Scene/Database.h"
+#include "../Scene/ReconstructionManager.h"
 #include "EstimateTask.h"
 #include "ExtractTask.h"
 #include "MatchTask.h"
@@ -10,6 +11,7 @@
 #include "ReadTask.h"
 #include "ReconstructTask.h"
 #include "RetrieveTask.h"
+#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QtConcurrent>
@@ -24,13 +26,13 @@ public:
 	explicit WorkFlow(QObject* parent = nullptr);
 	~WorkFlow();
 
-	void setData(Database* p_database);
+	void setData(Database* p_database, ReconstructionManager* p_modelManager);
 	void LoadPython();
 
 
 signals:
 	void readImageFinished(QString p_imagePath);
-	void reconstructImageFinished();
+	void reconstructUpdated();
 
 public slots:
 	void onProcessNewImage(const QString& value); // 传入影像，启动工作流
@@ -40,7 +42,7 @@ public slots:
 	void onRetrieveTaskFinished(quint32 imageID1, quint32 imageID2);
 	void onMatchTaskFinished(quint32 imageID1, quint32 imageID2);
 	void onEstimateFinished(quint32 imageID);
-	void onReconstructFinished(quint32 imageID);
+	void onReconstructUpdated(quint32 imageID);
 
 private:
 	WorkData* m_workData;      // 共享数据
@@ -51,6 +53,8 @@ private:
 	QThreadPool* m_match_threadPool;
 	QThreadPool* m_estimate_threadPool;
 	QThreadPool* m_reconstruct_threadPool;
+
+	bool ReconstructImage(quint32 imageID);
 };
 
 #endif // WORKFLOW_H
