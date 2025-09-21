@@ -29,7 +29,7 @@ public:
 	void Create(const Database& database,
 		const size_t min_num_matches = 10,
 		const bool ignore_watermarks = true,
-		const std::unordered_set<std::string>& image_names = {});
+		const std::set<size_t>& p_image_ids = {});
 	void AddImage(
 		const Database& database,
 		image_t imageID,

@@ -41,7 +41,7 @@ public slots:
 	void onGlobalFeatureExtractFinished(QString p_imagePath);
 	void onRetrieveTaskFinished(quint32 imageID1, quint32 imageID2);
 	void onMatchTaskFinished(quint32 imageID1, quint32 imageID2);
-	void onEstimateFinished(quint32 imageID);
+	void onEstimateFinished(quint32 imageID1, quint32 imageID2);
 	void onReconstructUpdated(quint32 imageID);
 
 private:
@@ -53,6 +53,8 @@ private:
 	QThreadPool* m_match_threadPool;
 	QThreadPool* m_estimate_threadPool;
 	QThreadPool* m_reconstruct_threadPool;
+
+	QMutex mu_reconstructTasks; // 分发任务加锁
 
 	bool ReconstructImage(quint32 imageID);
 };

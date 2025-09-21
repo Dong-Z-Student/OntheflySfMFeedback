@@ -78,4 +78,7 @@
       <Filter>头文件</Filter>
     </QtMoc>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
 </Project>

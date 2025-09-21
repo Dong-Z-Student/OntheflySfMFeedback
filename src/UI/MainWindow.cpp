@@ -102,6 +102,7 @@ void MainWindow::SetupWidgets() {
 	modelViewerWidget->SetDatabase(database);
 	tabWidget->addTab(modelViewerWidget, "Model Viewer");
 	setCentralWidget(tabWidget);
+	connect(modelViewerWidget, &ModelViewerWidget::statusUpdate, this, &MainWindow::UpdateStatus);
 
 	reconstructionManagerWidget = new ReconstructionManagerWidget(this, std::shared_ptr<const ReconstructionManager>(reconstructionManager));
 	reconstructionManagerWidget->setFixedWidth(270);
@@ -220,10 +221,9 @@ void MainWindow::RunFunc() {
 
 	QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
 	for (int i = 0; i < images.size(); i++) {
+		this_thread::sleep_for(chrono::milliseconds(1000));
 		const QString imagePath = StdString2QString2(images[i]);
 		settings.setValue("NewImage", imagePath);
-
-		this_thread::sleep_for(chrono::milliseconds(500));
 	}
 }
 
@@ -406,4 +406,10 @@ void MainWindow::onTabChanged(int index) {
 		statusLabel->setText(modelViewerWidget->status_label);
 	}
 }
-
+//主界面使用一个QLabel显示状态，子标签页发送status信号主界面接收，主界面切换页面改变页面序号，根据当前
+//页面序号接收status字符串，更新status显示内容。不会造成内存泄漏。
+void MainWindow::UpdateStatus(const QString& status) {
+	if (tabWidget->currentWidget() == modelViewerWidget) {
+		statusLabel->setText(status);
+	}
+}

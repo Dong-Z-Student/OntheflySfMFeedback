@@ -10,7 +10,7 @@ void DatabaseCache::Create(
 	const Database& database,
 	const size_t min_num_matches,
 	const bool ignore_watermarks,
-	const std::unordered_set<std::string>& image_names) {
+	const std::set<size_t>& p_image_ids) {
 
 	//////////////////////////////////////////////////////////////////////////////
 	// Load cameras
@@ -59,14 +59,14 @@ void DatabaseCache::Create(
 		const size_t num_images = images.size();
 
 		// Determines for which images data should be loaded.
-		if (image_names.empty()) {
+		if (p_image_ids.empty()) {
 			for (const auto& image : images) {
 				image_ids.insert(image.ImageId());
 			}
 		}
 		else {
 			for (const auto& image : images) {
-				if (image_names.count(image.Name()) > 0) {
+				if (p_image_ids.count(image.ImageId()) > 0) {
 					image_ids.insert(image.ImageId());
 				}
 			}
@@ -143,7 +143,6 @@ void DatabaseCache::Create(
 		image.second.SetNumCorrespondences(
 			correspondence_graph_->NumCorrespondencesForImage(image.first));
 	}
-
 	initialized = true;
 }
 
@@ -157,7 +156,9 @@ const class Image* DatabaseCache::FindImageWithName(
 	return nullptr;
 }
 
-void DatabaseCache::AddImage(const Database& database, image_t imageID, const size_t min_num_matches,
+void DatabaseCache::AddImage(const Database& database,
+	image_t imageID,
+	const size_t min_num_matches,
 	const bool ignore_watermarks) { // TODO: 未处理孤立影像的情况
 	//////////////////////////////////////////////////////////////////////////////
 	// Add cameras
@@ -190,7 +191,7 @@ void DatabaseCache::AddImage(const Database& database, image_t imageID, const si
 	//////////////////////////////////////////////////////////////////////////////
 	// Add images
 	//////////////////////////////////////////////////////////////////////////////
-	class Image image = database.ReadImage(imageID);
+	class Image addImage = database.ReadImage(imageID);
 	{
 		// Collect all images that are connected in the correspondence graph.
 		std::unordered_set<image_t> connected_image_ids;
@@ -208,15 +209,16 @@ void DatabaseCache::AddImage(const Database& database, image_t imageID, const si
 		// Load images with correspondences and discard images without
 		// correspondences, as those images are useless for SfM.
 		if (connected_image_ids.count(imageID) > 0) {
-			image.SetPoints2D(
+			addImage.SetPoints2D(
 				FeatureKeypointsToPointsVector(database.ReadKeypoints(imageID)));
-			images_.emplace(imageID, std::move(image));
+			images_.emplace(imageID, std::move(addImage));
 		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	// Build correspondence graph
 	//////////////////////////////////////////////////////////////////////////////
+	correspondence_graph_.reset();
 	correspondence_graph_ = std::make_shared<class CorrespondenceGraph>();
 
 	for (const auto& image : images_) {
@@ -237,7 +239,6 @@ void DatabaseCache::AddImage(const Database& database, image_t imageID, const si
 			num_ignored_image_pairs += 1;
 		}
 	}
-
 	correspondence_graph_->Finalize();
 
 	// Set number of observations and correspondences per image.

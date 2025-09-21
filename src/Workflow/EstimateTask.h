@@ -19,7 +19,7 @@ public:
 
 signals:
 	void estimateTaskFinished(quint32 p_imageID1, quint32 p_imageID2);
-	void estimateAllFinished(quint32 p_imageID);
+	void estimateAllFinished(quint32 p_imageID1, quint32 p_imageID2); // only imageID2 finished
 	void estimateTaskFailed();
 
 private:

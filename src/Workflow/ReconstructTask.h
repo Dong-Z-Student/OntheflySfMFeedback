@@ -20,9 +20,8 @@ public:
 		, modelID(p_modelID)
 		, type(p_type) {}
 	void run() override;
-	bool InitializeReconstruct();
+	bool Reconstruct();
 	bool InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper);
-	void Reconstruct(size_t imageID, size_t modelID);
 	void LocalBundleAdjustment(const IncrementalMapper::Options& options, size_t imageID, IncrementalMapper& mapper);
 	void GlobalBundleAdjustment(const IncrementalMapper::Options& options, IncrementalMapper& mapper);
 	size_t TriangulateImage(const IncrementalMapper::Options& options, size_t imageID, IncrementalMapper& mapper);
@@ -32,7 +31,12 @@ public:
 signals:
 	void reconstructTaskFinished(quint32 p_imageID);
 	void reconstructionInitial(quint32 p_modelID, bool success);
+	void registedInitialImagePair(quint32 imageID1, quint32 imageID2);
 	void registedSuccess(quint32 p_imageID);
+
+public slots:
+	void onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2);
+	void onRegistedSuccess(quint32 p_imageID);
 
 private:
 	quint32 imageID;

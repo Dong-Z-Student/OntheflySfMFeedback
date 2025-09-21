@@ -27,8 +27,7 @@ void EstimateTask::run()
 		m_data->setImageStatus(imagePath, CImageStatusFlag::CTwoViewGeometryEstimated);
 		LOG(INFO) << "[Estimate] Image " << imageID2 << " estimated finished!";
 
-		m_data->estimatedImageNum++;
-		emit estimateAllFinished(imageID2);
+		emit estimateAllFinished(imageID1, imageID2);
 	}
 }
 

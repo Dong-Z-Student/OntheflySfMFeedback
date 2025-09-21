@@ -36,6 +36,7 @@ private slots:
 	void onTabChanged(int index);
 
 	void addNewImageInWidget(QString p_imagePath);
+	void UpdateStatus(const QString& status);
 
 private:
 	void SetupWidgets();

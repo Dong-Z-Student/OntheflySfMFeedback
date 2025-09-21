@@ -4,23 +4,25 @@
 #include "glog/logging.h"
 #include "ReconstructTask.h"
 #include "WorkData.h"
+#include <sstream>
 
 void ReconstructTask::run()
 {
-	m_data->RefreshCache(imageID);
-	LOG(INFO) << "[Reconsturct] refreshed dbcache: " << imageID << " num: " << m_data->getDatabaseCache()->NumImages();
+	const bool refresh = m_data->LoadCache();
+	if (!refresh) {
+		return;
+	}
 	if (type == ReconstructType::AddModel) {
 		modelID = m_data->ModelManagerAddModel();
-		LOG(INFO) << "[Reconsturct] initializing model: " << modelID;
-		const bool success = InitializeReconstruct();
+		const bool success = Reconstruct();
 		emit reconstructionInitial(modelID, success);
 	}
 	if (type == ReconstructType::AddImage) {
-		LOG(INFO) << "[Reconsturct] add image " << imageID << " ---> model " << modelID;
+		const bool success = Reconstruct();
 	}
 }
 
-bool ReconstructTask::InitializeReconstruct()
+bool ReconstructTask::Reconstruct()
 {
 	Timer reconstructionTimer;
 	reconstructionTimer.Start();
@@ -63,6 +65,7 @@ bool ReconstructTask::InitializeReconstruct()
 	}
 	model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 
+	// IncrementalMapping
 	bool isContinue = true;
 	while (isContinue)
 	{
@@ -70,6 +73,12 @@ bool ReconstructTask::InitializeReconstruct()
 		isContinue = false;
 		size_t registerTime = 0;
 		const std::vector<image_t> nextImageIDs = mapper->FindNextImages(init_mapper_options);
+		/*std::ostringstream oss;
+		oss << "[DEBUG] nextImageIDs: ";
+		for (const auto& id : nextImageIDs) {
+			oss << id << " ";
+		}
+		LOG(INFO) << oss.str();*/
 		registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
 		model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 
@@ -203,12 +212,14 @@ bool ReconstructTask::InitializeReconstruct()
 #endif
 
 			isContinue = true;
-			break;
+			if (type == ReconstructType::AddImage) {
+				break;
+			}
+			}
 		}
-	}
 	mapper->EndReconstruction(false);
 	return true;
-}
+	}
 
 bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper)
 {
@@ -219,7 +230,7 @@ bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& opt
 	const bool isFindInitSuccess = mapper.FindInitialImagePair(options, &initImageID1, &initImageID2);
 	if (!isFindInitSuccess)
 	{
-		LOG(INFO) << "No good initial image pair found!" << endl;
+		LOG(INFO) << "No good initial image pair found!";
 		return false;
 	}
 	//if (!database->ExistsImage(initImageID1) || !database->ExistsImage(initImageID2))
@@ -250,197 +261,8 @@ bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& opt
 	}
 	ExtractColors(options, initImageID1, model);
 	//Callback(INITIAL_IMAGE_PAIR_REG_CALLBACK);
+	emit registedInitialImagePair(initImageID1, initImageID2);
 	return true;
-}
-
-// TODO
-void ReconstructTask::Reconstruct(size_t imageID, size_t modelID)
-{
-	Timer reconstructionTimer;
-	reconstructionTimer.Start();
-
-	std::shared_ptr<Reconstruction> model = m_data->getModelManager()->Get(modelID);
-	IncrementalMapper* mapper = m_data->getIncrementalMapper();
-	mapper->BeginReconstruction(model);
-
-	IncrementalMapper::Options init_mapper_options;
-
-	// InitializeEmptyModel
-	for (size_t numInitTrials = 0; numInitTrials < 2; numInitTrials++)
-	{
-		if (model->NumRegImages() > 0)
-		{
-			break;
-		}
-		// 只对空模型尝试初始化
-		if (InitializeEmptyModel(init_mapper_options, *model, *mapper))
-		{
-			//lastRegModelID = modelID;
-			//Callback(CHANGE_CURRENT_MODEL_CALLBACK);
-			break;
-		}
-
-		init_mapper_options.init_min_num_inliers /= 2;
-		if (InitializeEmptyModel(init_mapper_options, *model, *mapper))
-		{
-			//lastRegModelID = modelID;
-			//Callback(CHANGE_CURRENT_MODEL_CALLBACK);
-			break;
-		}
-
-		init_mapper_options.init_min_tri_angle /= 2;
-	}
-	if (model->NumRegImages() == 0)
-	{
-		mapper->EndReconstruction(true);
-		return;
-	}
-	model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-
-	bool isContinue = true;
-	while (isContinue)
-	{
-		reconstructionTimer.Restart();
-		isContinue = false;
-		size_t registerTime = 0;
-		const std::vector<image_t> nextImageIDs = mapper->FindNextImages(init_mapper_options);
-		registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
-		model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-
-		if (nextImageIDs.empty())
-		{
-			break;
-		}
-		size_t numRegNextImageTrials = 0;
-		for (size_t nextImageID : nextImageIDs)
-		{
-			numRegNextImageTrials++;
-			if (numRegNextImageTrials > 10)
-			{
-				break;
-			}
-
-			reconstructionTimer.Restart();
-			const std::string nextImageName = m_data->DatabaseReadImage(nextImageID).Name();
-			if (!mapper->RegisterNextImage(init_mapper_options, nextImageID))
-			{
-				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-				LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
-				continue;
-			}
-			model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-			registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
-			model->registerTimes.push_back(registerTime);
-			LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered successfully!";
-
-
-			reconstructionTimer.Restart();
-			TriangulateImage(init_mapper_options, nextImageID, *mapper);
-			model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-			model->triangulateTimes.push_back(reconstructionTimer.ElapsedMicroSeconds() / 1000);
-
-			reconstructionTimer.Restart();
-			LocalBundleAdjustment(init_mapper_options, nextImageID, *mapper);
-			ExtractColors(init_mapper_options, nextImageID, *model);
-
-			//Feedback
-			//GenerateMeshModel();
-
-			emit registedSuccess(imageID);
-			model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-
-#ifdef GaussianSplatting_Output
-			if (modelID != 0)
-			{
-				continue;
-			}
-			const size_t numRegImages = modelManager->Get(modelID)->NumRegImages();
-			if (numRegImages % 1 == 0 && numRegImages != 0 && numRegImages > 1)
-			{
-				const std::string basePath = StringReplace(EnsureTrailingSlash(GetParentDir(Database::exportPath)), "\\", "/");
-
-				const std::string modelExportDir = basePath + "models/" + to_string(numRegImages);
-				CreateDirIfNotExists(modelExportDir + "/bin", true);
-				CreateDirIfNotExists(modelExportDir + "/text", true);
-				modelManager->Get(modelID)->WriteBinary(modelExportDir + "/bin");
-				modelManager->Get(modelID)->WriteText(modelExportDir + "/text");
-				modelManager->Get(modelID)->OutputDebugResult(modelExportDir);
-
-				//const size_t imageNum = database->NumImages();
-				//const size_t imageOutNum = (imageNum / 20) * 20;
-				const size_t imageOutNum = numRegImages;
-				const vector<image_t> RegImagesIds = modelManager->Get(modelID)->RegImageIds();
-
-				vector<pair<image_t, image_t>> imagePairs(0);
-				vector<int> numInliers(0);
-				database->ReadTwoViewGeometryNumInliers(&imagePairs, &numInliers);
-				for (int i = 0; i < imagePairs.size(); i++)
-				{
-					const image_pair_t imagePairID = Database::ImagePairToPairId(imagePairs[i].first, imagePairs[i].second);
-					const size_t numInlierMatches = numInliers[i];
-					matchMatrix[imagePairID] = numInlierMatches;
-				}
-
-				std::ofstream MatchMatrixImageName(modelExportDir + "/match_matrix_image_name.txt");
-				for (size_t i = 1; i <= imageOutNum; i++)
-				{
-					if (i < imageOutNum)
-					{
-						const image_t imageId = RegImagesIds[i - 1];
-						MatchMatrixImageName << RemoveExtension(database->ReadImage(imageId).Name()) << ",";
-					}
-					if (i == imageOutNum)
-					{
-						const image_t imageId = RegImagesIds[i - 1];
-						MatchMatrixImageName << RemoveExtension(database->ReadImage(imageId).Name()) << endl;
-					}
-
-				}
-				MatchMatrixImageName.close();
-
-				std::ofstream MatchMatrixValue(modelExportDir + "/match_matrix_value.txt");
-				for (size_t i = 1; i <= imageOutNum; i++)
-				{
-					for (size_t j = 1; j <= imageOutNum; j++)
-					{
-						const image_t imageID1 = RegImagesIds[i - 1];
-						const image_t imageID2 = RegImagesIds[j - 1];
-						const size_t value = GetMatrixValue(imageID1, imageID2);
-						if (j < imageOutNum)
-						{
-							if (j != i)
-							{
-								MatchMatrixValue << value << ",";
-							}
-							if (j == i)
-							{
-								MatchMatrixValue << database->NumKeypointsForImage(imageID1) << ",";
-							}
-						}
-						if (j == imageOutNum)
-						{
-							if (j != i)
-							{
-								MatchMatrixValue << value;
-							}
-							if (j == i)
-							{
-								MatchMatrixValue << database->NumKeypointsForImage(imageID1);
-							}
-						}
-					}
-					MatchMatrixValue << endl;
-				}
-
-				cout << (boost::format("Export %1% models completed!") % numRegImages).str() << endl;
-			}
-#endif
-
-			isContinue = true;
-			break;
-		}
-	}
-	mapper->EndReconstruction(false);
 }
 
 void ReconstructTask::LocalBundleAdjustment(const IncrementalMapper::Options& options, size_t imageID, IncrementalMapper& mapper)
@@ -557,4 +379,13 @@ void ReconstructTask::ExtractColors(const IncrementalMapper::Options& options, s
 		return;
 	}
 	LOG(INFO) << "[Reconstructor] Could not read image " << imagePath;
+}
+
+void ReconstructTask::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
+	m_data->estimatedImageIDs[imageID1] = true;
+	m_data->estimatedImageIDs[imageID2] = true;
+}
+
+void ReconstructTask::onRegistedSuccess(quint32 p_imageID) {
+	m_data->estimatedImageIDs[p_imageID] = true;
 }
