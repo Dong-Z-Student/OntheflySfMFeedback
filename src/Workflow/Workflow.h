@@ -43,6 +43,8 @@ public slots:
 	void onMatchTaskFinished(quint32 imageID1, quint32 imageID2);
 	void onEstimateFinished(quint32 imageID1, quint32 imageID2);
 	void onReconstructUpdated(quint32 imageID);
+	void onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2);
+	void onRegistedSuccess(quint32 imageID);
 
 private:
 	WorkData* m_workData;      // 共享数据

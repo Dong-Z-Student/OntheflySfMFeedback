@@ -33,7 +33,7 @@ LogWidget::LogWidget(QWidget* parent)
 	, m_maxLines(80000)
 	, m_logSink(nullptr)
 	, m_fileThreadRunning(false)
-	, m_logFileFolder("../log") // 默认日志文件名
+	, m_logFileFolder("../log") // 默认日志文件路径
 {
 	InitializeUI();
 	InitializeLogging();

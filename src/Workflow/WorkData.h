@@ -60,10 +60,10 @@ namespace {
 			}
 		}
 	}
-	size_t CountFalseMoreThanTrue(const tbb::concurrent_map<size_t, std::atomic_bool>& estimatedImageIDs) {
+	size_t CountFalseMoreThanTrue(const tbb::concurrent_map<size_t, std::atomic_bool>& p_estimatedImageIDs) {
 		size_t false_count = 0;
 		size_t true_count = 0;
-		for (const auto& kv : estimatedImageIDs) {
+		for (const auto& kv : p_estimatedImageIDs) {
 			if (kv.second.load()) {
 				++true_count;
 			}
@@ -73,9 +73,9 @@ namespace {
 		}
 		return false_count - true_count;
 	}
-	size_t CountFalse(const tbb::concurrent_map<size_t, std::atomic_bool>& estimatedImageIDs) {
+	size_t CountFalse(const tbb::concurrent_map<size_t, std::atomic_bool>& p_estimatedImageIDs) {
 		size_t false_count = 0;
-		for (const auto& kv : estimatedImageIDs) {
+		for (const auto& kv : p_estimatedImageIDs) {
 			if (!kv.second.load()) {
 				++false_count;
 			}
@@ -91,10 +91,9 @@ public:
 	explicit WorkData(QObject* parent = nullptr)
 		: QObject(parent),
 		database(nullptr),
-		database_cache(std::make_shared<DatabaseCache>()),
+		database_cache(nullptr),
 		modelManager(nullptr),
-		mapper(new IncrementalMapper(database_cache)),
-		databaseCacheLoaded(false),
+		mapper(nullptr),
 		globalFeatureExtractor(nullptr),
 		globalFeatureRetriever(nullptr) {}
 
@@ -212,17 +211,42 @@ public:
 	}
 
 	//// === DatabaseCache 相关操作 ===
-	// 返回值：是否重新载入数据库
-	bool LoadCache() {
-		if (CountFalse(estimatedImageIDs) < 10 && databaseCacheLoaded) {
-			return false;
+	std::set<size_t> getImageMask(const int length) {
+		if (reconstructedImages.empty()) {
+			return std::set<size_t>();
 		}
+		size_t maxReconstructed = *reconstructedImages.rbegin();
+		auto startIt = estimatedImages.find(maxReconstructed);
+		if (startIt == estimatedImages.end()) {
+			return std::set<size_t>();
+		}
+		auto endIt = startIt;
+		++endIt;
+		for (int i = 0; i < length && endIt != estimatedImages.end(); ++i) {
+			++endIt;
+		}
+		return std::set<size_t>(estimatedImages.begin(), endIt);
+	}
+	void LoadCache(const int bufferSize) {
+		if (!database_cache) {
+			database_cache = std::make_shared<DatabaseCache>();
+			database_cache->Create(*database, 10, true, {});
+			if (mapper) delete mapper;
+			mapper = new IncrementalMapper(database_cache);
+			return;
+		}
+		const auto imageIDsMask = getImageMask(bufferSize);
 		database_cache = std::make_shared<DatabaseCache>();
-		database_cache->Create(*database, 10, true, {});
+		database_cache->Create(*database, 10, true, imageIDsMask);
 		if (mapper) delete mapper;
 		mapper = new IncrementalMapper(database_cache);
-		databaseCacheLoaded = true;
-		return true;
+	}
+
+	bool CheckCache(size_t imageID) {
+		if (!database_cache) {
+			return false;
+		}
+		return database_cache->ExistsImage(imageID);
 	}
 
 	//// === Image 相关操作 ===
@@ -283,8 +307,29 @@ public:
 	}
 
 
+	//// === 其他变量 ===
+	void AddEstimatedImage(size_t image_id) {
+		QWriteLocker locker(&m_estimatedSet_lock);
+		estimatedImages.insert(image_id);
+	}
+
+	void AddReconstructedImage(size_t image_id) {
+		QWriteLocker locker(&m_reconstructedSet_lock);
+		reconstructedImages.insert(image_id);
+	}
+
+	size_t GetEstimatedImagesCount() const {
+		QReadLocker locker(&m_estimatedSet_lock);
+		return estimatedImages.size();
+	}
+
+	size_t GetReconstructedImagesCount() const {
+		QReadLocker locker(&m_reconstructedSet_lock);
+		return reconstructedImages.size();
+	}
+
 public:
-	//// 并发计时器
+	//// 并发线程计时器
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> SIFTExtractionTimes;
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> globalFeatureExtractionTimes;
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> globalFeatureRetrievalTimes;
@@ -292,10 +337,7 @@ public:
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> geometricVerificationTimes;
 	//// 重建计数器
 	tbb::concurrent_unordered_map<size_t, std::atomic_size_t> numMatchingPairs;
-	tbb::concurrent_map<size_t, std::atomic_bool> estimatedImageIDs; // imageID, isReconstructed
-
-	//// 加载指示器
-	std::atomic_bool databaseCacheLoaded;
+	std::atomic_size_t lastRegistImageId; // 保存上一次注册成功的影像ID
 
 private:
 	//// 工作变量
@@ -310,6 +352,8 @@ private:
 	std::unordered_map<std::string, std::size_t> allImagePaths;
 	std::unordered_map<std::string, CImageStatusFlag> imagesStatus;
 	std::unordered_map<std::size_t, Bitmap> allBitmaps;
+	std::set<size_t> estimatedImages;
+	std::set<size_t> reconstructedImages;
 
 	//// 互斥锁
 	mutable QReadWriteLock m_database_lock;
@@ -318,6 +362,8 @@ private:
 	mutable QReadWriteLock m_imageidpath_lock;
 	mutable QReadWriteLock m_bitmap_lock;
 	QMutex m_imagestatus_lock;
+	mutable QReadWriteLock m_estimatedSet_lock;
+	mutable QReadWriteLock m_reconstructedSet_lock;
 };
 
 #endif // WORKDATA_H

@@ -220,10 +220,11 @@ void MainWindow::RunFunc() {
 	const vector<std::string> images = GetImageFileList(baseImagePath);
 
 	QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
+	this_thread::sleep_for(chrono::milliseconds(300));
 	for (int i = 0; i < images.size(); i++) {
-		this_thread::sleep_for(chrono::milliseconds(1000));
 		const QString imagePath = StdString2QString2(images[i]);
 		settings.setValue("NewImage", imagePath);
+		this_thread::sleep_for(chrono::milliseconds(1000));
 	}
 }
 

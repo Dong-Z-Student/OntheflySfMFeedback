@@ -8,10 +8,10 @@
 
 void ReconstructTask::run()
 {
-	const bool refresh = m_data->LoadCache();
-	if (!refresh) {
-		return;
-	}
+	const int bufferSize = 5;
+	const bool isCached = m_data->CheckCache(imageID);
+	if (isCached) return;
+	m_data->LoadCache(bufferSize);
 	if (type == ReconstructType::AddModel) {
 		modelID = m_data->ModelManagerAddModel();
 		const bool success = Reconstruct();
@@ -121,7 +121,7 @@ bool ReconstructTask::Reconstruct()
 			//Feedback
 			//GenerateMeshModel();
 
-			emit registedSuccess(imageID);
+			emit registedSuccess(nextImageID);
 			model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 
 #ifdef GaussianSplatting_Output
@@ -212,14 +212,11 @@ bool ReconstructTask::Reconstruct()
 #endif
 
 			isContinue = true;
-			if (type == ReconstructType::AddImage) {
-				break;
-			}
-			}
 		}
+	}
 	mapper->EndReconstruction(false);
 	return true;
-	}
+}
 
 bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper)
 {
@@ -382,10 +379,9 @@ void ReconstructTask::ExtractColors(const IncrementalMapper::Options& options, s
 }
 
 void ReconstructTask::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
-	m_data->estimatedImageIDs[imageID1] = true;
-	m_data->estimatedImageIDs[imageID2] = true;
+
 }
 
 void ReconstructTask::onRegistedSuccess(quint32 p_imageID) {
-	m_data->estimatedImageIDs[p_imageID] = true;
+
 }

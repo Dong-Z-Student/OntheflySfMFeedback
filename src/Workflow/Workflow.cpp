@@ -21,7 +21,7 @@ WorkFlow::WorkFlow(QObject* parent)
 	m_gextract_threadPool->setMaxThreadCount(1);
 	m_retrieve_threadPool->setMaxThreadCount(2);
 	m_match_threadPool->setMaxThreadCount(3);
-	m_estimate_threadPool->setMaxThreadCount(8);
+	m_estimate_threadPool->setMaxThreadCount(6);
 	m_reconstruct_threadPool->setMaxThreadCount(1);
 }
 
@@ -99,8 +99,10 @@ void WorkFlow::onMatchTaskFinished(quint32 imageID1, quint32 imageID2)
 
 void WorkFlow::onEstimateFinished(quint32 imageID1, quint32 imageID2) {
 	QMutexLocker locker(&mu_reconstructTasks);
-	m_workData->estimatedImageIDs[imageID1] = false;
-	m_workData->estimatedImageIDs[imageID2] = false;
+	if (m_workData->GetEstimatedImagesCount() == 0) {
+		m_workData->AddEstimatedImage(imageID1);
+	}
+	m_workData->AddEstimatedImage(imageID2);
 	ReconstructImage(imageID2);
 }
 
@@ -109,22 +111,33 @@ void WorkFlow::onReconstructUpdated(quint32 imageID)
 	emit reconstructUpdated();
 }
 
+void WorkFlow::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
+	m_workData->AddReconstructedImage(imageID1);
+	m_workData->AddReconstructedImage(imageID2);
+}
+
+void WorkFlow::onRegistedSuccess(quint32 imageID) {
+	m_workData->AddReconstructedImage(imageID);
+}
+
 bool WorkFlow::ReconstructImage(quint32 imageID)
 {
 	const size_t minEstimatedImageNum = 20;
-	const size_t estimatedImageNum = m_workData->estimatedImageIDs.size();
+	const size_t estimatedImageNum = m_workData->GetEstimatedImagesCount();
 	if (estimatedImageNum >= minEstimatedImageNum) {
 		if (estimatedImageNum == minEstimatedImageNum) {
 			LOG(INFO) << "[Reconstruct] initializing model: " << 0;
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, -1, ReconstructType::AddModel, this);
 			connect(m_reconstructTask, &ReconstructTask::reconstructionInitial, this, &WorkFlow::onReconstructUpdated);
 			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onReconstructUpdated);
+			connect(m_reconstructTask, &ReconstructTask::registedInitialImagePair, this, &WorkFlow::onRegistedInitialImagePair);
+			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess);
 			m_reconstruct_threadPool->start(m_reconstructTask);
 		}
 		else {
-			LOG(INFO) << "[Reconstruct] adding image " << imageID << " ---> model " << 0;
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, 0, ReconstructType::AddImage, this);
 			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onReconstructUpdated);
+			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess);
 			m_reconstruct_threadPool->start(m_reconstructTask);
 		}
 	}
