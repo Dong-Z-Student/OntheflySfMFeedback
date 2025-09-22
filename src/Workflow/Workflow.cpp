@@ -114,10 +114,12 @@ void WorkFlow::onReconstructUpdated(quint32 imageID)
 void WorkFlow::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
 	m_workData->AddReconstructedImage(imageID1);
 	m_workData->AddReconstructedImage(imageID2);
+	emit changeLastRegistedImageID(imageID2);
 }
 
 void WorkFlow::onRegistedSuccess(quint32 imageID) {
 	m_workData->AddReconstructedImage(imageID);
+	emit changeLastRegistedImageID(imageID);
 }
 
 bool WorkFlow::ReconstructImage(quint32 imageID)

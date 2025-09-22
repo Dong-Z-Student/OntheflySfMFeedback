@@ -8,7 +8,7 @@
 #include <QtCore>
 #include <QtOpenGL>
 
-class ModelViewerWidget : public QOpenGLWidget , protected QOpenGLFunctions_3_2_Core
+class ModelViewerWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_2_Core
 {
 	Q_OBJECT
 public:
@@ -54,15 +54,15 @@ public:
 	void ChangePointSize(float delta);
 	void ChangeCameraSize(float delta);
 
-	void RotateView(float x , float y , float prev_x , float prev_y);
-	void TranslateView(float x , float y , float prev_x , float prev_y);
+	void RotateView(float x, float y, float prev_x, float prev_y);
+	void TranslateView(float x, float y, float prev_x, float prev_y);
 
 	void ResetView();
 
 	QMatrix4x4 ModelViewMatrix() const;
 	void SetModelViewMatrix(const QMatrix4x4& matrix);
 
-	void SelectObject(int x , int y);
+	void SelectObject(int x, int y);
 	void SelectMoviewGrabberView(size_t view_idx);
 
 	QImage GrabImage();
@@ -76,14 +76,15 @@ public:
 	void SetPointSize(float point_size);
 	void SetImageSize(float image_size);
 
-	void SetBackgroundColor(float r , float g , float b);
+	void SetBackgroundColor(float r, float g, float b);
 
 	// Copy of current scene data that is displayed
 	std::shared_ptr<Reconstruction> reconstruction;
-	tbb::concurrent_unordered_map<camera_t , Camera> cameras;
-	tbb::concurrent_unordered_map<image_t , Image> images;
-	tbb::concurrent_unordered_map<point3D_t , Point3D> points3D;
+	tbb::concurrent_unordered_map<camera_t, Camera> cameras;
+	tbb::concurrent_unordered_map<image_t, Image> images;
+	tbb::concurrent_unordered_map<point3D_t, Point3D> points3D;
 	std::vector<image_t> reg_image_ids;
+	size_t lastRegistedImageID;
 
 	QString status_label;
 	void UpdateStatus(const QString& status);
@@ -92,7 +93,7 @@ signals:
 
 protected:
 	void initializeGL() override;
-	void resizeGL(int width , int height) override;
+	void resizeGL(int width, int height) override;
 	void paintGL() override;
 
 private:
@@ -118,7 +119,7 @@ private:
 	float AspectRatio() const;
 	float OrthographicWindowExtent() const;
 
-	Eigen::Vector3f PositionToArcballVector(float x , float y) const;
+	Eigen::Vector3f PositionToArcballVector(float x, float y) const;
 
 
 	QMatrix4x4 model_view_matrix_;
@@ -149,7 +150,7 @@ private:
 
 	float focus_distance_;
 
-	std::vector<std::pair<size_t , char>> selection_buffer_;
+	std::vector<std::pair<size_t, char>> selection_buffer_;
 	image_t selected_image_id_;
 	point3D_t selected_point3D_id_;
 	size_t selected_movie_grabber_view_;

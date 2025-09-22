@@ -48,6 +48,7 @@ private:
 	void RunFunc();
 	void ExportRunningProject();
 	void ExportModelOnRegisted();
+	void SetModelWidgetLastRegistedImageID(quint32 imageID);
 
 	Receiver* receiver;
 	Database* database;

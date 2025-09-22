@@ -113,7 +113,6 @@ void MainWindow::SetupWidgets() {
 	imageListWindowDock->setMinimumHeight(100);
 	imageListWindowDock->setMinimumWidth(250);
 	imageListWidget = new ImageListWidget(imageListWindowDock, database);
-	imageListWindowDock->setWidget(imageListWidget);
 	addDockWidget(Qt::RightDockWidgetArea, imageListWindowDock);
 
 	logWindowDock = new QDockWidget(tr("Log"), this);
@@ -126,7 +125,7 @@ void MainWindow::SetupWidgets() {
 	projectWidget = new ProjectWidget(this);
 	connect(projectWidget, &ProjectWidget::NewProject_SIGNAL, this, &MainWindow::NewProject_SLOT);
 
-	isTrackModelCheckBox = new QCheckBox(tr("Track Workflow"));
+	isTrackModelCheckBox = new QCheckBox(tr("Track Model"));
 	isTrackModelCheckBox->setChecked(true);
 
 	showMatchMatrixWidget = new ShowMatchMatrixWidget(this, database);
@@ -212,6 +211,7 @@ void MainWindow::SetupConnections() const {
 	connect(receiver, &Receiver::newDataReceived, workflow, &WorkFlow::onProcessNewImage);
 	connect(workflow, &WorkFlow::readImageFinished, this, &MainWindow::addNewImageInWidget);
 	connect(workflow, &WorkFlow::reconstructUpdated, this, &MainWindow::RenderNow);
+	connect(workflow, &WorkFlow::changeLastRegistedImageID, this, &MainWindow::SetModelWidgetLastRegistedImageID);
 }
 
 // ================= 业务逻辑 =================
@@ -220,7 +220,7 @@ void MainWindow::RunFunc() {
 	const vector<std::string> images = GetImageFileList(baseImagePath);
 
 	QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
-	this_thread::sleep_for(chrono::milliseconds(300));
+	this_thread::sleep_for(chrono::milliseconds(200));
 	for (int i = 0; i < images.size(); i++) {
 		const QString imagePath = StdString2QString2(images[i]);
 		settings.setValue("NewImage", imagePath);
@@ -413,4 +413,9 @@ void MainWindow::UpdateStatus(const QString& status) {
 	if (tabWidget->currentWidget() == modelViewerWidget) {
 		statusLabel->setText(status);
 	}
+}
+
+// ================== 组件通讯 ===============
+void MainWindow::SetModelWidgetLastRegistedImageID(quint32 p_imageID) {
+	modelViewerWidget->lastRegistedImageID = p_imageID;
 }

@@ -42,6 +42,7 @@ LogWidget::LogWidget(QWidget* parent)
 
 LogWidget::~LogWidget()
 {
+	disable_std_to_glog();
 	StopLogFileThread();
 	if (m_logSink) {
 		google::RemoveLogSink(m_logSink.get());
@@ -57,6 +58,8 @@ void LogWidget::InitializeUI()
 	setMinimumHeight(120);
 
 	m_clearButton = new QPushButton("Clear", this);
+	m_autoScrollCheckBox = new QCheckBox("Trace Log", this);
+	m_autoScrollCheckBox->setChecked(true);  // 默认开启
 	m_textEdit = new QPlainTextEdit(this);
 	m_layout = new QGridLayout(this);
 	m_flushTimer = new QTimer(this);
@@ -70,6 +73,7 @@ void LogWidget::InitializeUI()
 	m_textEdit->setFont(font);
 
 	m_layout->addWidget(m_clearButton, 0, 0, 1, 1, Qt::AlignLeft);
+	m_layout->addWidget(m_autoScrollCheckBox, 0, 1, 1, 1, Qt::AlignLeft);
 	m_layout->addWidget(m_textEdit, 1, 0, 1, 2);
 	m_layout->setRowStretch(1, 1);
 	m_layout->setColumnStretch(1, 1);
@@ -106,9 +110,8 @@ void LogWidget::Append(const std::string& message, google::LogSeverity severity)
 	}
 	// 文件写线程队列
 	{
-		std::lock_guard<std::mutex> locker(m_fileQueueMutex);
+		QMutexLocker locker(&m_fileQueueMutex);
 		m_fileLogQueue.push(std::make_pair(message, severity));
-		m_fileQueueCv.notify_one();
 	}
 }
 
@@ -156,9 +159,6 @@ void LogWidget::Flush()
 		localBuffer.swap(m_logBuffer);
 	}
 
-	QScrollBar* scrollBar = m_textEdit->verticalScrollBar();
-	bool shouldAutoScroll = (scrollBar->value() == scrollBar->maximum());
-
 	while (!localBuffer.empty()) {
 		auto logEntry = localBuffer.front();
 		localBuffer.pop();
@@ -171,8 +171,13 @@ void LogWidget::Flush()
 		QString fullMessage = prefix + message;
 		m_textEdit->appendPlainText(fullMessage);
 	}
-	if (shouldAutoScroll) scrollBar->setValue(scrollBar->maximum());
+
+	if (m_autoScrollCheckBox->isChecked()) {
+		QScrollBar* scrollBar = m_textEdit->verticalScrollBar();
+		scrollBar->setValue(scrollBar->maximum());
+	}
 }
+
 
 void LogWidget::SaveLogToFile(const std::string& filePath)
 {
@@ -196,54 +201,67 @@ void LogWidget::StartLogFileThread()
 		if (!dir.exists()) {
 			dir.mkpath(".");
 		}
+
 		std::ofstream logFile(filePath, std::ios::app);
 		if (!logFile.is_open()) return;
 
 		while (m_fileThreadRunning) {
-			std::unique_lock<std::mutex> lock(m_fileQueueMutex);
-			m_fileQueueCv.wait(lock, [this] { return !m_fileLogQueue.empty() || !m_fileThreadRunning; });
+			std::queue<std::pair<std::string, google::LogSeverity>> localQueue;
 
-			while (!m_fileLogQueue.empty()) {
-				auto logEntry = m_fileLogQueue.front();
-				m_fileLogQueue.pop();
-				lock.unlock();
+			{
+				QMutexLocker locker(&m_fileQueueMutex);
+				if (m_fileLogQueue.empty()) {
+					// 如果队列为空，短暂 sleep 避免空转
+					locker.unlock();
+					std::this_thread::sleep_for(std::chrono::milliseconds(50));
+					continue;
+				}
+				localQueue.swap(m_fileLogQueue);
+			}
 
-				// 写入文件
+			while (!localQueue.empty()) {
+				auto logEntry = localQueue.front();
+				localQueue.pop();
+
 				QString prefix = this->GetLogPrefix(logEntry.second);
 				QString message = QString::fromStdString(logEntry.first);
 				if (message.endsWith('\n')) message.chop(1);
 
 				QString fullMessage = prefix + message + "\n";
 				logFile << fullMessage.toUtf8().constData();
-				logFile.flush();
-
-				lock.lock();
 			}
+			logFile.flush();
 		}
-		while (!m_fileLogQueue.empty()) {
-			auto logEntry = m_fileLogQueue.front();
-			m_fileLogQueue.pop();
 
-			QString prefix = this->GetLogPrefix(logEntry.second);
-			QString message = QString::fromStdString(logEntry.first);
-			if (message.endsWith('\n')) message.chop(1);
+		// 线程退出前写完剩余日志
+		{
+			QMutexLocker locker(&m_fileQueueMutex);
+			while (!m_fileLogQueue.empty()) {
+				auto logEntry = m_fileLogQueue.front();
+				m_fileLogQueue.pop();
 
-			QString fullMessage = prefix + message + "\n";
-			logFile << fullMessage.toUtf8().constData();
+				QString prefix = this->GetLogPrefix(logEntry.second);
+				QString message = QString::fromStdString(logEntry.first);
+				if (message.endsWith('\n')) message.chop(1);
+
+				QString fullMessage = prefix + message + "\n";
+				logFile << fullMessage.toUtf8().constData();
+			}
 		}
 		logFile.flush();
 		logFile.close();
-		});
+		}
+	);
 }
 
 void LogWidget::StopLogFileThread()
 {
 	m_fileThreadRunning = false;
-	m_fileQueueCv.notify_one();
 	if (m_fileThread.joinable()) {
 		m_fileThread.join();
 	}
 }
+
 
 // ======================= CustomLogSink实现 ==========================
 LogWidget::CustomLogSink::CustomLogSink(LogWidget* widget)

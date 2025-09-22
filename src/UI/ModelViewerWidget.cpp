@@ -267,7 +267,7 @@ void BuildImageModel(const Image& image,
 }
 
 
-ModelViewerWidget::ModelViewerWidget(QWidget* parent) : QOpenGLWidget(parent), mouse_is_pressed_(false), focus_distance_(kInitFocusDistance), selected_image_id_(kInvalidImageId), selected_point3D_id_(kInvalidPoint3DId), coordinate_grid_enabled_(true), near_plane_(kInitNearPlane)
+ModelViewerWidget::ModelViewerWidget(QWidget* parent) : QOpenGLWidget(parent), mouse_is_pressed_(false), focus_distance_(kInitFocusDistance), selected_image_id_(kInvalidImageId), selected_point3D_id_(kInvalidPoint3DId), coordinate_grid_enabled_(true), near_plane_(kInitNearPlane), lastRegistedImageID(-1)
 {
 	background_color_[0] = 1.0f;
 	background_color_[1] = 1.0f;
@@ -1070,11 +1070,11 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 				plane_color = kSelectedImagePlaneColor;
 				frame_color = kSelectedImageFrameColor;
 			}
-			/*else if (image_id == Reconstructor::lastRegImageID) TODO
+			else if (image_id == lastRegistedImageID)
 			{
 				plane_color = Eigen::Vector4f(0.1f, 1.0f, 0.0f, 0.6f);
 				frame_color = Eigen::Vector4f(0.8f, 0.1f, 0.0f, 1.0f);
-			}*/
+			}
 			else {
 				image_colormap_->ComputeColor(image, &plane_color, &frame_color);
 			}

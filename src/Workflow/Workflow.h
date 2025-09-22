@@ -29,10 +29,10 @@ public:
 	void setData(Database* p_database, ReconstructionManager* p_modelManager);
 	void LoadPython();
 
-
 signals:
 	void readImageFinished(QString p_imagePath);
 	void reconstructUpdated();
+	void changeLastRegistedImageID(quint32 imageID);
 
 public slots:
 	void onProcessNewImage(const QString& value); // 传入影像，启动工作流

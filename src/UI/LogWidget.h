@@ -5,6 +5,7 @@
 #include <glog/logging.h>
 #include <memory>
 #include <mutex>
+#include <QCheckBox>
 #include <QGridLayout>
 #include <QMutex>
 #include <QPlainTextEdit>
@@ -59,6 +60,7 @@ private:
 
 	QPlainTextEdit* m_textEdit;
 	QPushButton* m_clearButton;
+	QCheckBox* m_autoScrollCheckBox;
 	QGridLayout* m_layout;
 	QTimer* m_flushTimer;
 
@@ -72,8 +74,7 @@ private:
 	// 文件写线程相关成员
 	std::thread m_fileThread;
 	std::queue<std::pair<std::string, google::LogSeverity>> m_fileLogQueue;
-	std::mutex m_fileQueueMutex;
-	std::condition_variable m_fileQueueCv;
+	QMutex m_fileQueueMutex;
 	std::atomic<bool> m_fileThreadRunning;
 	std::string m_logFileFolder;
 };
