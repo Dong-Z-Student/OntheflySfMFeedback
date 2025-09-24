@@ -8,13 +8,14 @@
 
 void ReconstructTask::run()
 {
-	const int bufferSize = 3;
+	// bufferSize：缓冲区大小，反映了数据库更新的频率。缓冲区越小更新频率越高，速度也会变慢，缓冲区大则更新频率缓慢，处理速度会变快
+	const int bufferSize = 80;
 	const bool isCached = m_data->CheckCache(imageID);
 	if (isCached) return;
 	m_data->LoadCache(bufferSize);
 	if (type == ReconstructType::AddModel) {
 		modelID = m_data->ModelManagerAddModel();
-		const bool success = Reconstruct();
+		const bool success = Reconstruct(true);
 		emit reconstructionInitial(modelID, success);
 	}
 	if (type == ReconstructType::AddImage) {
@@ -22,13 +23,13 @@ void ReconstructTask::run()
 	}
 }
 
-bool ReconstructTask::Reconstruct()
+bool ReconstructTask::Reconstruct(bool init)
 {
 	Timer reconstructionTimer;
 	reconstructionTimer.Start();
 
-	std::shared_ptr<Reconstruction> model = m_data->getModelManager()->Get(modelID);
 	IncrementalMapper* mapper = m_data->getIncrementalMapper();
+	std::shared_ptr<Reconstruction> model = m_data->getModelManager()->Get(modelID);
 	mapper->BeginReconstruction(model);
 
 	IncrementalMapper::Options init_mapper_options;
@@ -86,8 +87,29 @@ bool ReconstructTask::Reconstruct()
 		{
 			break;
 		}
+
+		std::vector<size_t> orderedNextImageIDs;
+		if (!init)
+		{
+			std::unordered_set<size_t> nextImageSet(nextImageIDs.begin(), nextImageIDs.end());
+			orderedNextImageIDs.reserve(nextImageIDs.size());
+			for (size_t id : m_data->getImageIDsMask())
+			{
+				if (nextImageSet.count(id) > 0)
+				{
+					orderedNextImageIDs.push_back(id);
+				}
+			}
+		}
+		else
+		{
+			orderedNextImageIDs.resize(nextImageIDs.size());
+			std::transform(nextImageIDs.begin(), nextImageIDs.end(), orderedNextImageIDs.begin(),
+				[](image_t id) { return static_cast<size_t>(id); });
+		}
+
 		size_t numRegNextImageTrials = 0;
-		for (size_t nextImageID : nextImageIDs)
+		for (size_t nextImageID : orderedNextImageIDs)
 		{
 			numRegNextImageTrials++;
 			if (numRegNextImageTrials > 10)

@@ -157,9 +157,9 @@ const class Image* DatabaseCache::FindImageWithName(
 }
 
 void DatabaseCache::AddImage(const Database& database,
-	image_t imageID,
 	const size_t min_num_matches,
-	const bool ignore_watermarks) { // TODO: 未处理孤立影像的情况
+	const bool ignore_watermarks,
+	const std::set<image_t>& p_image_ids) { // TODO: 未处理孤立影像的情况
 	//////////////////////////////////////////////////////////////////////////////
 	// Add cameras
 	//////////////////////////////////////////////////////////////////////////////
@@ -191,27 +191,30 @@ void DatabaseCache::AddImage(const Database& database,
 	//////////////////////////////////////////////////////////////////////////////
 	// Add images
 	//////////////////////////////////////////////////////////////////////////////
-	class Image addImage = database.ReadImage(imageID);
 	{
-		// Collect all images that are connected in the correspondence graph.
-		std::unordered_set<image_t> connected_image_ids;
-		for (size_t i = 0; i < image_pair_ids.size(); ++i) {
-			image_t image_id1;
-			image_t image_id2;
-			Database::PairIdToImagePair(image_pair_ids[i], &image_id1, &image_id2);
-			if (image_id1 != imageID && image_id2 != imageID) continue;
-			if (UseInlierMatchesCheck(two_view_geometries[i])) {
-				connected_image_ids.insert(image_id1);
-				connected_image_ids.insert(image_id2);
-			}
-		}
+		for (const auto& imageID : p_image_ids) {
+			class Image addImage = database.ReadImage(imageID);
 
-		// Load images with correspondences and discard images without
-		// correspondences, as those images are useless for SfM.
-		if (connected_image_ids.count(imageID) > 0) {
-			addImage.SetPoints2D(
-				FeatureKeypointsToPointsVector(database.ReadKeypoints(imageID)));
-			images_.emplace(imageID, std::move(addImage));
+			// Collect all images that are connected in the correspondence graph.
+			std::unordered_set<image_t> connected_image_ids;
+			for (size_t i = 0; i < image_pair_ids.size(); ++i) {
+				image_t image_id1;
+				image_t image_id2;
+				Database::PairIdToImagePair(image_pair_ids[i], &image_id1, &image_id2);
+				if (image_id1 != imageID && image_id2 != imageID) continue;
+				if (UseInlierMatchesCheck(two_view_geometries[i])) {
+					connected_image_ids.insert(image_id1);
+					connected_image_ids.insert(image_id2);
+				}
+			}
+
+			// Load images with correspondences and discard images without
+			// correspondences, as those images are useless for SfM.
+			if (connected_image_ids.count(imageID) > 0) {
+				addImage.SetPoints2D(
+					FeatureKeypointsToPointsVector(database.ReadKeypoints(imageID)));
+				images_.emplace(imageID, std::move(addImage));
+			}
 		}
 	}
 

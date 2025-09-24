@@ -32,9 +32,9 @@ public:
 		const std::set<size_t>& p_image_ids = {});
 	void AddImage(
 		const Database& database,
-		image_t imageID,
 		const size_t min_num_matches = 10,
-		const bool ignore_watermarks = true);
+		const bool ignore_watermarks = true,
+		const std::set<image_t>& p_image_ids = {});
 
 	// Get number of objects.
 	inline size_t NumCameras() const

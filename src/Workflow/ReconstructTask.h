@@ -20,7 +20,7 @@ public:
 		, modelID(p_modelID)
 		, type(p_type) {}
 	void run() override;
-	bool Reconstruct();
+	bool Reconstruct(bool init = false);
 	bool InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper);
 	void LocalBundleAdjustment(const IncrementalMapper::Options& options, size_t imageID, IncrementalMapper& mapper);
 	void GlobalBundleAdjustment(const IncrementalMapper::Options& options, IncrementalMapper& mapper);

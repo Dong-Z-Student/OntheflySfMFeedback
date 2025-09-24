@@ -109,6 +109,7 @@ public:
 	ReconstructionManager* getModelManager() const { return modelManager; }
 	ReconstructionManager* getModelManager() { return modelManager; }
 	IncrementalMapper* getIncrementalMapper() { return mapper; }
+	std::set<size_t> getImageIDsMask() { return imageIDsMask; }
 
 	CGlobalFeatureExtractor* getGlobalFeatureExtractor() const { return globalFeatureExtractor; }
 	CGlobalFeatureRetriever* getGlobalFeatureRetriever() const { return globalFeatureRetriever; }
@@ -211,22 +212,33 @@ public:
 	}
 
 	//// === DatabaseCache 相关操作 ===
-	std::set<size_t> getImageMask(const int length) {
+	std::set<size_t> getImageMask(const int length, bool contain = true) {
 		if (reconstructedImages.empty()) {
-			return std::set<size_t>();
+			return {};
 		}
+
 		size_t maxReconstructed = *reconstructedImages.rbegin();
 		auto startIt = estimatedImages.find(maxReconstructed);
 		if (startIt == estimatedImages.end()) {
-			return std::set<size_t>();
+			return {};
 		}
+
 		auto endIt = startIt;
 		++endIt;
 		for (int i = 0; i < length && endIt != estimatedImages.end(); ++i) {
 			++endIt;
 		}
-		return std::set<size_t>(estimatedImages.begin(), endIt);
+
+		if (contain) {
+			return { estimatedImages.begin(), endIt };
+		}
+		else {
+			auto fromIt = startIt;
+			++fromIt;
+			return { fromIt, endIt };
+		}
 	}
+
 	void LoadCache(const int bufferSize) {
 		if (!database_cache) {
 			database_cache = std::make_shared<DatabaseCache>();
@@ -235,7 +247,7 @@ public:
 			mapper = new IncrementalMapper(database_cache);
 			return;
 		}
-		const auto imageIDsMask = getImageMask(bufferSize);
+		imageIDsMask = getImageMask(bufferSize);
 		database_cache = std::make_shared<DatabaseCache>();
 		database_cache->Create(*database, 10, true, imageIDsMask);
 		if (mapper) delete mapper;
@@ -354,6 +366,7 @@ private:
 	std::unordered_map<std::size_t, Bitmap> allBitmaps;
 	std::set<size_t> estimatedImages;
 	std::set<size_t> reconstructedImages;
+	std::set<size_t> imageIDsMask;  // 当前缓冲区中的imageID掩膜
 
 	//// 互斥锁
 	mutable QReadWriteLock m_database_lock;

@@ -3,7 +3,7 @@
 #include "../Scene/Reconstruction.h"
 #include "Colormap.h"
 #include "PointLinePainter.h"
-
+#include <atomic>
 #include <QOpenGLFunctions_3_2_Core>
 #include <QtCore>
 #include <QtOpenGL>

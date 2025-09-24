@@ -31,6 +31,8 @@ const Eigen::Vector4f kSelectedPointColor(0.0f, 1.0f, 0.0f, 1.0f);
 
 const Eigen::Vector4f kSelectedImagePlaneColor(1.0f, 0.0f, 1.0f, 0.6f);
 const Eigen::Vector4f kSelectedImageFrameColor(0.8f, 0.0f, 0.8f, 1.0f);
+const Eigen::Vector4f kNewRegistedImagePlaneColor(0.1f, 1.0f, 0.0f, 0.6f);
+const Eigen::Vector4f kNewRegistedImageFrameColor(0.8f, 0.1f, 0.0f, 1.0f);
 
 const Eigen::Vector4f kMovieGrabberImagePlaneColor(0.0f, 1.0f, 1.0f, 0.6f);
 const Eigen::Vector4f kMovieGrabberImageFrameColor(0.0f, 0.8f, 0.8f, 1.0f);
@@ -768,13 +770,16 @@ void ModelViewerWidget::mouseMoveEvent(QMouseEvent* event) {
 void ModelViewerWidget::wheelEvent(QWheelEvent* event) {
 	// We don't mind whether horizontal or vertical scroll.
 	const float delta = event->angleDelta().x() + event->angleDelta().y();
-	if (event->modifiers().testFlag(Qt::ControlModifier)) {
+
+	Qt::KeyboardModifiers mods = event->modifiers();
+
+	if (mods & Qt::ControlModifier) {
 		ChangePointSize(delta);
 	}
-	else if (event->modifiers().testFlag(Qt::AltModifier)) {
+	else if (mods & Qt::AltModifier) {
 		ChangeCameraSize(delta);
 	}
-	else if (event->modifiers().testFlag(Qt::ShiftModifier)) {
+	else if (mods & Qt::ShiftModifier) {
 		ChangeNearPlane(delta);
 	}
 	else {
@@ -1046,6 +1051,7 @@ void ModelViewerWidget::UploadPointConnectionData() {
 
 void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 	makeCurrent();
+	image_t lastRegistedImageIDValue = lastRegistedImageID.load();
 
 	std::vector<LinePainter::Data> line_data;
 	line_data.reserve(8 * reg_image_ids.size());
@@ -1066,15 +1072,14 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 			plane_color = frame_color = IndexToRGB(index);
 		}
 		else {
-			size_t current_lastRegistedImageID = lastRegistedImageID.load();
 			if (image_id == selected_image_id_) {
 				plane_color = kSelectedImagePlaneColor;
 				frame_color = kSelectedImageFrameColor;
 			}
-			else if (image_id == current_lastRegistedImageID)
+			else if (image_id == lastRegistedImageIDValue) // TODO
 			{
-				plane_color = Eigen::Vector4f(0.1f, 1.0f, 0.0f, 0.6f);
-				frame_color = Eigen::Vector4f(0.8f, 0.1f, 0.0f, 1.0f);
+				plane_color = kNewRegistedImagePlaneColor;
+				frame_color = kNewRegistedImageFrameColor;
 			}
 			else {
 				image_colormap_->ComputeColor(image, &plane_color, &frame_color);
