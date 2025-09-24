@@ -31,7 +31,7 @@ public:
 
 signals:
 	void readImageFinished(QString p_imagePath);
-	void reconstructUpdated();
+	void reconstructUpdated(); // refresh the model in model viewer
 	void changeLastRegistedImageID(quint32 imageID);
 
 public slots:
@@ -42,7 +42,6 @@ public slots:
 	void onRetrieveTaskFinished(quint32 imageID1, quint32 imageID2);
 	void onMatchTaskFinished(quint32 imageID1, quint32 imageID2);
 	void onEstimateFinished(quint32 imageID1, quint32 imageID2);
-	void onReconstructUpdated(quint32 imageID);
 	void onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2);
 	void onRegistedSuccess(quint32 imageID);
 

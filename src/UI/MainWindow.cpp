@@ -417,5 +417,5 @@ void MainWindow::UpdateStatus(const QString& status) {
 
 // ================== 组件通讯 ===============
 void MainWindow::SetModelWidgetLastRegistedImageID(quint32 p_imageID) {
-	modelViewerWidget->lastRegistedImageID = p_imageID;
+	modelViewerWidget->lastRegistedImageID.store(p_imageID);
 }

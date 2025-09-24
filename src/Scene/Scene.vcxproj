@@ -147,7 +147,7 @@
     <IncludePath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\include;C:\Program Files (x86)\Intel\oneAPI\tbb\2021.9.0\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include;$(VcpkgManifestRoot)\vcpkg_installed\x64-windows\include\eigen3;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;$(VcpkgManifestRoot)\vcpkg_installed\x64-windows\include\eigen3;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug2|x64'">
     <IncludePath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;C:\Program Files (x86)\Intel\oneAPI\tbb\2021.9.0\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>

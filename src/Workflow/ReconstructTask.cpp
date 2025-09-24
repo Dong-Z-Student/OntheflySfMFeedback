@@ -8,7 +8,7 @@
 
 void ReconstructTask::run()
 {
-	const int bufferSize = 5;
+	const int bufferSize = 3;
 	const bool isCached = m_data->CheckCache(imageID);
 	if (isCached) return;
 	m_data->LoadCache(bufferSize);

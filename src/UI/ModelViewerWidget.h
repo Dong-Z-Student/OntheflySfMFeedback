@@ -84,7 +84,7 @@ public:
 	tbb::concurrent_unordered_map<image_t, Image> images;
 	tbb::concurrent_unordered_map<point3D_t, Point3D> points3D;
 	std::vector<image_t> reg_image_ids;
-	size_t lastRegistedImageID;
+	std::atomic_size_t lastRegistedImageID;
 
 	QString status_label;
 	void UpdateStatus(const QString& status);

@@ -1066,11 +1066,12 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 			plane_color = frame_color = IndexToRGB(index);
 		}
 		else {
+			size_t current_lastRegistedImageID = lastRegistedImageID.load();
 			if (image_id == selected_image_id_) {
 				plane_color = kSelectedImagePlaneColor;
 				frame_color = kSelectedImageFrameColor;
 			}
-			else if (image_id == lastRegistedImageID)
+			else if (image_id == current_lastRegistedImageID)
 			{
 				plane_color = Eigen::Vector4f(0.1f, 1.0f, 0.0f, 0.6f);
 				frame_color = Eigen::Vector4f(0.8f, 0.1f, 0.0f, 1.0f);

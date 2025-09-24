@@ -106,20 +106,17 @@ void WorkFlow::onEstimateFinished(quint32 imageID1, quint32 imageID2) {
 	ReconstructImage(imageID2);
 }
 
-void WorkFlow::onReconstructUpdated(quint32 imageID)
-{
-	emit reconstructUpdated();
-}
-
 void WorkFlow::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
 	m_workData->AddReconstructedImage(imageID1);
 	m_workData->AddReconstructedImage(imageID2);
 	emit changeLastRegistedImageID(imageID2);
+	emit reconstructUpdated();
 }
 
 void WorkFlow::onRegistedSuccess(quint32 imageID) {
 	m_workData->AddReconstructedImage(imageID);
 	emit changeLastRegistedImageID(imageID);
+	emit reconstructUpdated();
 }
 
 bool WorkFlow::ReconstructImage(quint32 imageID)
@@ -130,15 +127,12 @@ bool WorkFlow::ReconstructImage(quint32 imageID)
 		if (estimatedImageNum == minEstimatedImageNum) {
 			LOG(INFO) << "[Reconstruct] initializing model: " << 0;
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, -1, ReconstructType::AddModel, this);
-			connect(m_reconstructTask, &ReconstructTask::reconstructionInitial, this, &WorkFlow::onReconstructUpdated);
-			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onReconstructUpdated);
 			connect(m_reconstructTask, &ReconstructTask::registedInitialImagePair, this, &WorkFlow::onRegistedInitialImagePair);
 			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess);
 			m_reconstruct_threadPool->start(m_reconstructTask);
 		}
 		else {
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, 0, ReconstructType::AddImage, this);
-			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onReconstructUpdated);
 			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess);
 			m_reconstruct_threadPool->start(m_reconstructTask);
 		}

@@ -43,11 +43,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <CopyCppRuntimeToOutputDir>true</CopyCppRuntimeToOutputDir>
-    <IncludePath>C:\Users\WTG\env\Python\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include;$(VcpkgManifestRoot)\vcpkg_installed\x64-windows\include\eigen3;$(oneTBBIncludeDir);$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\WTG\env\Python\libs;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\lib\x64;$(oneTBBLibDir);$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\WTG\env\Python\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;$(VcpkgManifestRoot)\vcpkg_installed\x64-windows\include\eigen3;$(oneTBBIncludeDir);$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\WTG\env\Python\libs;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\lib\x64;$(oneTBBLibDir);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgTriplet>
+    </VcpkgTriplet>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -58,7 +62,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>python310.lib;Base.lib;Estimator.lib;Geometry.lib;Scene.lib;Feature.lib;Workflow.lib;SIFTGPU.lib;VLFeat.lib;cublas.lib;cublasLt.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;cufft.lib;cufftw.lib;cufilt.lib;curand.lib;cusolver.lib;cusolverMg.lib;cusparse.lib;nppc.lib;nppial.lib;nppicc.lib;nppidei.lib;nppif.lib;nppig.lib;nppim.lib;nppist.lib;nppisu.lib;nppitc.lib;npps.lib;nvblas.lib;nvJitLink.lib;nvJitLink_static.lib;nvjpeg.lib;nvml.lib;nvptxcompiler_static.lib;nvrtc-builtins_static.lib;nvrtc.lib;nvrtc_static.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>python310.lib;Base.lib;Estimator.lib;Geometry.lib;Scene.lib;Feature.lib;Workflow.lib;SIFTGPU.lib;VLFeat.lib;cublas.lib;cublasLt.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;cufft.lib;cufftw.lib;cufilt.lib;curand.lib;cusolver.lib;cusolverMg.lib;cusparse.lib;nppc.lib;nppial.lib;nppicc.lib;nppidei.lib;nppif.lib;nppig.lib;nppim.lib;nppist.lib;nppisu.lib;nppitc.lib;npps.lib;nvblas.lib;nvjpeg.lib;nvml.lib;nvptxcompiler_static.lib;nvrtc-builtins_static.lib;nvrtc.lib;nvrtc_static.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -72,7 +76,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>

@@ -10,6 +10,7 @@
     {
       "name": "ceres",
       "features": [
+        "cuda",
         "lapack",
         "schur",
         "suitesparse"
@@ -17,8 +18,6 @@
     },
     "eigen3",
     "freeimage",
-    "gflags",
-    "glog",
     {
       "name": "jasper",
       "default-features": false
@@ -36,12 +35,6 @@
     {
       "name": "vcpkg-cmake-config",
       "host": true
-    }
-  ],
-  "overrides": [
-    {
-      "name": "glog",
-      "version": "0.6.0"
     }
   ]
 }
