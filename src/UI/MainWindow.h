@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Workflow/Receiver.h"
 #include "../Workflow/Workflow.h"
 #include "ImageListWidget.h"
@@ -38,6 +38,11 @@ private slots:
 	void addNewImageInWidget(QString p_imagePath);
 	void UpdateStatus(const QString& status);
 
+	// Feedback UI相关槽函数
+	void OnShowMeshChanged();
+	void OnShowFeedbackChanged();
+	void OnShowGuidePathChanged();
+
 private:
 	void SetupWidgets();
 	void SetupActions();
@@ -70,8 +75,12 @@ private:
 	QAction* stopReceiverAction;
 	QAction* renderNowAction;
 	QAction* showMatchMatrixAction;
+	QAction* showMeshAction;
+	QAction* showFeedbackAction;
+	QAction* showGuidePathAction;
 	QMenu* projectMenu;
 	QMenu* transmitMenu;
+	QMenu* feedbackMenu;
 	QToolBar* projectToolBar;
 	QToolBar* transmitToolBar;
 	QToolBar* reconstructToolBar;

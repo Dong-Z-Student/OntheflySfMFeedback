@@ -1,4 +1,5 @@
 #pragma once
+#include "../Base/ply.h"
 #include "../Base/timer.h"
 #include "../Scene/Database.h"
 #include "../Scene/Reconstruction.h"
@@ -89,6 +90,8 @@ public:
 	tbb::concurrent_unordered_map<point3D_t, Point3D> points3D;
 	std::vector<image_t> reg_image_ids;
 	std::atomic_size_t lastRegistedImageID;
+
+	std::shared_ptr<PlyMesh> mesh;
 
 	QString status_label;
 	void UpdateStatus(const QString& status);

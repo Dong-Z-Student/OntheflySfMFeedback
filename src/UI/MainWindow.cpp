@@ -10,55 +10,57 @@
 using namespace std;
 
 // ================= 工具函数 =================
-std::string ToLowerCase(const std::string& str) {
-	std::string lowerCaseStr = str;
-	std::transform(lowerCaseStr.begin(), lowerCaseStr.end(), lowerCaseStr.begin(),
-		[](unsigned char c) { return std::tolower(c); });
-	return lowerCaseStr;
-}
+namespace {
+	std::string ToLowerCase(const std::string& str) {
+		std::string lowerCaseStr = str;
+		std::transform(lowerCaseStr.begin(), lowerCaseStr.end(), lowerCaseStr.begin(),
+			[](unsigned char c) { return std::tolower(c); });
+		return lowerCaseStr;
+	}
 
-std::vector<std::string> GetImageFileList(const std::string& path) {
-	std::vector<std::string> fileList;
-	std::filesystem::path dirPath(path);
-	const std::vector<std::string> imageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
+	std::vector<std::string> GetImageFileList(const std::string& path) {
+		std::vector<std::string> fileList;
+		std::filesystem::path dirPath(path);
+		const std::vector<std::string> imageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
 
-	if (std::filesystem::exists(dirPath) && std::filesystem::is_directory(dirPath)) {
-		for (const auto& entry : std::filesystem::directory_iterator(dirPath)) {
-			if (entry.is_regular_file()) {
-				std::filesystem::path filePath = entry.path();
-				std::string extension = ToLowerCase(filePath.extension().string());
-				if (std::find(imageExtensions.begin(), imageExtensions.end(), extension) != imageExtensions.end()) {
-					fileList.push_back(filePath.string());
+		if (std::filesystem::exists(dirPath) && std::filesystem::is_directory(dirPath)) {
+			for (const auto& entry : std::filesystem::directory_iterator(dirPath)) {
+				if (entry.is_regular_file()) {
+					std::filesystem::path filePath = entry.path();
+					std::string extension = ToLowerCase(filePath.extension().string());
+					if (std::find(imageExtensions.begin(), imageExtensions.end(), extension) != imageExtensions.end()) {
+						fileList.push_back(filePath.string());
+					}
 				}
 			}
 		}
+		return fileList;
 	}
-	return fileList;
-}
 
-QString StdString2QString2(std::string string) {
-	return QString::fromLocal8Bit(string.data());
-}
+	QString StdString2QString2(std::string string) {
+		return QString::fromLocal8Bit(string.data());
+	}
 
-int Add(int currentTime) {
-	int hours = currentTime / 10000;
-	int minutes = (currentTime / 100) % 100;
-	int seconds = currentTime % 100;
+	int Add(int currentTime) {
+		int hours = currentTime / 10000;
+		int minutes = (currentTime / 100) % 100;
+		int seconds = currentTime % 100;
 
-	seconds++;
-	if (seconds == 60) {
-		seconds = 0;
-		minutes++;
-		if (minutes == 60) {
-			minutes = 0;
-			hours++;
-			if (hours == 24) {
-				hours = 0;
+		seconds++;
+		if (seconds == 60) {
+			seconds = 0;
+			minutes++;
+			if (minutes == 60) {
+				minutes = 0;
+				hours++;
+				if (hours == 24) {
+					hours = 0;
+				}
 			}
 		}
+		int newTime = hours * 10000 + minutes * 100 + seconds;
+		return newTime;
 	}
-	int newTime = hours * 10000 + minutes * 100 + seconds;
-	return newTime;
 }
 
 // ================= 构造/析构与事件 =================
@@ -149,15 +151,24 @@ void MainWindow::SetupActions() {
 	renderNowAction = new QAction(this);
 	connect(renderNowAction, &QAction::triggered, this, &MainWindow::RenderNow);
 
-	//reconstructor->AddCallback(
-	//	Reconstructor::INITIAL_IMAGE_PAIR_REG_CALLBACK, [this]() { renderNowAction->trigger(); });
-	//reconstructor->AddCallback(
-	//	Reconstructor::NEXT_IMAGE_REG_CALLBACK, [this]() { renderNowAction->trigger(); });
-	//reconstructor->AddCallback(
-	//	Reconstructor::CHANGE_CURRENT_MODEL_CALLBACK, [this]() { ChangeCurrentModel(); });
-
 	showMatchMatrixAction = new QAction(QIcon(":/media/match-matrix.png"), tr("Show Match Matrix"), this);
 	connect(showMatchMatrixAction, &QAction::triggered, this, &MainWindow::ShowMatchMatrix);
+
+	// 添加Feedback相关的Actions
+	showMeshAction = new QAction(tr("Show Mesh"), this);
+	showMeshAction->setCheckable(true);
+	showMeshAction->setChecked(false);
+	connect(showMeshAction, &QAction::triggered, this, &MainWindow::OnShowMeshChanged);
+
+	showFeedbackAction = new QAction(tr("Show Feedback"), this);
+	showFeedbackAction->setCheckable(true);
+	showFeedbackAction->setChecked(false);
+	connect(showFeedbackAction, &QAction::triggered, this, &MainWindow::OnShowFeedbackChanged);
+
+	showGuidePathAction = new QAction(tr("Show Guide Path"), this);
+	showGuidePathAction->setCheckable(true);
+	showGuidePathAction->setChecked(false);
+	connect(showGuidePathAction, &QAction::triggered, this, &MainWindow::OnShowGuidePathChanged);
 }
 
 void MainWindow::CreateMenus() {
@@ -170,6 +181,12 @@ void MainWindow::CreateMenus() {
 	transmitMenu->addAction(startReceiveAction);
 	transmitMenu->addAction(stopReceiverAction);
 	menuBar()->addAction(transmitMenu->menuAction());
+
+	feedbackMenu = new QMenu(tr("Feedback"), this);
+	feedbackMenu->addAction(showMeshAction);
+	feedbackMenu->addAction(showFeedbackAction);
+	feedbackMenu->addAction(showGuidePathAction);
+	menuBar()->addAction(feedbackMenu->menuAction());
 }
 
 void MainWindow::CreateToolbar() {
@@ -385,7 +402,7 @@ void MainWindow::RenderNow() {
 			modelViewerWidget->reconstruction = reconstructionManager->Get(reconstruction_idx);
 			modelViewerWidget->ReloadReconstruction();
 		}
-	}
+}
 	catch (const std::exception& e) {
 		std::cout << "RenderNow unknown exception caught" << endl;
 	}
@@ -401,7 +418,7 @@ void MainWindow::addNewImageInWidget(QString p_imagePath)
 	imageListWidget->AddImage(newImagePath);
 }
 
-// ================= 状态栏相关 =================
+// ================= 菜单状态栏相关 =================
 
 void MainWindow::onTabChanged(int index) {
 	if (tabWidget->currentWidget() == modelViewerWidget) {
@@ -414,6 +431,18 @@ void MainWindow::UpdateStatus(const QString& status) {
 	if (tabWidget->currentWidget() == modelViewerWidget) {
 		statusLabel->setText(status);
 	}
+}
+
+void MainWindow::OnShowMeshChanged()
+{
+}
+
+void MainWindow::OnShowFeedbackChanged()
+{
+}
+
+void MainWindow::OnShowGuidePathChanged()
+{
 }
 
 // ================== 组件通讯 ===============

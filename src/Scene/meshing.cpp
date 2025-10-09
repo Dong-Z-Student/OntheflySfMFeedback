@@ -848,28 +848,28 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 	//MeshOperator::FilterMesh(mesh, config);
 
 
-	{
-		CMesh cgalmesh;
-		std::unordered_map<size_t, CMesh::Vertex_index> vertex_map;
-		size_t index = 0;
-		for (const auto& vh : mesh->vertices) {
-			Point p = Point(vh.x, vh.y, vh.z);
-			auto cgal_vh = cgalmesh.add_vertex(p);
-			vertex_map[index] = cgal_vh;
-			index++;
-		}
+	//{
+	//	CMesh cgalmesh;
+	//	std::unordered_map<size_t, CMesh::Vertex_index> vertex_map;
+	//	size_t index = 0;
+	//	for (const auto& vh : mesh->vertices) {
+	//		Point p = Point(vh.x, vh.y, vh.z);
+	//		auto cgal_vh = cgalmesh.add_vertex(p);
+	//		vertex_map[index] = cgal_vh;
+	//		index++;
+	//	}
 
-		for (const auto& facet : mesh->faces) {
-			cgalmesh.add_face(
-				vertex_map[facet.vertex_idx1],
-				vertex_map[facet.vertex_idx2],
-				vertex_map[facet.vertex_idx3]
-			);
-		}
-		CGAL::IO::write_PLY("D:\\PROJECT\\On_the_fly_SfME\\x64\\Release\\cgal_create.ply", cgalmesh);
-	}
+	//	for (const auto& facet : mesh->faces) {
+	//		cgalmesh.add_face(
+	//			vertex_map[facet.vertex_idx1],
+	//			vertex_map[facet.vertex_idx2],
+	//			vertex_map[facet.vertex_idx3]
+	//		);
+	//	}
+	//	CGAL::IO::write_PLY("D:\\PROJECT\\On_the_fly_SfME\\x64\\Release\\cgal_create.ply", cgalmesh);
+	//}
 
-	WriteTextPlyMesh("D:/PROJECT/On_the_fly_SfME/x64/Release/create.ply", *mesh);
+	//WriteTextPlyMesh("D:/PROJECT/On_the_fly_SfME/x64/Release/create.ply", *mesh);
 }
 
 void MeshManager::UpdateMesh(const Reconstruction& reconstruction) {

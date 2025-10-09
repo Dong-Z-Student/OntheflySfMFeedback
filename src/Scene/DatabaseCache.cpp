@@ -159,7 +159,7 @@ const class Image* DatabaseCache::FindImageWithName(
 void DatabaseCache::AddImage(const Database& database,
 	const size_t min_num_matches,
 	const bool ignore_watermarks,
-	const std::set<image_t>& p_image_ids) { // TODO: 未处理孤立影像的情况
+	const std::set<image_t>& p_image_ids) {
 	//////////////////////////////////////////////////////////////////////////////
 	// Add cameras
 	//////////////////////////////////////////////////////////////////////////////

@@ -8,6 +8,7 @@
 #include "../Feature/ImageReader.h"
 #include "../Scene/Database.h"
 #include "../Scene/DatabaseCache.h"
+#include "../Scene/meshing.h"
 #include "../Scene/ReconstructionManager.h"
 #include "tbb/concurrent_map.h"
 #include <QMutex>
@@ -350,6 +351,8 @@ public:
 	//// 重建计数器
 	tbb::concurrent_unordered_map<size_t, std::atomic_size_t> numMatchingPairs;
 	std::atomic_size_t lastRegistImageId; // 保存上一次注册成功的影像ID
+	//// 实时反馈渲染数据
+	std::shared_ptr<RenderingData> m_render_data;
 
 private:
 	//// 工作变量

@@ -42,6 +42,7 @@
   <ItemGroup>
     <ClCompile Include="EstimateTask.cpp" />
     <ClCompile Include="ExtractTask.cpp" />
+    <ClCompile Include="FeedbackTask.cpp" />
     <ClCompile Include="MatchTask.cpp" />
     <ClCompile Include="PythonTask.cpp" />
     <ClCompile Include="ReadTask.cpp" />
@@ -75,6 +76,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="FeedbackTask.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

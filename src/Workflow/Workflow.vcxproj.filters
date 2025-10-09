@@ -42,6 +42,9 @@
     <ClCompile Include="ReconstructTask.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="FeedbackTask.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Receiver.h">
@@ -75,6 +78,9 @@
       <Filter>头文件</Filter>
     </QtMoc>
     <QtMoc Include="ReconstructTask.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+    <QtMoc Include="FeedbackTask.h">
       <Filter>头文件</Filter>
     </QtMoc>
   </ItemGroup>

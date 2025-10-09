@@ -15,6 +15,7 @@ WorkFlow::WorkFlow(QObject* parent)
 	, m_match_threadPool(new QThreadPool(this))
 	, m_estimate_threadPool(new QThreadPool(this))
 	, m_reconstruct_threadPool(new QThreadPool(this))
+	, m_feedback_threadPool(new QThreadPool(this))
 {
 	LoadPython();
 	m_read_threadPool->setMaxThreadCount(1);
@@ -24,6 +25,7 @@ WorkFlow::WorkFlow(QObject* parent)
 	m_match_threadPool->setMaxThreadCount(3);
 	m_estimate_threadPool->setMaxThreadCount(6);
 	m_reconstruct_threadPool->setMaxThreadCount(1);
+	m_feedback_threadPool->setMaxThreadCount(1);
 }
 
 WorkFlow::~WorkFlow()
@@ -116,8 +118,14 @@ void WorkFlow::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
 
 void WorkFlow::onRegistedSuccess(quint32 imageID) {
 	m_workData->AddReconstructedImage(imageID);
+	GenerateMeshModel();
 	emit changeLastRegistedImageID(imageID);
 	emit reconstructUpdated();
+}
+
+void WorkFlow::onFeedbackFinished()
+{
+	LOG(INFO) << "[DEBUG] Feedback Render Slot.";
 }
 
 bool WorkFlow::ReconstructImage(quint32 imageID)
@@ -139,5 +147,20 @@ bool WorkFlow::ReconstructImage(quint32 imageID)
 		}
 	}
 	return false;
+}
+
+void WorkFlow::GenerateMeshModel()
+{
+	auto& config = Config::getInstance();
+	int startFeedback = config.feedback.StartCreateMesh;
+	int step = config.feedback.Step;
+	const size_t reconstructedImageNum = m_workData->GetReconstructedImagesCount();
+
+	if (reconstructedImageNum == startFeedback ||
+		(reconstructedImageNum > startFeedback && reconstructedImageNum % step == 0)) {
+		FeedbackTask* m_feedbackTask = new FeedbackTask(m_workData, this);
+		connect(m_feedbackTask, &FeedbackTask::taskFinished, this, &WorkFlow::onFeedbackFinished);
+		m_feedback_threadPool->start(m_feedbackTask);
+	}
 }
 

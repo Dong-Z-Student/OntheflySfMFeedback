@@ -6,6 +6,7 @@
 #include "../Scene/ReconstructionManager.h"
 #include "EstimateTask.h"
 #include "ExtractTask.h"
+#include "FeedbackTask.h"
 #include "MatchTask.h"
 #include "PythonTask.h"
 #include "ReadTask.h"
@@ -44,6 +45,7 @@ public slots:
 	void onEstimateFinished(quint32 imageID1, quint32 imageID2);
 	void onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2);
 	void onRegistedSuccess(quint32 imageID);
+	void onFeedbackFinished();
 
 private:
 	WorkData* m_workData;      // 共享数据
@@ -54,10 +56,12 @@ private:
 	QThreadPool* m_match_threadPool;
 	QThreadPool* m_estimate_threadPool;
 	QThreadPool* m_reconstruct_threadPool;
+	QThreadPool* m_feedback_threadPool;
 
 	QMutex mu_reconstructTasks; // 分发任务加锁
 
 	bool ReconstructImage(quint32 imageID);
+	void GenerateMeshModel();
 };
 
 #endif // WORKFLOW_H

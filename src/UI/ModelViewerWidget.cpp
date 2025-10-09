@@ -1106,7 +1106,7 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 				plane_color = kSelectedImagePlaneColor;
 				frame_color = kSelectedImageFrameColor;
 			}
-			else if (image_id == lastRegistedImageIDValue) // TODO
+			else if (image_id == lastRegistedImageIDValue)
 			{
 				plane_color = kNewRegistedImagePlaneColor;
 				frame_color = kNewRegistedImageFrameColor;
