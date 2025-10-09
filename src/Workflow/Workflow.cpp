@@ -1,4 +1,5 @@
-﻿#include "glog/logging.h"
+﻿#include "../Base/config.h"
+#include "glog/logging.h"
 #include "WorkData.h"
 #include "WorkFlow.h"
 
@@ -121,10 +122,10 @@ void WorkFlow::onRegistedSuccess(quint32 imageID) {
 
 bool WorkFlow::ReconstructImage(quint32 imageID)
 {
-	const size_t minEstimatedImageNum = 20;
+	Config& config = Config::getInstance();
 	const size_t estimatedImageNum = m_workData->GetEstimatedImagesCount();
-	if (estimatedImageNum >= minEstimatedImageNum) {
-		if (estimatedImageNum == minEstimatedImageNum) {
+	if (estimatedImageNum >= config.pipeline.MinEstimatedImageNum) {
+		if (estimatedImageNum == config.pipeline.MinEstimatedImageNum) {
 			LOG(INFO) << "[Reconstruct] initializing model: " << 0;
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, -1, ReconstructType::AddModel, this);
 			connect(m_reconstructTask, &ReconstructTask::registedInitialImagePair, this, &WorkFlow::onRegistedInitialImagePair);

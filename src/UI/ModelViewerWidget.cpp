@@ -269,8 +269,14 @@ void BuildImageModel(const Image& image,
 }
 
 
-ModelViewerWidget::ModelViewerWidget(QWidget* parent) : QOpenGLWidget(parent), mouse_is_pressed_(false), focus_distance_(kInitFocusDistance), selected_image_id_(kInvalidImageId), selected_point3D_id_(kInvalidPoint3DId), coordinate_grid_enabled_(true), near_plane_(kInitNearPlane), lastRegistedImageID(-1)
+ModelViewerWidget::ModelViewerWidget(QWidget* parent) : QOpenGLWidget(parent), mouse_is_pressed_(false)
+, focus_distance_(kInitFocusDistance), selected_image_id_(kInvalidImageId)
+, selected_point3D_id_(kInvalidPoint3DId), coordinate_grid_enabled_(true)
+, near_plane_(kInitNearPlane), lastRegistedImageID(-1)
+, cPressed(false)
 {
+	setFocusPolicy(Qt::StrongFocus);
+
 	background_color_[0] = 1.0f;
 	background_color_[1] = 1.0f;
 	background_color_[2] = 1.0f;
@@ -361,7 +367,6 @@ void ModelViewerWidget::resizeGL(int width, int height) {
 	UploadCoordinateGridData();
 }
 
-
 void ModelViewerWidget::ReloadReconstruction() {
 	if (reconstruction == nullptr) {
 		return;
@@ -373,14 +378,23 @@ void ModelViewerWidget::ReloadReconstruction() {
 		reg_image_ids = reconstruction->RegImageIds();
 
 		images.clear();
+
 		for (const image_t image_id : reg_image_ids) {
 			images[image_id] = reconstruction->Image(image_id);
 		}
 
-		QString labelString = QString::fromStdString(formatDuration(reconstruction->reconstructTime / 1000));
-		labelString += QString().asprintf("  %d Images - %d Points", static_cast<int>(reg_image_ids.size()), static_cast<int>(points3D.size()));
+		QString labelString = QString::fromStdString(
+			formatDuration(reconstruction->reconstructTime / 1000)
+		);
+		labelString += QString().asprintf("  %d Images - %d Points",
+			static_cast<int>(reg_image_ids.size()),
+			static_cast<int>(points3D.size())
+		);
+		double avgSeconds = reg_image_ids.empty() ? 0.0 :
+			static_cast<double>(totalTimer.ElapsedMicroSeconds()) / reg_image_ids.size() / 1e6;
 
-		//statusbar_status_label->setText(labelString);
+		labelString += QString().asprintf("  (%.2f s / image)", avgSeconds);
+
 		UpdateStatus(labelString);
 
 		Upload();
@@ -725,6 +739,11 @@ void ModelViewerWidget::SetBackgroundColor(const float r,
 	update();
 }
 
+void ModelViewerWidget::StartTimer()
+{
+	totalTimer.Start();
+}
+
 void ModelViewerWidget::mousePressEvent(QMouseEvent* event) {
 	if (mouse_press_timer_.isActive()) {  // Select objects (2. click)
 		mouse_is_pressed_ = false;
@@ -767,19 +786,30 @@ void ModelViewerWidget::mouseMoveEvent(QMouseEvent* event) {
 	event->accept();
 }
 
+void ModelViewerWidget::keyPressEvent(QKeyEvent* event) {
+	if (event->key() == Qt::Key_C) {
+		cPressed = true;
+	}
+	QWidget::keyPressEvent(event);
+}
+
+void ModelViewerWidget::keyReleaseEvent(QKeyEvent* event) {
+	if (event->key() == Qt::Key_C) {
+		cPressed = false;
+	}
+	QWidget::keyReleaseEvent(event);
+}
+
 void ModelViewerWidget::wheelEvent(QWheelEvent* event) {
 	// We don't mind whether horizontal or vertical scroll.
 	const float delta = event->angleDelta().x() + event->angleDelta().y();
-
-	Qt::KeyboardModifiers mods = event->modifiers();
-
-	if (mods & Qt::ControlModifier) {
+	if (event->modifiers() & Qt::ControlModifier) {
 		ChangePointSize(delta);
 	}
-	else if (mods & Qt::AltModifier) {
+	else if (cPressed) {
 		ChangeCameraSize(delta);
 	}
-	else if (mods & Qt::ShiftModifier) {
+	else if (event->modifiers() & Qt::ShiftModifier) {
 		ChangeNearPlane(delta);
 	}
 	else {
@@ -1196,10 +1226,6 @@ Eigen::Vector3f ModelViewerWidget::PositionToArcballVector(
 	}
 	return vec;
 }
-
-
-
-
 
 
 

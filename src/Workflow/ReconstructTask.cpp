@@ -74,12 +74,6 @@ bool ReconstructTask::Reconstruct(bool init)
 		isContinue = false;
 		size_t registerTime = 0;
 		const std::vector<image_t> nextImageIDs = mapper->FindNextImages(init_mapper_options);
-		/*std::ostringstream oss;
-		oss << "[DEBUG] nextImageIDs: ";
-		for (const auto& id : nextImageIDs) {
-			oss << id << " ";
-		}
-		LOG(INFO) << oss.str();*/
 		registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
 		model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 

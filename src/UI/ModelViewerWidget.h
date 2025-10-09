@@ -1,4 +1,5 @@
 #pragma once
+#include "../Base/timer.h"
 #include "../Scene/Database.h"
 #include "../Scene/Reconstruction.h"
 #include "Colormap.h"
@@ -78,6 +79,9 @@ public:
 
 	void SetBackgroundColor(float r, float g, float b);
 
+	// timer help func
+	void StartTimer();
+
 	// Copy of current scene data that is displayed
 	std::shared_ptr<Reconstruction> reconstruction;
 	tbb::concurrent_unordered_map<camera_t, Camera> cameras;
@@ -100,6 +104,8 @@ private:
 	void mousePressEvent(QMouseEvent* event) override;
 	void mouseReleaseEvent(QMouseEvent* event) override;
 	void mouseMoveEvent(QMouseEvent* event) override;
+	void keyPressEvent(QKeyEvent* event) override;
+	void keyReleaseEvent(QKeyEvent* event) override;
 	void wheelEvent(QWheelEvent* event) override;
 
 	void SetupPainters();
@@ -145,6 +151,7 @@ private:
 	std::unique_ptr<ImageColormapBase> image_colormap_;
 
 	bool mouse_is_pressed_;
+	bool cPressed;
 	QTimer mouse_press_timer_;
 	QPoint prev_mouse_pos_;
 
@@ -166,4 +173,5 @@ private:
 
 	float background_color_[3];
 
+	Timer totalTimer;
 };

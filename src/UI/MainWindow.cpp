@@ -216,6 +216,7 @@ void MainWindow::SetupConnections() const {
 
 // ================= 业务逻辑 =================
 void MainWindow::RunFunc() {
+	modelViewerWidget->StartTimer();
 	const std::string baseImagePath = Database::imageDir;
 	const vector<std::string> images = GetImageFileList(baseImagePath);
 
@@ -419,3 +420,4 @@ void MainWindow::UpdateStatus(const QString& status) {
 void MainWindow::SetModelWidgetLastRegistedImageID(quint32 p_imageID) {
 	modelViewerWidget->lastRegistedImageID.store(p_imageID);
 }
+
