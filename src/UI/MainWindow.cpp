@@ -160,10 +160,10 @@ void MainWindow::SetupActions() {
 	showMeshAction->setChecked(false);
 	connect(showMeshAction, &QAction::triggered, this, &MainWindow::OnShowMeshChanged);
 
-	showFeedbackAction = new QAction(tr("Show Feedback"), this);
-	showFeedbackAction->setCheckable(true);
-	showFeedbackAction->setChecked(false);
-	connect(showFeedbackAction, &QAction::triggered, this, &MainWindow::OnShowFeedbackChanged);
+	showQualityAction = new QAction(tr("Show Quality"), this);
+	showQualityAction->setCheckable(true);
+	showQualityAction->setChecked(false);
+	connect(showQualityAction, &QAction::triggered, this, &MainWindow::OnShowQualityChanged);
 
 	showGuidePathAction = new QAction(tr("Show Guide Path"), this);
 	showGuidePathAction->setCheckable(true);
@@ -184,7 +184,7 @@ void MainWindow::CreateMenus() {
 
 	feedbackMenu = new QMenu(tr("Feedback"), this);
 	feedbackMenu->addAction(showMeshAction);
-	feedbackMenu->addAction(showFeedbackAction);
+	feedbackMenu->addAction(showQualityAction);
 	feedbackMenu->addAction(showGuidePathAction);
 	menuBar()->addAction(feedbackMenu->menuAction());
 }
@@ -380,7 +380,7 @@ void MainWindow::RenderNow() {
 #ifdef DISABLE_MODELVIEWER
 	return;
 #endif
-	lock_guard<mutex> lock(renderMutex);
+	QMutexLocker locker(&mu_render);
 	try {
 		if (reconstructionManager->Size() == 0) {
 			reconstructionManagerWidget->SelectReconstruction(ReconstructionManagerWidget::kNewestReconstructionIdx);
@@ -402,7 +402,7 @@ void MainWindow::RenderNow() {
 			modelViewerWidget->reconstruction = reconstructionManager->Get(reconstruction_idx);
 			modelViewerWidget->ReloadReconstruction();
 		}
-}
+	}
 	catch (const std::exception& e) {
 		std::cout << "RenderNow unknown exception caught" << endl;
 	}
@@ -437,7 +437,7 @@ void MainWindow::OnShowMeshChanged()
 {
 }
 
-void MainWindow::OnShowFeedbackChanged()
+void MainWindow::OnShowQualityChanged()
 {
 }
 
@@ -447,6 +447,7 @@ void MainWindow::OnShowGuidePathChanged()
 
 // ================== 组件通讯 ===============
 void MainWindow::SetModelWidgetLastRegistedImageID(quint32 p_imageID) {
+	QMutexLocker locker(&mu_render);
 	modelViewerWidget->lastRegistedImageID.store(p_imageID);
 }
 

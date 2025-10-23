@@ -94,6 +94,7 @@ public:
 	std::shared_ptr<PlyMesh> mesh;
 
 	QString status_label;
+
 	void UpdateStatus(const QString& status);
 signals:
 	void statusUpdate(const QString& status);

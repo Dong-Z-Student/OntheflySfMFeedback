@@ -34,6 +34,7 @@ signals:
 	void readImageFinished(QString p_imagePath);
 	void reconstructUpdated(); // refresh the model in model viewer
 	void changeLastRegistedImageID(quint32 imageID);
+	void feedbackFinished();
 
 public slots:
 	void onProcessNewImage(const QString& value); // 传入影像，启动工作流
@@ -61,7 +62,7 @@ private:
 	QMutex mu_reconstructTasks; // 分发任务加锁
 
 	bool ReconstructImage(quint32 imageID);
-	void GenerateMeshModel();
+	void Feedback();
 };
 
 #endif // WORKFLOW_H

@@ -118,14 +118,14 @@ void WorkFlow::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
 
 void WorkFlow::onRegistedSuccess(quint32 imageID) {
 	m_workData->AddReconstructedImage(imageID);
-	GenerateMeshModel();
+	Feedback();
 	emit changeLastRegistedImageID(imageID);
 	emit reconstructUpdated();
 }
 
 void WorkFlow::onFeedbackFinished()
 {
-	LOG(INFO) << "[DEBUG] Feedback Render Slot.";
+	emit feedbackFinished();
 }
 
 bool WorkFlow::ReconstructImage(quint32 imageID)
@@ -149,7 +149,7 @@ bool WorkFlow::ReconstructImage(quint32 imageID)
 	return false;
 }
 
-void WorkFlow::GenerateMeshModel()
+void WorkFlow::Feedback()
 {
 	auto& config = Config::getInstance();
 	int startFeedback = config.feedback.StartCreateMesh;
@@ -158,7 +158,7 @@ void WorkFlow::GenerateMeshModel()
 
 	if (reconstructedImageNum == startFeedback ||
 		(reconstructedImageNum > startFeedback && reconstructedImageNum % step == 0)) {
-		FeedbackTask* m_feedbackTask = new FeedbackTask(m_workData, this);
+		FeedbackTask* m_feedbackTask = new FeedbackTask(m_workData, 0, this);
 		connect(m_feedbackTask, &FeedbackTask::taskFinished, this, &WorkFlow::onFeedbackFinished);
 		m_feedback_threadPool->start(m_feedbackTask);
 	}

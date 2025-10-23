@@ -395,7 +395,7 @@ void ModelViewerWidget::ReloadReconstruction() {
 
 		labelString += QString().asprintf("  (%.2f s / image)", avgSeconds);
 
-		UpdateStatus(labelString);
+		UpdateStatus(labelString); // 在Upload渲染数据之前统计平均处理时间，以免造成多余时间统计 
 
 		Upload();
 	}

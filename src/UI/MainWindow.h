@@ -10,6 +10,7 @@
 #include <QAction>
 #include <QMainWindow>
 #include <QMenu>
+#include <QMutex>
 #include <QToolBar>
 
 class MainWindow : public QMainWindow {
@@ -40,7 +41,7 @@ private slots:
 
 	// Feedback UI相关槽函数
 	void OnShowMeshChanged();
-	void OnShowFeedbackChanged();
+	void OnShowQualityChanged();
 	void OnShowGuidePathChanged();
 
 private:
@@ -76,7 +77,7 @@ private:
 	QAction* renderNowAction;
 	QAction* showMatchMatrixAction;
 	QAction* showMeshAction;
-	QAction* showFeedbackAction;
+	QAction* showQualityAction;
 	QAction* showGuidePathAction;
 	QMenu* projectMenu;
 	QMenu* transmitMenu;
@@ -87,5 +88,6 @@ private:
 	QToolBar* feedbackToolBar;
 	QCheckBox* isTrackModelCheckBox;
 	bool isForcedRender = false;
-	std::mutex renderMutex;
+
+	QMutex mu_render;
 };

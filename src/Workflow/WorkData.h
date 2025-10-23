@@ -350,7 +350,6 @@ public:
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> geometricVerificationTimes;
 	//// 重建计数器
 	tbb::concurrent_unordered_map<size_t, std::atomic_size_t> numMatchingPairs;
-	std::atomic_size_t lastRegistImageId; // 保存上一次注册成功的影像ID
 	//// 实时反馈渲染数据
 	std::shared_ptr<RenderingData> m_render_data;
 

@@ -29,6 +29,7 @@ bool ReconstructTask::Reconstruct(bool init)
 	reconstructionTimer.Start();
 
 	IncrementalMapper* mapper = m_data->getIncrementalMapper();
+	QWriteLocker locker(&(m_data->getModelLock(modelID)));
 	std::shared_ptr<Reconstruction> model = m_data->getModelManager()->Get(modelID);
 	mapper->BeginReconstruction(model);
 
@@ -135,7 +136,7 @@ bool ReconstructTask::Reconstruct(bool init)
 			ExtractColors(init_mapper_options, nextImageID, *model);
 
 			//Feedback
-			//GenerateMeshModel();
+			//Feedback();
 
 			emit registedSuccess(nextImageID);
 			model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);

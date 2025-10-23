@@ -5,8 +5,9 @@
 
 void FeedbackTask::run()
 {
+	QReadLocker locker(&(m_data->getModelLock(modelID)));
 	ReconstructionManager* modelManager = m_data->getModelManager();
-	std::shared_ptr<Reconstruction> model = modelManager->Get(0);
+	std::shared_ptr<Reconstruction> model = modelManager->Get(modelID);
 	std::shared_ptr<MeshManager> meshManager = std::make_shared<MeshManager>();
 	meshManager->CreateMesh(*model);
 	//meshManager->GenerateRenderMeshData(*model);
