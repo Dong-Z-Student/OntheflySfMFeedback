@@ -8,8 +8,8 @@
 #include "../Feature/ImageReader.h"
 #include "../Scene/Database.h"
 #include "../Scene/DatabaseCache.h"
-#include "../Scene/meshing.h"
 #include "../Scene/ReconstructionManager.h"
+#include "../Scene/RenderData.h"
 #include "tbb/concurrent_map.h"
 #include <QMutex>
 #include <QMutexLocker>
@@ -350,8 +350,8 @@ public:
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> geometricVerificationTimes;
 	//// 重建计数器
 	tbb::concurrent_unordered_map<size_t, std::atomic_size_t> numMatchingPairs;
-	//// 实时反馈渲染数据
-	std::shared_ptr<RenderingData> m_render_data;
+	//// 用于UI显示的反馈数据
+	std::shared_ptr<const RenderData> render_data;
 
 private:
 	//// 工作变量

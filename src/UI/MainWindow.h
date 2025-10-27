@@ -43,6 +43,7 @@ private slots:
 	void OnShowMeshChanged();
 	void OnShowQualityChanged();
 	void OnShowGuidePathChanged();
+	void OnFeedback();
 
 private:
 	void SetupWidgets();

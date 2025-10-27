@@ -3,6 +3,7 @@
 #include "../Base/timer.h"
 #include "../Scene/Database.h"
 #include "../Scene/Reconstruction.h"
+#include "../Scene/RenderData.h"
 #include "Colormap.h"
 #include "PointLinePainter.h"
 #include <atomic>
@@ -38,6 +39,7 @@ public:
 	void SetDatabase(Database* database);
 
 	void ReloadReconstruction();
+	void ReloadFeedback(bool showMesh = true, bool showQuality = true, bool showGuidePath = true);
 	void ClearReconstruction();
 
 	int GetProjectionType() const;
@@ -91,7 +93,7 @@ public:
 	std::vector<image_t> reg_image_ids;
 	std::atomic_size_t lastRegistedImageID;
 
-	std::shared_ptr<PlyMesh> mesh;
+	std::shared_ptr<const RenderData> render_data;
 
 	QString status_label;
 
@@ -122,6 +124,7 @@ private:
 	void UploadImageData(bool selection_mode = false);
 	void UploadImageConnectionData();
 	void UploadMovieGrabberData();
+	void UploadMeshData(bool showMesh = true, bool showMeshline = true);
 
 	void ComposeProjectionMatrix();
 
@@ -148,6 +151,10 @@ private:
 	LinePainter movie_grabber_path_painter_;
 	LinePainter movie_grabber_line_painter_;
 	TrianglePainter movie_grabber_triangle_painter_;
+
+	//Feedback Painter
+	TrianglePainter mesh_triangle_painter_;
+	LinePainter mesh_line_painter_;
 
 	Database* database = nullptr;
 

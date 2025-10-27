@@ -359,6 +359,10 @@ void ModelViewerWidget::paintGL() {
 	movie_grabber_path_painter_.Render(pmv_matrix, width(), height(), 1.5);
 	movie_grabber_line_painter_.Render(pmv_matrix, width(), height(), 1);
 	movie_grabber_triangle_painter_.Render(pmv_matrix);
+
+	// Feedback
+	mesh_line_painter_.Render(pmv_matrix, width(), height(), 1);
+	mesh_triangle_painter_.Render(pmv_matrix);
 }
 
 void ModelViewerWidget::resizeGL(int width, int height) {
@@ -398,6 +402,19 @@ void ModelViewerWidget::ReloadReconstruction() {
 		UpdateStatus(labelString); // 在Upload渲染数据之前统计平均处理时间，以免造成多余时间统计 
 
 		Upload();
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << "Unknown exception caught" << endl;
+	}
+}
+
+void ModelViewerWidget::ReloadFeedback(bool showMesh, bool showQuality, bool showGuidePath)
+{
+	try
+	{
+		UploadMeshData(showMesh);
+		update();
 	}
 	catch (const std::exception& e)
 	{
@@ -831,6 +848,9 @@ void ModelViewerWidget::SetupPainters() {
 	image_triangle_painter_.Setup();
 	image_connection_painter_.Setup();
 
+	mesh_triangle_painter_.Setup();//Mesh表面
+	mesh_line_painter_.Setup();//Mesh轮廓线
+
 	movie_grabber_path_painter_.Setup();
 	movie_grabber_line_painter_.Setup();
 	movie_grabber_triangle_painter_.Setup();
@@ -1193,6 +1213,42 @@ void ModelViewerWidget::UploadImageConnectionData() {
 }
 
 void ModelViewerWidget::UploadMovieGrabberData() {
+}
+
+void ModelViewerWidget::UploadMeshData(bool showMesh, bool showMeshline)
+{
+	makeCurrent();
+
+	std::vector<TrianglePainter::Data> triangle_data;
+	std::vector<LinePainter::Data> line_data;
+	if (showMesh) {
+		triangle_data.reserve(render_data->mesh_data.size());
+		if (showMeshline) {
+			line_data.reserve(render_data->mesh_lines.size());
+			for (const auto& line : render_data->mesh_lines) {
+				line_data.emplace_back(
+					PointPainter::Data(line[0], line[1], line[2], line[3], line[4], line[5], line[6]),
+					PointPainter::Data(line[7], line[8], line[9], line[10], line[11], line[12], line[13])
+				);
+			}
+		}
+		for (const auto& pts : render_data->mesh_data) {
+			triangle_data.emplace_back(
+				PointPainter::Data(
+					pts[0], pts[1], pts[2], pts[3], pts[4], pts[5], pts[6]
+				),
+				PointPainter::Data(
+					pts[7], pts[8], pts[9], pts[10], pts[11], pts[12], pts[13]
+				),
+				PointPainter::Data(
+					pts[14], pts[15], pts[16], pts[17], pts[18], pts[19], pts[20]
+				)
+			);
+		}
+	}
+
+	mesh_line_painter_.Upload(line_data);
+	mesh_triangle_painter_.Upload(triangle_data);
 }
 
 void ModelViewerWidget::ComposeProjectionMatrix() {

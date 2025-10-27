@@ -229,6 +229,7 @@ void MainWindow::SetupConnections() const {
 	connect(workflow, &WorkFlow::readImageFinished, this, &MainWindow::addNewImageInWidget);
 	connect(workflow, &WorkFlow::reconstructUpdated, this, &MainWindow::RenderNow);
 	connect(workflow, &WorkFlow::changeLastRegistedImageID, this, &MainWindow::SetModelWidgetLastRegistedImageID);
+	connect(workflow, &WorkFlow::feedbackFinished, this, &MainWindow::OnFeedback);
 }
 
 // ================= 业务逻辑 =================
@@ -394,10 +395,7 @@ void MainWindow::RenderNow() {
 				reconstruction_idx = reconstructionManager->Size() - 1;
 			}
 		}
-		/*if (isTrackModelCheckBox->isChecked() || reconstruction_idx == reconstructor->lastRegModelID || isForcedRender) {
-			modelViewerWidget->reconstruction = reconstructionManager->Get(reconstruction_idx);
-			modelViewerWidget->ReloadReconstruction();
-		}*/
+
 		if (isTrackModelCheckBox->isChecked() || isForcedRender) {
 			modelViewerWidget->reconstruction = reconstructionManager->Get(reconstruction_idx);
 			modelViewerWidget->ReloadReconstruction();
@@ -435,6 +433,13 @@ void MainWindow::UpdateStatus(const QString& status) {
 
 void MainWindow::OnShowMeshChanged()
 {
+	if (!modelViewerWidget->render_data) {
+		return;
+	}
+	bool p_showMesh = showMeshAction->isChecked();
+	bool p_showQuality = showQualityAction->isChecked();
+	bool p_showPath = showGuidePathAction->isChecked();
+	modelViewerWidget->ReloadFeedback(p_showMesh, p_showQuality, p_showPath);
 }
 
 void MainWindow::OnShowQualityChanged()
@@ -443,6 +448,13 @@ void MainWindow::OnShowQualityChanged()
 
 void MainWindow::OnShowGuidePathChanged()
 {
+}
+
+void MainWindow::OnFeedback()
+{
+	modelViewerWidget->render_data = workflow->GetRenderingData();
+	bool p_showMesh = showMeshAction->isChecked();
+	modelViewerWidget->ReloadFeedback(p_showMesh);
 }
 
 // ================== 组件通讯 ===============

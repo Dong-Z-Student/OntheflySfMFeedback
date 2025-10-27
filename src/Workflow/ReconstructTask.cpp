@@ -29,7 +29,7 @@ bool ReconstructTask::Reconstruct(bool init)
 	reconstructionTimer.Start();
 
 	IncrementalMapper* mapper = m_data->getIncrementalMapper();
-	QWriteLocker locker(&(m_data->getModelLock(modelID)));
+
 	std::shared_ptr<Reconstruction> model = m_data->getModelManager()->Get(modelID);
 	mapper->BeginReconstruction(model);
 
@@ -43,21 +43,23 @@ bool ReconstructTask::Reconstruct(bool init)
 			break;
 		}
 		// 只对空模型尝试初始化
-		if (InitializeEmptyModel(init_mapper_options, *model, *mapper))
 		{
-			//lastRegModelID = modelID;
-			//Callback(CHANGE_CURRENT_MODEL_CALLBACK);
-			break;
-		}
+			QWriteLocker locker(&(m_data->getModelLock(modelID)));
+			if (InitializeEmptyModel(init_mapper_options, *model, *mapper))
+			{
+				//lastRegModelID = modelID;
+				//Callback(CHANGE_CURRENT_MODEL_CALLBACK);
+				break;
+			}
 
-		init_mapper_options.init_min_num_inliers /= 2;
-		if (InitializeEmptyModel(init_mapper_options, *model, *mapper))
-		{
-			//lastRegModelID = modelID;
-			//Callback(CHANGE_CURRENT_MODEL_CALLBACK);
-			break;
+			init_mapper_options.init_min_num_inliers /= 2;
+			if (InitializeEmptyModel(init_mapper_options, *model, *mapper))
+			{
+				//lastRegModelID = modelID;
+				//Callback(CHANGE_CURRENT_MODEL_CALLBACK);
+				break;
+			}
 		}
-
 		init_mapper_options.init_min_tri_angle /= 2;
 	}
 	if (model->NumRegImages() == 0)
@@ -114,11 +116,14 @@ bool ReconstructTask::Reconstruct(bool init)
 
 			reconstructionTimer.Restart();
 			const std::string nextImageName = m_data->DatabaseReadImage(nextImageID).Name();
-			if (!mapper->RegisterNextImage(init_mapper_options, nextImageID))
 			{
-				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-				LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
-				continue;
+				QWriteLocker locker(&(m_data->getModelLock(modelID)));
+				if (!mapper->RegisterNextImage(init_mapper_options, nextImageID))
+				{
+					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+					LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
+					continue;
+				}
 			}
 			model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 			registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
@@ -134,9 +139,6 @@ bool ReconstructTask::Reconstruct(bool init)
 			reconstructionTimer.Restart();
 			LocalBundleAdjustment(init_mapper_options, nextImageID, *mapper);
 			ExtractColors(init_mapper_options, nextImageID, *model);
-
-			//Feedback
-			//Feedback();
 
 			emit registedSuccess(nextImageID);
 			model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
@@ -229,11 +231,11 @@ bool ReconstructTask::Reconstruct(bool init)
 #endif
 
 			isContinue = true;
+			}
 		}
-	}
 	mapper->EndReconstruction(false);
 	return true;
-}
+	}
 
 bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper)
 {

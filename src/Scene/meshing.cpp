@@ -531,25 +531,23 @@ void DelaunayMeshingInput::ClearCaches() {
 	modified_points.clear();
 }
 
-void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
-	isbusy = true;
-	StackTimer timer;
-
-	timer.start("总耗时");
-	timer.start("读取重建数据");
+void MeshManager::CopyFromReconstruction(const Reconstruction& reconstruction)
+{
 	input_data.CopyFromSparseReconstruction(reconstruction);
-	timer.stop();
+}
+
+void MeshManager::CreateMesh() {
+	isbusy = true;
+
 	timer.start("创建Delaunay三角剖分");
 	input_data.CreateSubSampledDelaunayTriangulation(options.max_proj_dist, options.max_depth_dist, triangulation);
 	timer.stop();
 
-	//LOG(INFO) << "Initializing ray tracer...";
 	timer.start("初始化权重计算器");
 	ray_caster = new DelaunayTriangulationRayCaster(triangulation);
 	edge_weight_computer = new DelaunayMeshingEdgeWeightComputer(triangulation, options.visibility_sigma, options.distance_sigma_factor);
 	timer.stop();
 
-	//LOG(INFO) << "Initializing graph optimization...";
 	timer.start("计算所有光线权重图");
 
 	CellGraphData cell_graph_data;
@@ -560,12 +558,8 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 		cell_graph_data.emplace(it, DelaunayCellData(cell_graph_data.size()));
 	}
 
-	const int num_threads = GetEffectiveNumThreads(options.num_threads);
-	ThreadPool thread_pool(num_threads);
-	JobQueue<CellGraphData> result_queue(num_threads);
-
 	// Function that accumulates edge weights in the s-t graph for a single image.
-	auto IntegreateImage = [&](const size_t image_id) {
+	auto IntegreateImage = [&](const size_t image_id) -> CellGraphData {
 		// Accumulated weights for the current image only.
 		CellGraphData image_cell_graph_data;
 
@@ -654,33 +648,12 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 				}
 			}
 		}
-		result_queue.Push(std::move(image_cell_graph_data));
+		return image_cell_graph_data;
 		};
-
 	// Add first batch of images to the thread job queue.
 	std::vector<image_t> image_vector(input_data.modified_images.begin(), input_data.modified_images.end());
-	size_t image_idx = 0;
-	const size_t init_num_tasks =
-		std::min(input_data.images.size(), thread_pool.NumThreads());
-	for (; image_idx < init_num_tasks; ++image_idx) {
-		thread_pool.AddTask(IntegreateImage, image_vector[image_idx]);
-	}
-
-	// Pop the integrated images from the thread job queue and integrate their
-	// accumulated weights into the global graph.
 	for (size_t i = 0; i < input_data.modified_images.size(); ++i) {
-
-		// Push the next image to the queue.
-		if (image_idx < input_data.modified_images.size()) {
-			thread_pool.AddTask(IntegreateImage, image_idx);
-			image_idx += 1;
-		}
-
-		// Pop the next results from the queue.
-		auto result = result_queue.Pop();
-
-		// Accumulate the weights of the image into the global graph.
-		const auto& image_cell_graph_data = result.Data();
+		const auto image_cell_graph_data = IntegreateImage(i);
 		for (const auto& image_cell_data : image_cell_graph_data) {
 			auto& cell_data = cell_graph_data.at(image_cell_data.first);
 			cell_data.sink_weight += image_cell_data.second.sink_weight;
@@ -743,11 +716,9 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 
 	// Extract the surface facets as the oriented min-cut of the graph.
 	timer.start("运行graph-cut optimization");
-	//LOG(INFO) << "Running graph-cut optimization...";
 	graph_cut.Compute();
 	timer.stop();
 
-	//LOG(INFO) << "Extracting surface as min-cut...";
 	timer.start("提取mesh表面");
 	std::unordered_set<Delaunay::Vertex_handle> surface_vertices;
 	std::vector<Delaunay::Facet> surface_facets;
@@ -800,16 +771,6 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 		}
 	}
 
-	//std::ofstream file("length.txt");
-	//file << std::fixed << std::setprecision(5);
-	//for (const float& length : surface_facet_side_lengths) {
-	//    file << length << '\n';
-	//}
-	//file.close();
-
-
-	//LOG(INFO) << "Creating surface mesh model...";
-
 	std::unordered_map<const Delaunay::Vertex_handle, size_t>
 		surface_vertex_indices;
 	surface_vertex_indices.reserve(surface_vertices.size());
@@ -833,7 +794,6 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 				triangulation.vertex_triple_index(facet.second, 2))));
 	}
 	timer.stop();
-	timer.stop();
 	isbusy = false;
 	timer.printExecutionTimes();
 
@@ -846,8 +806,6 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 	//config.outlier_threshold_multiplier = 2.5;
 	//config.max_iterations = 5;
 	//MeshOperator::FilterMesh(mesh, config);
-
-
 	//{
 	//	CMesh cgalmesh;
 	//	std::unordered_map<size_t, CMesh::Vertex_index> vertex_map;
@@ -858,7 +816,6 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 	//		vertex_map[index] = cgal_vh;
 	//		index++;
 	//	}
-
 	//	for (const auto& facet : mesh->faces) {
 	//		cgalmesh.add_face(
 	//			vertex_map[facet.vertex_idx1],
@@ -868,18 +825,17 @@ void MeshManager::CreateMesh(const Reconstruction& reconstruction) {
 	//	}
 	//	CGAL::IO::write_PLY("D:\\PROJECT\\On_the_fly_SfME\\x64\\Release\\cgal_create.ply", cgalmesh);
 	//}
-
 	//WriteTextPlyMesh("D:/PROJECT/On_the_fly_SfME/x64/Release/create.ply", *mesh);
 }
 
-void MeshManager::UpdateMesh(const Reconstruction& reconstruction) {
+void MeshManager::UpdateMesh() {
 	isbusy = true;
 	StackTimer timer;
 
-	timer.start("总耗时");
+	/*timer.start("总耗时");
 	timer.start("读取重建数据");
 	input_data.UpdateFromSparseReconstruction(reconstruction);
-	timer.stop();
+	timer.stop();*/
 	timer.start("创建Delaunay三角剖分");
 	input_data.CreateSubSampledDelaunayTriangulation(options.max_proj_dist, options.max_depth_dist, triangulation);
 	timer.stop();
@@ -1957,348 +1913,48 @@ void MeshManager::CreateMeshSimulatly(const Reconstruction& reconstruction) {
 	timer.printExecutionTimes();
 }
 
-//计算Feedback指标，并且生成渲染数据
-void MeshManager::GenerateRenderMeshData(const Reconstruction& reconstruction) {
-	// 标志位控制不同部分数据的生成
-	bool demo_flag = true; // 演示模式，仅用 image_track 指标
-	bool generate_colored_mesh = false; // 控制是否生成带颜色的网格数据
-	bool generate_heatmap = false;      // 控制是否生成热力点数据
-	bool generate_guides = false;       // 控制是否生成引导点、线和锥底面数据
-
-	std::shared_ptr<RenderingData> rendata = std::make_shared<RenderingData>();
+//生成渲染数据
+void MeshManager::GenerateRenderMeshData() {
+	if (renderdata) renderdata.reset();
+	std::shared_ptr<RenderData> rendata = std::make_shared<RenderData>();
 	using TriangleElement = std::tuple<image_t, point2D_t, point2D_t, point2D_t>;
-	std::vector<double> weights;
 
-	// 第一步：计算每个面片的质量指标 (GSD, img_track, reprojection_error)
-	for (auto& f : mesh->faces) {
-		PlyMeshVertex vertex1 = mesh->vertices[f.vertex_idx1];
-		PlyMeshVertex vertex2 = mesh->vertices[f.vertex_idx2];
-		PlyMeshVertex vertex3 = mesh->vertices[f.vertex_idx3];
-
-		auto& track1 = reconstruction.Point3D(vertex1.point3D_idx).Track().Elements();
-		auto& track2 = reconstruction.Point3D(vertex2.point3D_idx).Track().Elements();
-		auto& track3 = reconstruction.Point3D(vertex3.point3D_idx).Track().Elements();
-		f.img_track = static_cast<double>(track1.size() + track2.size() + track3.size()) / 3.0;
-
-		if (demo_flag) {
-			f.gsd = 0.0; // 在 demo 模式下不计算 GSD 和 reprojection_error
-			f.reprojection_error = 0.0;
-			f.area_weight = 0.0;
-			continue; // 跳过 demo 模式下不需要的计算
-		}
-
-		std::vector<TriangleElement> result;
-		std::unordered_map<image_t, point2D_t> map1, map2, map3;
-		for (const auto& elem : track1) { map1[elem.image_id] = elem.point2D_idx; }
-		for (const auto& elem : track2) { map2[elem.image_id] = elem.point2D_idx; }
-		for (const auto& elem : track3) { map3[elem.image_id] = elem.point2D_idx; }
-
-		for (const auto& pair1 : map1) {
-			image_t id = pair1.first;
-			if (map2.count(id) > 0 && map3.count(id) > 0) {
-				result.emplace_back(TriangleElement(id, pair1.second, map2[id], map3[id]));
+	//// 渲染基础Mesh网格
+	std::set<std::pair<size_t, size_t>> drawnEdges;
+	// 生成统一浅蓝色的网格
+	Eigen::Vector4f light_blue_color(0.678f, 0.847f, 0.902f, 1.0f); // 浅蓝色 RGBA
+	for (const auto& f : mesh->faces) {
+		const auto& v0 = mesh->vertices[f.vertex_idx1];
+		const auto& v1 = mesh->vertices[f.vertex_idx2];
+		const auto& v2 = mesh->vertices[f.vertex_idx3];
+		// 渲染面片
+		rendata->mesh_data.emplace_back(TrianglePainterData{
+			v0.x, v0.y, v0.z, light_blue_color(0), light_blue_color(1), light_blue_color(2), light_blue_color(3),
+			v1.x, v1.y, v1.z, light_blue_color(0), light_blue_color(1), light_blue_color(2), light_blue_color(3),
+			v2.x, v2.y, v2.z, light_blue_color(0), light_blue_color(1), light_blue_color(2), light_blue_color(3)
+			});
+		// 渲染边
+		std::vector<std::pair<size_t, size_t>> edges = {
+				{f.vertex_idx1,f.vertex_idx2},
+				{f.vertex_idx2,f.vertex_idx3},
+				{f.vertex_idx1,f.vertex_idx3},
+		};
+		for (auto& edge : edges) {
+			if (edge.first > edge.second) {
+				std::swap(edge.first, edge.second);
 			}
-		}
-
-		// 计算 3D 面积
-		double v1x = vertex2.x - vertex1.x, v1y = vertex2.y - vertex1.y, v1z = vertex2.z - vertex1.z;
-		double v2x = vertex3.x - vertex1.x, v2y = vertex3.y - vertex1.y, v2z = vertex3.z - vertex1.z;
-		double crossX = v1y * v2z - v1z * v2y;
-		double crossY = v1z * v2x - v1x * v2z;
-		double crossZ = v1x * v2y - v1y * v2x;
-		double area3d = 0.5 * std::sqrt(crossX * crossX + crossY * crossY + crossZ * crossZ);
-		f.area_weight = area3d;
-
-		// 计算 2D 最大投影面积
-		std::vector<double> areas2d;
-		double max_area2d = std::numeric_limits<double>::lowest(); // 修正初始值
-		for (const auto& tri : result) {
-			image_t img_id = std::get<0>(tri);
-			const auto& img = reconstruction.Image(img_id);
-			const Camera& cam = reconstruction.Camera(img.CameraId());
-			// int image_width = cam.Width(); // 未使用
-			// int image_height = cam.Height(); // 未使用
-			auto& p1 = img.Point2D(std::get<1>(tri));
-			auto& p2 = img.Point2D(std::get<2>(tri));
-			auto& p3 = img.Point2D(std::get<3>(tri));
-
-			double area2d = 0.5 * std::abs(p1.xy[0] * (p2.xy[1] - p3.xy[1]) +
-				p2.xy[0] * (p3.xy[1] - p1.xy[1]) + p3.xy[0] * (p1.xy[1] - p2.xy[1]));
-			areas2d.push_back(area2d);
-			if (area2d > max_area2d) max_area2d = area2d; // 更新最大值
-		}
-
-		// 计算 GSD
-		if (max_area2d > 0.0 && !std::isinf(max_area2d)) { // 更健壮的检查
-			f.gsd = std::sqrt(area3d / max_area2d);
-		}
-		else {
-			f.gsd = std::numeric_limits<double>::max(); // 或者一个默认大值
-		}
-
-		// 计算平均重投影误差
-		const auto& error1 = reconstruction.Point3D(vertex1.point3D_idx).Error();
-		const auto& error2 = reconstruction.Point3D(vertex2.point3D_idx).Error();
-		const auto& error3 = reconstruction.Point3D(vertex3.point3D_idx).Error();
-		f.reprojection_error = (error1 + error2 + error3) / 3.0;
-	}
-
-	// 第二步：基于质量指标计算每个面片的总质量权重 Qtotal
-	if (generate_colored_mesh || generate_heatmap || generate_guides) {
-		// 收集所有三角面片的指标值
-		std::vector<double> all_gsd, all_img_track, all_warping_score;
-		for (const auto& f : mesh->faces) {
-			all_gsd.push_back(f.gsd);
-			all_img_track.push_back(static_cast<double>(f.img_track));
-			all_warping_score.push_back(f.reprojection_error);
-		}
-
-		// 计算各指标的 5%-95% 分位数值（过滤极端值）
-		double gsd_min = 0.0, gsd_max = 0.0;
-		double img_track_min = 0.0, img_track_max = 0.0;
-		double warping_score_min = 0.0, warping_score_max = 0.0;
-
-		if (!all_gsd.empty()) {
-			std::sort(all_gsd.begin(), all_gsd.end());
-			size_t min_idx = static_cast<size_t>(all_gsd.size() * 0.05);
-			size_t max_idx = std::min(static_cast<size_t>(all_gsd.size() * 0.95), all_gsd.size() - 1); // 防止越界
-			gsd_min = all_gsd[min_idx];
-			gsd_max = all_gsd[max_idx];
-		}
-		if (!all_img_track.empty()) {
-			std::sort(all_img_track.begin(), all_img_track.end());
-			size_t min_idx = static_cast<size_t>(all_img_track.size() * 0.05);
-			size_t max_idx = std::min(static_cast<size_t>(all_img_track.size() * 0.95), all_img_track.size() - 1);
-			img_track_min = all_img_track[min_idx];
-			img_track_max = all_img_track[max_idx];
-		}
-		if (!all_warping_score.empty()) {
-			std::sort(all_warping_score.begin(), all_warping_score.end());
-			size_t min_idx = static_cast<size_t>(all_warping_score.size() * 0.05);
-			size_t max_idx = std::min(static_cast<size_t>(all_warping_score.size() * 0.95), all_warping_score.size() - 1);
-			warping_score_min = all_warping_score[min_idx];
-			warping_score_max = all_warping_score[max_idx];
-		}
-
-		// 设置权重
-		double w1 = demo_flag ? 0.0 : 0.1;  // GSD权重
-		double w2 = demo_flag ? 1.0 : 0.8;  // img_track权重
-		double w3 = demo_flag ? 0.0 : 0.1;  // warping_score权重
-
-		// 对每个三角面片归一化并计算总质量指标
-		for (auto& f : mesh->faces) {
-			double range_gsd = (gsd_max - gsd_min);
-			double range_img = (img_track_max - img_track_min);
-			double range_warp = (warping_score_max - warping_score_min);
-			if (range_gsd <= 0.0) range_gsd = 1.0;
-			if (range_img <= 0.0) range_img = 1.0;
-			if (range_warp <= 0.0) range_warp = 1.0;
-
-			double normalized_gsd = (gsd_max - f.gsd) / range_gsd;
-			double normalized_img_track = (f.img_track - img_track_min) / range_img;
-			double normalized_warping_score = (warping_score_max - f.reprojection_error) / range_warp;
-
-			normalized_gsd = std::max(0.0, std::min(1.0, normalized_gsd));
-			normalized_img_track = std::max(0.0, std::min(1.0, normalized_img_track));
-			normalized_warping_score = std::max(0.0, std::min(1.0, normalized_warping_score));
-
-			f.Qtotal = w1 * normalized_gsd +
-				w2 * normalized_img_track +
-				w3 * normalized_warping_score;
-			weights.push_back(f.Qtotal);
-		}
-	}
-	else {
-		// 如果不生成彩色网格或后续数据，则 Qtotal 和 weights 可以是默认值
-		for (const auto& f : mesh->faces) {
-			weights.push_back(0.0); // 或者根据需要填充
-		}
-	}
-
-
-	// 第三步：生成渲染数据
-	// 1. 生成网格数据 (Mesh Data)
-	if (generate_colored_mesh) {
-		// 生成带颜色的网格
-		std::vector<double> quantiles;
-		auto colors = generateColorsWithQuantiles(weights, quantiles); // 这会填充 quantiles
-		for (size_t idx = 0; idx < mesh->faces.size(); ++idx) {
-			const auto& f = mesh->faces[idx];
-			const auto& v0 = mesh->vertices[f.vertex_idx1];
-			const auto& v1 = mesh->vertices[f.vertex_idx2];
-			const auto& v2 = mesh->vertices[f.vertex_idx3];
-			rendata->mesh_data.emplace_back(TrianglePainterData{
-				v0.x, v0.y, v0.z, colors[idx](0), colors[idx](1), colors[idx](2), colors[idx](3),
-				v1.x, v1.y, v1.z, colors[idx](0), colors[idx](1), colors[idx](2), colors[idx](3),
-				v2.x, v2.y, v2.z, colors[idx](0), colors[idx](1), colors[idx](2), colors[idx](3)
-				});
-		}
-	}
-	else {
-		// 生成统一浅蓝色的网格
-		Eigen::Vector4f light_blue_color(0.678f, 0.847f, 0.902f, 1.0f); // 浅蓝色 RGBA
-		for (const auto& f : mesh->faces) {
-			const auto& v0 = mesh->vertices[f.vertex_idx1];
-			const auto& v1 = mesh->vertices[f.vertex_idx2];
-			const auto& v2 = mesh->vertices[f.vertex_idx3];
-			rendata->mesh_data.emplace_back(TrianglePainterData{
-				v0.x, v0.y, v0.z, light_blue_color(0), light_blue_color(1), light_blue_color(2), light_blue_color(3),
-				v1.x, v1.y, v1.z, light_blue_color(0), light_blue_color(1), light_blue_color(2), light_blue_color(3),
-				v2.x, v2.y, v2.z, light_blue_color(0), light_blue_color(1), light_blue_color(2), light_blue_color(3)
-				});
-		}
-	}
-
-	// 如果不需要生成热力图、引导数据和锥底，则直接结束
-	if (!(generate_heatmap || generate_guides)) {
-		renderdata.reset();
-		renderdata = rendata;
-		return;
-	}
-
-	// 准备后续数据所需的基础信息
-	std::vector<Eigen::Vector3f> camera_centers;
-	for (const auto& [imgid, img] : input_data.images) {
-		camera_centers.emplace_back(img.proj_center);
-	}
-
-	Eigen::Vector3f plane_normal(0.0f, 0.0f, 1.0f); // 使用 Z 轴为法向量
-	Eigen::Vector3f avg_cam_center(0.0f, 0.0f, 0.0f);
-	for (const auto& c : camera_centers) avg_cam_center += c;
-	if (!camera_centers.empty()) avg_cam_center /= static_cast<float>(camera_centers.size());
-	Eigen::Vector3f plane_point = avg_cam_center;
-
-	std::vector<Eigen::Vector3f> low_quality_normals;
-	std::vector<Eigen::Vector3f> low_quality_centers;
-	std::vector<double> quantiles_for_guides; // 为引导数据单独计算或复用
-	if (generate_heatmap || generate_guides) {
-		generateColorsWithQuantiles(weights, quantiles_for_guides); // 确保 quantiles_for_guides 被填充
-	}
-
-	// 2. 生成热力点数据 (Heatmap Points) 和/或 收集引导数据所需信息
-	if (generate_heatmap || generate_guides) {
-		double min_quality = *std::min_element(weights.begin(), weights.end());
-		double max_quality = *std::max_element(weights.begin(), weights.end());
-
-		for (size_t idx = 0; idx < mesh->faces.size(); ++idx) {
-			const auto& f = mesh->faces[idx];
-			const auto& v0 = mesh->vertices[f.vertex_idx1];
-			const auto& v1 = mesh->vertices[f.vertex_idx2];
-			const auto& v2 = mesh->vertices[f.vertex_idx3];
-			Eigen::Vector3f p0(v0.x, v0.y, v0.z);
-			Eigen::Vector3f p1(v1.x, v1.y, v1.z);
-			Eigen::Vector3f p2(v2.x, v2.y, v2.z);
-			Eigen::Vector3f center = (p0 + p1 + p2) / 3.0f;
-			Eigen::Vector3f normal = (p1 - p0).cross(p2 - p0).normalized();
-			if (normal.z() < 0) normal = -normal;
-
-			// 投影到基平面
-			Eigen::Vector3f dir = center - plane_point;
-			float distance = dir.dot(plane_normal);
-			Eigen::Vector3f proj = center - distance * plane_normal;
-
-			if (generate_heatmap) {
-				// 使用 generateColorsWithQuantiles 的分位数输出
-				double q = quantiles_for_guides[idx]; // 使用已计算的 quantiles
-				Eigen::Vector4f color;
-				if (q < 0.5) {
-					float t = static_cast<float>(q / 0.5);
-					color = (1 - t) * Eigen::Vector4f(0.0f, 1.0f, 0.0f, 1.0f) + t * Eigen::Vector4f(1.0f, 1.0f, 0.0f, 1.0f);
-				}
-				else {
-					float t = static_cast<float>((q - 0.5) / 0.5);
-					color = (1 - t) * Eigen::Vector4f(1.0f, 1.0f, 0.0f, 1.0f) + t * Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f);
-				}
-
-				float spread = 0.1f;
-				int steps = 1;
-				for (int dx = -steps; dx <= steps; ++dx) {
-					for (int dy = -steps; dy <= steps; ++dy) {
-						float offset_x = dx * spread;
-						float offset_y = dy * spread;
-						Eigen::Vector3f p = proj + offset_x * Eigen::Vector3f::UnitX() + offset_y * Eigen::Vector3f::UnitY();
-						float factor = 1.0f - 0.3f * (std::abs(dx) + std::abs(dy));
-						factor = std::max(factor, 0.0f);
-						Eigen::Vector4f c = factor * color;
-						c[3] = 1.0f;
-						rendata->heatmap_points.emplace_back(PointPainterData{ p.x(), p.y(), p.z(), c(0), c(1), c(2), c(3) });
-					}
-				}
-			}
-
-			if (generate_guides && quantiles_for_guides[idx] <= 0.15) {
-				low_quality_centers.push_back(center);
-				low_quality_normals.push_back(normal);
-			}
-		}
-	}
-
-	// 如果不需要生成引导数据和锥底，则直接结束
-	if (!generate_guides) {
-		renderdata.reset();
-		renderdata = rendata;
-		return;
-	}
-
-	// 3. 生成引导点、线和锥底面数据 (Guide Points, Lines, Base Faces)
-	if (generate_guides && !low_quality_centers.empty()) {
-		DBSCAN dbscan(0.15f, 10);
-		std::vector<int> cluster_labels = dbscan.fit(low_quality_centers);
-		std::map<int, std::vector<int>> clusters;
-		for (int i = 0; i < cluster_labels.size(); ++i) {
-			if (cluster_labels[i] != -1) {
-				clusters[cluster_labels[i]].push_back(i);
-			}
-		}
-
-		for (const auto& [cluster_id, indices] : clusters) {
-			std::vector<Eigen::Vector3f> inter_points;
-			for (int idx : indices) {
-				const Eigen::Vector3f& center = low_quality_centers[idx];
-				const Eigen::Vector3f& normal = low_quality_normals[idx];
-
-				float denom = normal.dot(plane_normal);
-				if (std::abs(denom) < 1e-4f) continue;
-
-				float t = -(center - plane_point).dot(plane_normal) / denom;
-				if (-t > 5.5f) continue; // 过滤 t 距离
-
-				Eigen::Vector3f pt = center + t * normal;
-				inter_points.push_back(pt);
-
-				// 渲染紫色点
-				rendata->guide_points.emplace_back(PointPainterData{ pt.x(), pt.y(), pt.z(), 1.0f, 0.0f, 1.0f, 1.0f });
-
-				// 渲染方向线
-				Eigen::Vector3f dir = center - pt;
-				Eigen::Vector3f mid_point = pt + 0.5f * dir;
-				rendata->guide_lines.emplace_back(LinePainterData{
-					pt.x(), pt.y(), pt.z(), 0.0f, 1.0f, 0.0f, 1.0f,
-					mid_point.x(), mid_point.y(), mid_point.z(), 0.0f, 1.0f, 0.0f, 1.0f
+			if (drawnEdges.find(edge) == drawnEdges.end()) {
+				drawnEdges.insert(edge);
+				const auto& edgeFirst = mesh->vertices[edge.first];
+				const auto& edgeSecond = mesh->vertices[edge.second];
+				rendata->mesh_lines.emplace_back(LinePainterData{
+					edgeFirst.x,edgeFirst.y,edgeFirst.z,0.0 , 0.7 , 0.0 , 1.0,
+					edgeSecond.x,edgeSecond.y,edgeSecond.z,0.0 , 0.7 , 0.0 , 1.0
 					});
 			}
-
-			// 构造锥底三角形扇面
-			if (inter_points.size() >= 3) {
-				Eigen::Vector3f center = std::accumulate(inter_points.begin(), inter_points.end(), Eigen::Vector3f(0, 0, 0)) / inter_points.size();
-
-				std::sort(inter_points.begin(), inter_points.end(), [center](const Eigen::Vector3f& a, const Eigen::Vector3f& b) {
-					return std::atan2(a.y() - center.y(), a.x() - center.x()) < std::atan2(b.y() - center.y(), b.x() - center.x());
-					});
-
-				Eigen::Vector4f base_color(1.0f, 1.0f, 0.0f, 0.8f); // 黄色
-				for (size_t i = 1; i + 1 < inter_points.size(); ++i) {
-					rendata->base_faces.emplace_back(TrianglePainterData{
-						center.x(), center.y(), center.z(), base_color(0), base_color(1), base_color(2), base_color(3),
-						inter_points[i].x(), inter_points[i].y(), inter_points[i].z(), base_color(0), base_color(1), base_color(2), base_color(3),
-						inter_points[i + 1].x(), inter_points[i + 1].y(), inter_points[i + 1].z(), base_color(0), base_color(1), base_color(2), base_color(3)
-						});
-				}
-			}
 		}
 	}
 
-	renderdata.reset();
 	renderdata = rendata;
 }
 

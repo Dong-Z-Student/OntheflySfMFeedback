@@ -4,6 +4,7 @@
 
 #include "../Scene/Database.h"
 #include "../Scene/ReconstructionManager.h"
+#include "../Scene/RenderData.h"
 #include "EstimateTask.h"
 #include "ExtractTask.h"
 #include "FeedbackTask.h"
@@ -12,6 +13,7 @@
 #include "ReadTask.h"
 #include "ReconstructTask.h"
 #include "RetrieveTask.h"
+#include "WorkData.h"
 #include <QMutex>
 #include <QObject>
 #include <QString>
@@ -29,6 +31,7 @@ public:
 
 	void setData(Database* p_database, ReconstructionManager* p_modelManager);
 	void LoadPython();
+	std::shared_ptr<const RenderData> GetRenderingData() const { return m_workData->render_data; }
 
 signals:
 	void readImageFinished(QString p_imagePath);
