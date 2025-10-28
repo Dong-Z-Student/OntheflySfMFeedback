@@ -88,6 +88,11 @@ namespace {
 		return Eigen::Vector3f(point.x(), point.y(), point.z());
 	}
 
+	struct TrackPoint2D {
+		Eigen::Vector2f position = Eigen::Vector2f::Zero();
+		image_t image_id = 0;
+		uint32_t point2d_idx = 0;
+	};
 }
 
 struct DelaunayMeshingOptions {
@@ -249,7 +254,9 @@ public:
 	struct Point {
 		Eigen::Vector3f position = Eigen::Vector3f::Zero();
 		uint32_t num_visible_images = 0;
+		double pro_error = 0.0;
 		std::vector<image_t> visible_images_ids;
+		std::vector<TrackPoint2D> point2ds;
 	};
 
 	tbb::concurrent_unordered_map<camera_t, Camera> cameras;
@@ -516,6 +523,7 @@ public:
 		const std::vector<Delaunay::Facet>& surface_facets,
 		const std::vector<float>& surface_facet_side_lengths);
 
+	std::vector<double> QualityAssessment();
 
 	void GenerateRenderMeshData();
 

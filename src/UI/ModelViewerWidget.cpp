@@ -363,6 +363,7 @@ void ModelViewerWidget::paintGL() {
 	// Feedback
 	mesh_line_painter_.Render(pmv_matrix, width(), height(), 1);
 	mesh_triangle_painter_.Render(pmv_matrix);
+	quality_triangle_painter_.Render(pmv_matrix);
 }
 
 void ModelViewerWidget::resizeGL(int width, int height) {
@@ -413,7 +414,8 @@ void ModelViewerWidget::ReloadFeedback(bool showMesh, bool showQuality, bool sho
 {
 	try
 	{
-		UploadMeshData(showMesh);
+		UploadMeshData(showMesh, !showQuality);
+		UploadQualityData(showQuality);
 		update();
 	}
 	catch (const std::exception& e)
@@ -850,6 +852,7 @@ void ModelViewerWidget::SetupPainters() {
 
 	mesh_triangle_painter_.Setup();//Mesh表面
 	mesh_line_painter_.Setup();//Mesh轮廓线
+	quality_triangle_painter_.Setup();//质量评估三角面片
 
 	movie_grabber_path_painter_.Setup();
 	movie_grabber_line_painter_.Setup();
@@ -1215,14 +1218,13 @@ void ModelViewerWidget::UploadImageConnectionData() {
 void ModelViewerWidget::UploadMovieGrabberData() {
 }
 
-void ModelViewerWidget::UploadMeshData(bool showMesh, bool showMeshline)
+void ModelViewerWidget::UploadMeshData(bool showMesh, bool showMeshface, bool showMeshline)
 {
 	makeCurrent();
 
 	std::vector<TrianglePainter::Data> triangle_data;
 	std::vector<LinePainter::Data> line_data;
 	if (showMesh) {
-		triangle_data.reserve(render_data->mesh_data.size());
 		if (showMeshline) {
 			line_data.reserve(render_data->mesh_lines.size());
 			for (const auto& line : render_data->mesh_lines) {
@@ -1232,7 +1234,36 @@ void ModelViewerWidget::UploadMeshData(bool showMesh, bool showMeshline)
 				);
 			}
 		}
-		for (const auto& pts : render_data->mesh_data) {
+		if (showMeshface) {
+			triangle_data.reserve(render_data->mesh_data.size());
+			for (const auto& pts : render_data->mesh_data) {
+				triangle_data.emplace_back(
+					PointPainter::Data(
+						pts[0], pts[1], pts[2], pts[3], pts[4], pts[5], pts[6]
+					),
+					PointPainter::Data(
+						pts[7], pts[8], pts[9], pts[10], pts[11], pts[12], pts[13]
+					),
+					PointPainter::Data(
+						pts[14], pts[15], pts[16], pts[17], pts[18], pts[19], pts[20]
+					)
+				);
+			}
+		}
+	}
+
+	mesh_line_painter_.Upload(line_data);
+	mesh_triangle_painter_.Upload(triangle_data);
+}
+
+void ModelViewerWidget::UploadQualityData(bool showQuality)
+{
+	makeCurrent();
+
+	std::vector<TrianglePainter::Data> triangle_data;
+	if (showQuality) {
+		triangle_data.reserve(render_data->quality_data.size());
+		for (const auto& pts : render_data->quality_data) {
 			triangle_data.emplace_back(
 				PointPainter::Data(
 					pts[0], pts[1], pts[2], pts[3], pts[4], pts[5], pts[6]
@@ -1247,8 +1278,7 @@ void ModelViewerWidget::UploadMeshData(bool showMesh, bool showMeshline)
 		}
 	}
 
-	mesh_line_painter_.Upload(line_data);
-	mesh_triangle_painter_.Upload(triangle_data);
+	quality_triangle_painter_.Upload(triangle_data);
 }
 
 void ModelViewerWidget::ComposeProjectionMatrix() {

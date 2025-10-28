@@ -211,6 +211,39 @@ namespace {
 
 		outFile.close();
 	}
+
+	struct TrackPointTriplet {
+		TrackPoint2D point_a, point_b, point_c;
+	};
+
+	std::vector<TrackPointTriplet> common_image_points(
+		const std::vector<TrackPoint2D>& point2ds_a,
+		const std::vector<TrackPoint2D>& point2ds_b,
+		const std::vector<TrackPoint2D>& point2ds_c) {
+
+		std::unordered_map<uint32_t, TrackPoint2D> map_a, map_b, map_c;
+
+		for (const auto& point : point2ds_a) {
+			map_a[point.image_id] = point;
+		}
+		for (const auto& point : point2ds_b) {
+			map_b[point.image_id] = point;
+		}
+		for (const auto& point : point2ds_c) {
+			map_c[point.image_id] = point;
+		}
+
+		std::vector<TrackPointTriplet> result;
+		for (const auto& [id, point_a] : map_a) {
+			auto it_b = map_b.find(id);
+			auto it_c = map_c.find(id);
+
+			if (it_b != map_b.end() && it_c != map_c.end()) {
+				result.push_back({ point_a, it_b->second, it_c->second });
+			}
+		}
+		return result;
+	}
 }
 
 // DelaunayMeshingInput implementation
@@ -221,6 +254,7 @@ void DelaunayMeshingInput::ReadSparseReconstruction(const std::string& path) {
 }
 
 void DelaunayMeshingInput::CopyFromSparseReconstruction(const Reconstruction& reconstruction) {
+	images.clear(); points.clear(); cameras.clear();
 	images.reserve(reconstruction.NumRegImages());
 	points.reserve(reconstruction.NumPoints3D());
 
@@ -230,6 +264,13 @@ void DelaunayMeshingInput::CopyFromSparseReconstruction(const Reconstruction& re
 		DelaunayMeshingInput::Point input_point;
 		input_point.position = point3D.second.XYZ().cast<float>();
 		input_point.num_visible_images = point3D.second.Track().Length();
+		input_point.pro_error = point3D.second.Error();
+		for (const auto& element : point3D.second.Track().Elements()) {
+			input_point.visible_images_ids.emplace_back(element.image_id);
+			const auto& img = reconstruction.Image(element.image_id);
+			const auto& p = img.Point2D(element.point2D_idx);
+			input_point.point2ds.emplace_back(TrackPoint2D{ {p.xy[0], p.xy[1]}, element.image_id, element.point2D_idx });
+		}
 		points[point3D.first] = input_point;
 	}
 
@@ -243,7 +284,6 @@ void DelaunayMeshingInput::CopyFromSparseReconstruction(const Reconstruction& re
 		for (const auto& point2D : image.Points2D()) {
 			if (point2D.HasPoint3D()) {
 				input_image.point_ids.push_back(point2D.point3D_id);
-				points[point2D.point3D_id].visible_images_ids.push_back(image_id);
 			}
 		}
 		images[image_id] = input_image;
@@ -262,51 +302,52 @@ void DelaunayMeshingInput::CopyFromSparseReconstruction(const Reconstruction& re
 	}
 
 	// 为每个modified_images影像添加虚拟三维点
-	point3D_t next_virtual_id = std::numeric_limits<point3D_t>::max();
-
-	for (const auto& image_id : modified_images) {
-		auto& image = images[image_id];
-		// 收集所有已关联三维点的位置
-		std::vector<Eigen::Vector3f> point_positions;
-		for (const auto& pid : image.point_ids) {
-			auto it = points.find(pid);
-			if (it != points.end()) {
-				point_positions.push_back(it->second.position);
-			}
-		}
-		Eigen::Vector3f cam_center = image.proj_center;
-		float min_dist = std::numeric_limits<float>::max();
-		Eigen::Vector3f avg_dir = Eigen::Vector3f::Zero();
-		int valid_count = 0;
-		for (const auto& pos : point_positions) {
-			Eigen::Vector3f dir = pos - cam_center;
-			float dist = dir.norm();
-			if (dist > 1e-6) {
-				avg_dir += dir.normalized();
-				if (dist < min_dist) min_dist = dist;
-				++valid_count;
-			}
-		}
-		if (valid_count > 0) {
-			avg_dir /= static_cast<float>(valid_count);
-		}
-		else {
-			avg_dir = Eigen::Vector3f(1.0f, 0.0f, 0.0f);
-			min_dist = 1.0f;
-		}
-		if (avg_dir.norm() < 1e-6) avg_dir = Eigen::Vector3f(1.0f, 0.0f, 0.0f);
-		avg_dir.normalize();
-		float virtual_dist = min_dist * 0.8f;
-		Eigen::Vector3f virtual_pos = cam_center + avg_dir * virtual_dist;
-		// 生成虚拟点ID
-		--next_virtual_id;
-		DelaunayMeshingInput::Point fake_point;
-		fake_point.position = virtual_pos;
-		fake_point.num_visible_images = 1;
-		fake_point.visible_images_ids.push_back(image_id);
-		points[next_virtual_id] = fake_point;
-		modified_points.emplace(next_virtual_id);
-	}
+	//{
+	//	point3D_t next_virtual_id = std::numeric_limits<point3D_t>::max();
+	//	for (const auto& image_id : modified_images) {
+	//		auto& image = images[image_id];
+	//		// 收集所有已关联三维点的位置
+	//		std::vector<Eigen::Vector3f> point_positions;
+	//		for (const auto& pid : image.point_ids) {
+	//			auto it = points.find(pid);
+	//			if (it != points.end()) {
+	//				point_positions.push_back(it->second.position);
+	//			}
+	//		}
+	//		Eigen::Vector3f cam_center = image.proj_center;
+	//		float min_dist = std::numeric_limits<float>::max();
+	//		Eigen::Vector3f avg_dir = Eigen::Vector3f::Zero();
+	//		int valid_count = 0;
+	//		for (const auto& pos : point_positions) {
+	//			Eigen::Vector3f dir = pos - cam_center;
+	//			float dist = dir.norm();
+	//			if (dist > 1e-6) {
+	//				avg_dir += dir.normalized();
+	//				if (dist < min_dist) min_dist = dist;
+	//				++valid_count;
+	//			}
+	//		}
+	//		if (valid_count > 0) {
+	//			avg_dir /= static_cast<float>(valid_count);
+	//		}
+	//		else {
+	//			avg_dir = Eigen::Vector3f(1.0f, 0.0f, 0.0f);
+	//			min_dist = 1.0f;
+	//		}
+	//		if (avg_dir.norm() < 1e-6) avg_dir = Eigen::Vector3f(1.0f, 0.0f, 0.0f);
+	//		avg_dir.normalize();
+	//		float virtual_dist = min_dist * 0.8f;
+	//		Eigen::Vector3f virtual_pos = cam_center + avg_dir * virtual_dist;
+	//		// 生成虚拟点ID
+	//		--next_virtual_id;
+	//		DelaunayMeshingInput::Point fake_point;
+	//		fake_point.position = virtual_pos;
+	//		fake_point.num_visible_images = 1;
+	//		fake_point.visible_images_ids.push_back(image_id);
+	//		points[next_virtual_id] = fake_point;
+	//		modified_points.emplace(next_virtual_id);
+	//	}
+	//}
 }
 
 void DelaunayMeshingInput::UpdateFromSparseReconstruction(const Reconstruction& reconstruction) {
@@ -1606,6 +1647,128 @@ std::shared_ptr<PlyMesh> MeshManager::FilterSurfaceFacetsWithBoundaryAdaptation(
 	return filtered_mesh;
 }
 
+std::vector<double> MeshManager::QualityAssessment()
+{
+	using TriangleElement = std::tuple<image_t, point2D_t, point2D_t, point2D_t>;
+	std::vector<double> weights;
+
+	// 第一步：计算每个面片的质量指标 (GSD, img_track, reprojection_error)
+	for (auto& f : mesh->faces) {
+		PlyMeshVertex vertex1 = mesh->vertices[f.vertex_idx1];
+		PlyMeshVertex vertex2 = mesh->vertices[f.vertex_idx2];
+		PlyMeshVertex vertex3 = mesh->vertices[f.vertex_idx3];
+
+		auto& track1 = input_data.points[vertex1.point3D_idx].point2ds;
+		auto& track2 = input_data.points[vertex2.point3D_idx].point2ds;
+		auto& track3 = input_data.points[vertex3.point3D_idx].point2ds;
+		f.img_track = static_cast<double>(track1.size() + track2.size() + track3.size()) / 3.0;
+
+		std::vector<TrackPointTriplet> result = common_image_points(track1, track2, track3);
+
+		// 计算 3D 面积
+		double v1x = vertex2.x - vertex1.x, v1y = vertex2.y - vertex1.y, v1z = vertex2.z - vertex1.z;
+		double v2x = vertex3.x - vertex1.x, v2y = vertex3.y - vertex1.y, v2z = vertex3.z - vertex1.z;
+		double crossX = v1y * v2z - v1z * v2y;
+		double crossY = v1z * v2x - v1x * v2z;
+		double crossZ = v1x * v2y - v1y * v2x;
+		double area3d = 0.5 * std::sqrt(crossX * crossX + crossY * crossY + crossZ * crossZ);
+		f.area_weight = area3d;
+
+		// 计算 2D 最大投影面积
+		std::vector<double> areas2d;
+		double max_area2d = std::numeric_limits<double>::lowest(); // 修正初始值
+		for (const auto& triplet : result) {
+			const auto& p1 = triplet.point_a.position;
+			const auto& p2 = triplet.point_b.position;
+			const auto& p3 = triplet.point_c.position;
+
+			double area2d = 0.5 * std::abs(p1.x() * (p2.y() - p3.y()) +
+				p2.x() * (p3.y() - p1.y()) + p3.x() * (p1.y() - p2.y()));
+			areas2d.push_back(area2d);
+			if (area2d > max_area2d) max_area2d = area2d; // 更新最大值
+		}
+
+		// 计算 GSD
+		if (max_area2d > 0.0 && !std::isinf(max_area2d)) { // 更健壮的检查
+			f.gsd = std::sqrt(area3d / max_area2d);
+		}
+		else {
+			f.gsd = std::numeric_limits<double>::max(); // 或者一个默认大值
+		}
+
+		// 计算平均重投影误差
+		const auto& error1 = input_data.points[vertex1.point3D_idx].pro_error;
+		const auto& error2 = input_data.points[vertex2.point3D_idx].pro_error;
+		const auto& error3 = input_data.points[vertex3.point3D_idx].pro_error;
+		f.reprojection_error = (error1 + error2 + error3) / 3.0;
+	}
+
+	// 第二步：基于质量指标计算每个面片的总质量权重 Qtotal
+	// 收集所有三角面片的指标值
+	std::vector<double> all_gsd, all_img_track, all_warping_score;
+	for (const auto& f : mesh->faces) {
+		all_gsd.push_back(f.gsd);
+		all_img_track.push_back(static_cast<double>(f.img_track));
+		all_warping_score.push_back(f.reprojection_error);
+	}
+
+	// 计算各指标的 5%-95% 分位数值（过滤极端值）
+	double gsd_min = 0.0, gsd_max = 0.0;
+	double img_track_min = 0.0, img_track_max = 0.0;
+	double warping_score_min = 0.0, warping_score_max = 0.0;
+
+	if (!all_gsd.empty()) {
+		std::sort(all_gsd.begin(), all_gsd.end());
+		size_t min_idx = static_cast<size_t>(all_gsd.size() * 0.05);
+		size_t max_idx = std::min(static_cast<size_t>(all_gsd.size() * 0.95), all_gsd.size() - 1); // 防止越界
+		gsd_min = all_gsd[min_idx];
+		gsd_max = all_gsd[max_idx];
+	}
+	if (!all_img_track.empty()) {
+		std::sort(all_img_track.begin(), all_img_track.end());
+		size_t min_idx = static_cast<size_t>(all_img_track.size() * 0.05);
+		size_t max_idx = std::min(static_cast<size_t>(all_img_track.size() * 0.95), all_img_track.size() - 1);
+		img_track_min = all_img_track[min_idx];
+		img_track_max = all_img_track[max_idx];
+	}
+	if (!all_warping_score.empty()) {
+		std::sort(all_warping_score.begin(), all_warping_score.end());
+		size_t min_idx = static_cast<size_t>(all_warping_score.size() * 0.05);
+		size_t max_idx = std::min(static_cast<size_t>(all_warping_score.size() * 0.95), all_warping_score.size() - 1);
+		warping_score_min = all_warping_score[min_idx];
+		warping_score_max = all_warping_score[max_idx];
+	}
+
+	// 设置权重
+	double w1 = 0.1;  // GSD权重
+	double w2 = 0.8;  // img_track权重
+	double w3 = 0.1;  // warping_score权重
+
+	// 对每个三角面片归一化并计算总质量指标
+	for (auto& f : mesh->faces) {
+		double range_gsd = (gsd_max - gsd_min);
+		double range_img = (img_track_max - img_track_min);
+		double range_warp = (warping_score_max - warping_score_min);
+		if (range_gsd <= 0.0) range_gsd = 1.0;
+		if (range_img <= 0.0) range_img = 1.0;
+		if (range_warp <= 0.0) range_warp = 1.0;
+
+		double normalized_gsd = (gsd_max - f.gsd) / range_gsd;
+		double normalized_img_track = (f.img_track - img_track_min) / range_img;
+		double normalized_warping_score = (warping_score_max - f.reprojection_error) / range_warp;
+
+		normalized_gsd = std::max(0.0, std::min(1.0, normalized_gsd));
+		normalized_img_track = std::max(0.0, std::min(1.0, normalized_img_track));
+		normalized_warping_score = std::max(0.0, std::min(1.0, normalized_warping_score));
+
+		f.Qtotal = w1 * normalized_gsd +
+			w2 * normalized_img_track +
+			w3 * normalized_warping_score;
+		weights.push_back(f.Qtotal);
+	}
+
+	return weights;
+}
 
 // 渐进式连续构建Mesh，权重部分累积，提取部分重新构建
 void MeshManager::CreateMeshSimulatly(const Reconstruction& reconstruction) {
@@ -1953,6 +2116,22 @@ void MeshManager::GenerateRenderMeshData() {
 					});
 			}
 		}
+	}
+
+	// 质量评估计算，生成渲染数据
+	std::vector<double> quantiles;
+	auto weights = QualityAssessment();
+	auto colors = generateColorsWithQuantiles(weights, quantiles); // 填充 quantiles
+	for (size_t idx = 0; idx < mesh->faces.size(); ++idx) {
+		const auto& f = mesh->faces[idx];
+		const auto& v0 = mesh->vertices[f.vertex_idx1];
+		const auto& v1 = mesh->vertices[f.vertex_idx2];
+		const auto& v2 = mesh->vertices[f.vertex_idx3];
+		rendata->quality_data.emplace_back(TrianglePainterData{
+			v0.x, v0.y, v0.z, colors[idx](0), colors[idx](1), colors[idx](2), colors[idx](3),
+			v1.x, v1.y, v1.z, colors[idx](0), colors[idx](1), colors[idx](2), colors[idx](3),
+			v2.x, v2.y, v2.z, colors[idx](0), colors[idx](1), colors[idx](2), colors[idx](3)
+			});
 	}
 
 	renderdata = rendata;

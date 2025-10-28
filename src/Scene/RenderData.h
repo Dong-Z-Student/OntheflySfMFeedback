@@ -12,6 +12,7 @@ using TrianglePainterData = std::array<float, 21>;
 struct RenderData {
 	std::vector<TrianglePainterData>    mesh_data;
 	std::vector<LinePainterData>        mesh_lines;
+	std::vector<TrianglePainterData>    quality_data;
 	std::vector<LinePainterData>        guide_lines;
 	std::vector<PointPainterData>       guide_points;
 	std::vector<PointPainterData>       heatmap_points;

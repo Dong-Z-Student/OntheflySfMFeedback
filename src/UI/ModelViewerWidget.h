@@ -124,7 +124,8 @@ private:
 	void UploadImageData(bool selection_mode = false);
 	void UploadImageConnectionData();
 	void UploadMovieGrabberData();
-	void UploadMeshData(bool showMesh = true, bool showMeshline = true);
+	void UploadMeshData(bool showMesh = true, bool showMeshface = true, bool showMeshline = true);
+	void UploadQualityData(bool showQuality = true);
 
 	void ComposeProjectionMatrix();
 
@@ -155,6 +156,7 @@ private:
 	//Feedback Painter
 	TrianglePainter mesh_triangle_painter_;
 	LinePainter mesh_line_painter_;
+	TrianglePainter quality_triangle_painter_;
 
 	Database* database = nullptr;
 

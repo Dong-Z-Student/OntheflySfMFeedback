@@ -444,17 +444,33 @@ void MainWindow::OnShowMeshChanged()
 
 void MainWindow::OnShowQualityChanged()
 {
+	if (!modelViewerWidget->render_data) {
+		return;
+	}
+	bool p_showMesh = showMeshAction->isChecked();
+	bool p_showQuality = showQualityAction->isChecked();
+	bool p_showPath = showGuidePathAction->isChecked();
+	modelViewerWidget->ReloadFeedback(p_showMesh, p_showQuality, p_showPath);
 }
 
 void MainWindow::OnShowGuidePathChanged()
 {
+	if (!modelViewerWidget->render_data) {
+		return;
+	}
+	bool p_showMesh = showMeshAction->isChecked();
+	bool p_showQuality = showQualityAction->isChecked();
+	bool p_showPath = showGuidePathAction->isChecked();
+	modelViewerWidget->ReloadFeedback(p_showMesh, p_showQuality, p_showPath);
 }
 
 void MainWindow::OnFeedback()
 {
 	modelViewerWidget->render_data = workflow->GetRenderingData();
 	bool p_showMesh = showMeshAction->isChecked();
-	modelViewerWidget->ReloadFeedback(p_showMesh);
+	bool p_showQuality = showQualityAction->isChecked();
+	bool p_showPath = showGuidePathAction->isChecked();
+	modelViewerWidget->ReloadFeedback(p_showMesh, p_showQuality, p_showPath);
 }
 
 // ================== 组件通讯 ===============

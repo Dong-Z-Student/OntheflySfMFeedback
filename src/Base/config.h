@@ -16,6 +16,7 @@ struct SfMConfig {
 struct PipelineConfig {
 	bool AutoRunImages;
 	bool AutoExportModel;
+	int AutoExportFrame;
 	int MinEstimatedImageNum;
 };
 
@@ -76,6 +77,7 @@ private:
 		// [Pipeline]
 		pipeline.AutoRunImages = pt.get<bool>("Pipeline.AutoRunImages", true);
 		pipeline.AutoExportModel = pt.get<bool>("Pipeline.AutoExportModel", false);
+		pipeline.AutoExportFrame = pt.get<int>("Pipeline.AutoExportFrame", 1);
 		pipeline.MinEstimatedImageNum = pt.get<int>("Pipeline.InitialImagesNum", 20);
 
 		// [Python]
