@@ -38,6 +38,7 @@ signals:
 	void reconstructUpdated(); // refresh the model in model viewer
 	void changeLastRegistedImageID(quint32 imageID);
 	void feedbackFinished();
+	void updateSimulationSpeed(quint32 estimated, quint32 reconstructed);// 更新模拟器传入影像的速度
 
 public slots:
 	void onProcessNewImage(const QString& value); // 传入影像，启动工作流

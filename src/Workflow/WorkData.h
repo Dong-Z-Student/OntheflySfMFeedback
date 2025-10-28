@@ -111,7 +111,6 @@ public:
 	ReconstructionManager* getModelManager() { return modelManager; }
 	IncrementalMapper* getIncrementalMapper() { return mapper; }
 	std::set<size_t> getImageIDsMask() { return imageIDsMask; }
-
 	CGlobalFeatureExtractor* getGlobalFeatureExtractor() const { return globalFeatureExtractor; }
 	CGlobalFeatureRetriever* getGlobalFeatureRetriever() const { return globalFeatureRetriever; }
 	void setGlobalFeatureFunc(CGlobalFeatureExtractor* p_globalFeatureExtractor,

@@ -230,6 +230,7 @@ void MainWindow::SetupConnections() const {
 	connect(workflow, &WorkFlow::reconstructUpdated, this, &MainWindow::RenderNow);
 	connect(workflow, &WorkFlow::changeLastRegistedImageID, this, &MainWindow::SetModelWidgetLastRegistedImageID);
 	connect(workflow, &WorkFlow::feedbackFinished, this, &MainWindow::OnFeedback);
+	connect(workflow, &WorkFlow::updateSimulationSpeed, this, &MainWindow::UpdateSimulationSpeed);
 }
 
 // ================= 业务逻辑 =================
@@ -243,7 +244,7 @@ void MainWindow::RunFunc() {
 	for (int i = 0; i < images.size(); i++) {
 		const QString imagePath = StdString2QString2(images[i]);
 		settings.setValue("NewImage", imagePath);
-		this_thread::sleep_for(chrono::milliseconds(1000));
+		this_thread::sleep_for(chrono::milliseconds(simulationSpeed.load()));
 	}
 }
 
@@ -417,7 +418,6 @@ void MainWindow::addNewImageInWidget(QString p_imagePath)
 }
 
 // ================= 菜单状态栏相关 =================
-
 void MainWindow::onTabChanged(int index) {
 	if (tabWidget->currentWidget() == modelViewerWidget) {
 		statusLabel->setText(modelViewerWidget->status_label);
@@ -429,6 +429,15 @@ void MainWindow::UpdateStatus(const QString& status) {
 	if (tabWidget->currentWidget() == modelViewerWidget) {
 		statusLabel->setText(status);
 	}
+}
+
+
+// ================= 流程控制相关 =================
+void MainWindow::UpdateSimulationSpeed(quint32 estimated, quint32 reconstructed)
+{
+	float ratio = (estimated > 0) ?
+		static_cast<float>(estimated - reconstructed) / 50.0f : 1.0f;
+	simulationSpeed.store(static_cast<int>(1000.0f * ratio));
 }
 
 void MainWindow::OnShowMeshChanged()

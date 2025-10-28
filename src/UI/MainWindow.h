@@ -39,6 +39,8 @@ private slots:
 	void addNewImageInWidget(QString p_imagePath);
 	void UpdateStatus(const QString& status);
 
+	void UpdateSimulationSpeed(quint32 estimated, quint32 reconstructed);
+
 	// Feedback UI相关槽函数
 	void OnShowMeshChanged();
 	void OnShowQualityChanged();
@@ -91,4 +93,6 @@ private:
 	bool isForcedRender = false;
 
 	QMutex mu_render;
+
+	std::atomic_int simulationSpeed = 1000; // 发送影像的间隔时间，单位:ms
 };

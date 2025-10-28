@@ -8,8 +8,8 @@
 
 void ReconstructTask::run()
 {
-	// bufferSize：缓冲区大小，反映了数据库更新的频率。缓冲区越小更新频率越高，速度也会变慢，缓冲区大则更新频率缓慢，处理速度会变快
-	const int bufferSize = 80;
+	// bufferSize：缓冲区大小，反映了数据库更新的频率。缓冲区越小更新频率越高，重建速度也会变慢，缓冲区大则更新频率缓慢，处理速度会变快
+	const int bufferSize = 50;
 	const bool isCached = m_data->CheckCache(imageID);
 	if (isCached) return;
 	m_data->LoadCache(bufferSize);
@@ -231,11 +231,11 @@ bool ReconstructTask::Reconstruct(bool init)
 #endif
 
 			isContinue = true;
-			}
 		}
+	}
 	mapper->EndReconstruction(false);
 	return true;
-	}
+}
 
 bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper)
 {
