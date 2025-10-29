@@ -87,9 +87,9 @@ public:
 
 	// Copy of current scene data that is displayed
 	std::shared_ptr<const Reconstruction> reconstruction;
-	tbb::concurrent_unordered_map<camera_t, Camera> cameras;
-	tbb::concurrent_unordered_map<image_t, Image> images;
-	tbb::concurrent_unordered_map<point3D_t, Point3D> points3D;
+	std::unordered_map<camera_t, Camera> cameras;
+	std::unordered_map<image_t, Image> images;
+	std::unordered_map<point3D_t, Point3D> points3D;
 	std::vector<image_t> reg_image_ids;
 	std::atomic_size_t lastRegistedImageID;
 

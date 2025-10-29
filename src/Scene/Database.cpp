@@ -191,7 +191,7 @@ FeatureMatches Database::ReadMatches(image_t image_id1, image_t image_id2) const
 {
 	const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
 	FeatureMatches result = matches.at(pair_id);
-	if (SwapImagePair(image_id1, image_id2)) 
+	if (SwapImagePair(image_id1, image_id2))
 	{
 		for (FeatureMatch& match : result)
 		{
@@ -364,7 +364,7 @@ void Database::DeleteMatches(image_t image_id1, image_t image_id2)
 #ifdef _DEBUG
 	matches.erase(pair_id);
 #else
-	matches.unsafe_erase(pair_id);
+	matches.erase(pair_id);
 #endif
 }
 void Database::DeleteInlierMatches(image_t image_id1, image_t image_id2)
@@ -374,7 +374,7 @@ void Database::DeleteInlierMatches(image_t image_id1, image_t image_id2)
 #ifdef _DEBUG
 	twoViewGeometries.erase(pair_id);
 #else
-	twoViewGeometries.unsafe_erase(pair_id);
+	twoViewGeometries.erase(pair_id);
 #endif
 }
 void Database::ClearAllTables()

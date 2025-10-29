@@ -424,7 +424,7 @@ void MainWindow::onTabChanged(int index) {
 		statusLabel->setText(modelViewerWidget->status_label);
 	}
 }
-void MainWindow::OnTrackModelToogled(bool checked)
+void MainWindow::OnTrackModelToggled(bool checked)
 {
 	workflow->SetForceRefresh(checked);
 }
@@ -440,9 +440,32 @@ void MainWindow::UpdateStatus(const QString& status) {
 // ================= 流程控制相关 =================
 void MainWindow::UpdateSimulationSpeed(quint32 read, quint32 reconstructed)
 {
-	float ratio = (read > 30) ?
-		static_cast<float>(read - reconstructed) / 50.0f : 0.8f;
-	simulationSpeed.store(static_cast<int>(1000.0f * ratio));
+	constexpr quint32 MIN_READ = 30;
+	constexpr quint32 IDEAL_QUEUE = 50;
+	constexpr quint32 MAX_QUEUE = 100;
+	constexpr float BASE_INTERVAL = 1000.0f;
+
+	if (read < MIN_READ) {
+		simulationSpeed.store(800);  // 初始稍快
+		return;
+	}
+
+	quint32 pending = read - reconstructed;
+	float ratio;
+
+	if (pending <= IDEAL_QUEUE) {
+		ratio = 0.7f;  // 加速
+	}
+	else if (pending >= MAX_QUEUE) {
+		ratio = 1.8f;  // 减速
+	}
+	else {
+		// 线性过渡
+		ratio = 0.7f + 1.1f * (static_cast<float>(pending - IDEAL_QUEUE) /
+			(MAX_QUEUE - IDEAL_QUEUE));
+	}
+
+	simulationSpeed.store(static_cast<int>(BASE_INTERVAL * ratio));
 }
 
 
@@ -482,8 +505,8 @@ void MainWindow::OnShowGuidePathChanged()
 
 void MainWindow::OnFeedback()
 {
+	modelViewerWidget->render_data = workflow->GetRenderingData();
 	if (isTrackModelCheckBox->isChecked()) {
-		modelViewerWidget->render_data = workflow->GetRenderingData();
 		bool p_showMesh = showMeshAction->isChecked();
 		bool p_showQuality = showQualityAction->isChecked();
 		bool p_showPath = showGuidePathAction->isChecked();

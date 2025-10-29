@@ -35,7 +35,7 @@ private slots:
 	void RenderNow();
 	void NewProject_SLOT();
 	void onTabChanged(int index);
-	void OnTrackModelToogled(bool checked);
+	void OnTrackModelToggled(bool checked);
 
 	void addNewImageInWidget(QString p_imagePath);
 	void UpdateStatus(const QString& status);

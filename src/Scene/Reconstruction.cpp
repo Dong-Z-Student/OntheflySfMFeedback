@@ -119,14 +119,14 @@ void Reconstruction::TearDown() {
 				++it;
 			}
 			else {
-				it = images_.unsafe_erase(it);
+				it = images_.erase(it);
 			}
 		}
 
 		// Remove all unused cameras.
 		for (auto it = cameras_.begin(); it != cameras_.end();) {
 			if (keep_camera_ids.count(it->first) == 0) {
-				it = cameras_.unsafe_erase(it);
+				it = cameras_.erase(it);
 			}
 			else {
 				++it;
@@ -152,13 +152,13 @@ void Reconstruction::TearDown() {
 				++it;
 			}
 			else {
-				it = images_.unsafe_erase(it);
+				it = images_.erase(it);
 			}
 		}
 
 		for (auto it = cameras_.begin(); it != cameras_.end();) {
 			if (keep_camera_ids.count(it->first) == 0) {
-				it = cameras_.unsafe_erase(it);
+				it = cameras_.erase(it);
 			}
 			else {
 				++it;
@@ -278,7 +278,7 @@ void Reconstruction::DeletePoint3D(const point3D_t point3D_id) {
 		image.ResetPoint3DForPoint2D(track_el.point2D_idx);
 	}
 
-	points3D_.unsafe_erase(point3D_id);
+	points3D_.erase(point3D_id);
 }
 
 void Reconstruction::DeleteObservation(const image_t image_id,

@@ -203,13 +203,13 @@ private:
 	std::unordered_map<image_pair_t, FeatureMatches> matches;
 	std::unordered_map<image_pair_t, TwoViewGeometry> twoViewGeometries;
 #else
-	tbb::concurrent_unordered_map<camera_t, Camera> cameras;
-	tbb::concurrent_unordered_map<image_t, Image> images;
-	tbb::concurrent_unordered_map<image_t, FeatureKeypoints> keypoints;
-	tbb::concurrent_unordered_map<image_t, FeatureDescriptors> descriptors;
-	tbb::concurrent_vector<GlobalFeature> globalFeatures;
-	tbb::concurrent_unordered_map<image_pair_t, FeatureMatches> matches;
-	tbb::concurrent_unordered_map<image_pair_t, TwoViewGeometry> twoViewGeometries;
+	std::unordered_map<camera_t, Camera> cameras;
+	std::unordered_map<image_t, Image> images;
+	std::unordered_map<image_t, FeatureKeypoints> keypoints;
+	std::unordered_map<image_t, FeatureDescriptors> descriptors;
+	std::vector<GlobalFeature> globalFeatures;
+	std::unordered_map<image_pair_t, FeatureMatches> matches;
+	std::unordered_map<image_pair_t, TwoViewGeometry> twoViewGeometries;
 #endif
 
 	const int d = 2048; // 向量的维数
