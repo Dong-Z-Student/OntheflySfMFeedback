@@ -86,7 +86,7 @@ public:
 	void StartTimer();
 
 	// Copy of current scene data that is displayed
-	std::shared_ptr<Reconstruction> reconstruction;
+	std::shared_ptr<const Reconstruction> reconstruction;
 	tbb::concurrent_unordered_map<camera_t, Camera> cameras;
 	tbb::concurrent_unordered_map<image_t, Image> images;
 	tbb::concurrent_unordered_map<point3D_t, Point3D> points3D;
@@ -97,7 +97,7 @@ public:
 
 	QString status_label;
 
-	void UpdateStatus(const QString& status);
+	void UpdateStatus(const QString& status = "");
 signals:
 	void statusUpdate(const QString& status);
 
@@ -135,6 +135,7 @@ private:
 
 	Eigen::Vector3f PositionToArcballVector(float x, float y) const;
 
+	QString labelString;
 
 	QMatrix4x4 model_view_matrix_;
 	QMatrix4x4 projection_matrix_;

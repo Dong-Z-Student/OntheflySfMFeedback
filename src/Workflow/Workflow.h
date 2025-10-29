@@ -32,13 +32,14 @@ public:
 	void setData(Database* p_database, ReconstructionManager* p_modelManager);
 	void LoadPython();
 	std::shared_ptr<const RenderData> GetRenderingData() const { return m_workData->render_data; }
+	std::shared_ptr<const Reconstruction> GetRenderReconstructionData() const { return m_workData->readModelPtr; } // 用于渲染的Reconstruction数据（不完整）
+	void SetForceRefresh(bool checked) { m_workData->forceRefresh.store(checked); }
 
 signals:
 	void readImageFinished(QString p_imagePath);
-	void reconstructUpdated(); // refresh the model in model viewer
-	void changeLastRegistedImageID(quint32 imageID);
+	void reconstructUpdated(quint32 p_lastRegistedImageID); // refresh the model in model viewer
 	void feedbackFinished();
-	void updateSimulationSpeed(quint32 estimated, quint32 reconstructed);// 更新模拟器传入影像的速度
+	void updateSimulationSpeed(quint32 read, quint32 reconstructed);// 更新模拟器传入影像的速度
 
 public slots:
 	void onProcessNewImage(const QString& value); // 传入影像，启动工作流

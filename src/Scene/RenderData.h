@@ -8,11 +8,13 @@
 using PointPainterData = std::array<float, 7>; // x,y,z,r,g,b,a
 using LinePainterData = std::array<float, 14>;
 using TrianglePainterData = std::array<float, 21>;
+using DirectionPainterData = std::array<float, 6>; // x,y,z,dx,dy,dz
 
 struct RenderData {
 	std::vector<TrianglePainterData>    mesh_data;
 	std::vector<LinePainterData>        mesh_lines;
 	std::vector<TrianglePainterData>    quality_data;
+	std::vector<DirectionPainterData>   path_data;
 	std::vector<LinePainterData>        guide_lines;
 	std::vector<PointPainterData>       guide_points;
 	std::vector<PointPainterData>       heatmap_points;

@@ -309,7 +309,9 @@ void ModelViewerWidget::SetDatabase(Database* database)
 
 void ModelViewerWidget::UpdateStatus(const QString& status)
 {
-	status_label = status;
+	if (!status.isEmpty()) {
+		status_label = status;
+	}
 	emit statusUpdate(status_label);
 }
 
@@ -378,6 +380,7 @@ void ModelViewerWidget::ReloadReconstruction() {
 	}
 	try
 	{
+		// copy of reference
 		cameras = reconstruction->Cameras();
 		points3D = reconstruction->Points3D();
 		reg_image_ids = reconstruction->RegImageIds();
@@ -401,7 +404,6 @@ void ModelViewerWidget::ReloadReconstruction() {
 		labelString += QString().asprintf("  (%.2f s / image)", avgSeconds);
 
 		UpdateStatus(labelString); // 在Upload渲染数据之前统计平均处理时间，以免造成多余时间统计 
-
 		Upload();
 	}
 	catch (const std::exception& e)
@@ -1104,8 +1106,7 @@ void ModelViewerWidget::UploadPointConnectionData() {
 
 void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 	makeCurrent();
-	image_t lastRegistedImageIDValue = lastRegistedImageID.load();
-
+	image_t lastRegistedImageIDValue = lastRegistedImageID.load(std::memory_order_acquire);
 	std::vector<LinePainter::Data> line_data;
 	line_data.reserve(8 * reg_image_ids.size());
 

@@ -349,8 +349,10 @@ public:
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> geometricVerificationTimes;
 	//// 重建计数器
 	tbb::concurrent_unordered_map<size_t, std::atomic_size_t> numMatchingPairs;
-	//// 用于UI显示的反馈数据
-	std::shared_ptr<const RenderData> render_data;
+	//// 用于UI显示的数据
+	std::shared_ptr<const RenderData> render_data; // 反馈数据
+	std::shared_ptr<Reconstruction> readModelPtr; // 双缓冲设计，用于缓存关键的模型数据供UI线程读取
+	std::atomic_bool forceRefresh{ true }; // 重建过程强制更新模型数据到readModelPtr中
 
 private:
 	//// 工作变量

@@ -35,17 +35,19 @@ private slots:
 	void RenderNow();
 	void NewProject_SLOT();
 	void onTabChanged(int index);
+	void OnTrackModelToogled(bool checked);
 
 	void addNewImageInWidget(QString p_imagePath);
 	void UpdateStatus(const QString& status);
 
-	void UpdateSimulationSpeed(quint32 estimated, quint32 reconstructed);
+	void UpdateSimulationSpeed(quint32 read, quint32 reconstructed);
 
 	// Feedback UI相关槽函数
 	void OnShowMeshChanged();
 	void OnShowQualityChanged();
 	void OnShowGuidePathChanged();
 	void OnFeedback();
+	void OnRenderNow(quint32 p_lastRegistedImageID);
 
 private:
 	void SetupWidgets();
@@ -92,7 +94,7 @@ private:
 	QCheckBox* isTrackModelCheckBox;
 	bool isForcedRender = false;
 
-	QMutex mu_render;
+	std::atomic_bool render_flag_{ false };
 
-	std::atomic_int simulationSpeed = 1000; // 发送影像的间隔时间，单位:ms
+	std::atomic_int simulationSpeed = 800; // 发送影像的间隔时间，单位:ms
 };

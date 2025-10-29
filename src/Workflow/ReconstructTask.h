@@ -28,15 +28,12 @@ public:
 	size_t FilterPoints(const IncrementalMapper::Options& options, IncrementalMapper& mapper);
 	size_t FilterImages(const IncrementalMapper::Options& options, IncrementalMapper& mapper);
 	void ExtractColors(const IncrementalMapper::Options& options, size_t imageID, Reconstruction& model);
+	void CopyEssentialReconstruction();
 signals:
 	void reconstructTaskFinished(quint32 p_imageID);
 	void reconstructionInitial(quint32 p_modelID, bool success);
 	void registedInitialImagePair(quint32 imageID1, quint32 imageID2);
 	void registedSuccess(quint32 p_imageID);
-
-public slots:
-	void onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2);
-	void onRegistedSuccess(quint32 p_imageID);
 
 private:
 	quint32 imageID;

@@ -129,6 +129,8 @@ void MainWindow::SetupWidgets() {
 
 	isTrackModelCheckBox = new QCheckBox(tr("Track Model"));
 	isTrackModelCheckBox->setChecked(true);
+	connect(isTrackModelCheckBox, &QCheckBox::toggled,
+		this, &MainWindow::OnTrackModelToggled);
 
 	showMatchMatrixWidget = new ShowMatchMatrixWidget(this, database);
 }
@@ -227,8 +229,7 @@ void MainWindow::CreateStatusbar() {
 void MainWindow::SetupConnections() const {
 	connect(receiver, &Receiver::newDataReceived, workflow, &WorkFlow::onProcessNewImage);
 	connect(workflow, &WorkFlow::readImageFinished, this, &MainWindow::addNewImageInWidget);
-	connect(workflow, &WorkFlow::reconstructUpdated, this, &MainWindow::RenderNow);
-	connect(workflow, &WorkFlow::changeLastRegistedImageID, this, &MainWindow::SetModelWidgetLastRegistedImageID);
+	connect(workflow, &WorkFlow::reconstructUpdated, this, &MainWindow::OnRenderNow);
 	connect(workflow, &WorkFlow::feedbackFinished, this, &MainWindow::OnFeedback);
 	connect(workflow, &WorkFlow::updateSimulationSpeed, this, &MainWindow::UpdateSimulationSpeed);
 }
@@ -382,7 +383,7 @@ void MainWindow::RenderNow() {
 #ifdef DISABLE_MODELVIEWER
 	return;
 #endif
-	QMutexLocker locker(&mu_render);
+
 	try {
 		if (reconstructionManager->Size() == 0) {
 			reconstructionManagerWidget->SelectReconstruction(ReconstructionManagerWidget::kNewestReconstructionIdx);
@@ -398,7 +399,7 @@ void MainWindow::RenderNow() {
 		}
 
 		if (isTrackModelCheckBox->isChecked() || isForcedRender) {
-			modelViewerWidget->reconstruction = reconstructionManager->Get(reconstruction_idx);
+			modelViewerWidget->reconstruction = workflow->GetRenderReconstructionData();
 			modelViewerWidget->ReloadReconstruction();
 		}
 	}
@@ -423,6 +424,10 @@ void MainWindow::onTabChanged(int index) {
 		statusLabel->setText(modelViewerWidget->status_label);
 	}
 }
+void MainWindow::OnTrackModelToogled(bool checked)
+{
+	workflow->SetForceRefresh(checked);
+}
 //主界面使用一个QLabel显示状态，子标签页发送status信号主界面接收，主界面切换页面改变页面序号，根据当前
 //页面序号接收status字符串，更新status显示内容。不会造成内存泄漏。
 void MainWindow::UpdateStatus(const QString& status) {
@@ -433,13 +438,15 @@ void MainWindow::UpdateStatus(const QString& status) {
 
 
 // ================= 流程控制相关 =================
-void MainWindow::UpdateSimulationSpeed(quint32 estimated, quint32 reconstructed)
+void MainWindow::UpdateSimulationSpeed(quint32 read, quint32 reconstructed)
 {
-	float ratio = (estimated > 0) ?
-		static_cast<float>(estimated - reconstructed) / 50.0f : 1.0f;
+	float ratio = (read > 30) ?
+		static_cast<float>(read - reconstructed) / 50.0f : 0.8f;
 	simulationSpeed.store(static_cast<int>(1000.0f * ratio));
 }
 
+
+// ================= 槽函数实现 =================
 void MainWindow::OnShowMeshChanged()
 {
 	if (!modelViewerWidget->render_data) {
@@ -475,16 +482,23 @@ void MainWindow::OnShowGuidePathChanged()
 
 void MainWindow::OnFeedback()
 {
-	modelViewerWidget->render_data = workflow->GetRenderingData();
-	bool p_showMesh = showMeshAction->isChecked();
-	bool p_showQuality = showQualityAction->isChecked();
-	bool p_showPath = showGuidePathAction->isChecked();
-	modelViewerWidget->ReloadFeedback(p_showMesh, p_showQuality, p_showPath);
+	if (isTrackModelCheckBox->isChecked()) {
+		modelViewerWidget->render_data = workflow->GetRenderingData();
+		bool p_showMesh = showMeshAction->isChecked();
+		bool p_showQuality = showQualityAction->isChecked();
+		bool p_showPath = showGuidePathAction->isChecked();
+		modelViewerWidget->ReloadFeedback(p_showMesh, p_showQuality, p_showPath);
+	}
+}
+
+void MainWindow::OnRenderNow(quint32 p_lastRegistedImageID)
+{
+	SetModelWidgetLastRegistedImageID(p_lastRegistedImageID);
+	RenderNow();
 }
 
 // ================== 组件通讯 ===============
 void MainWindow::SetModelWidgetLastRegistedImageID(quint32 p_imageID) {
-	QMutexLocker locker(&mu_render);
-	modelViewerWidget->lastRegistedImageID.store(p_imageID);
+	modelViewerWidget->lastRegistedImageID.store(p_imageID, std::memory_order_release);
 }
 

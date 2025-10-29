@@ -12,7 +12,6 @@
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 
 #include <omp.h>
-#include <tbb/concurrent_unordered_map.h>
 #include <tbb/global_control.h>
 #include <unordered_map>
 #include <unordered_set>
@@ -259,7 +258,7 @@ public:
 		std::vector<TrackPoint2D> point2ds;
 	};
 
-	tbb::concurrent_unordered_map<camera_t, Camera> cameras;
+	std::unordered_map<camera_t, Camera> cameras;
 	std::unordered_map<image_t, Image> images; // Current model images
 	std::unordered_map<point3D_t, Point> points; // Current model points
 	KeyTracker<point3D_t> pointsTracker;

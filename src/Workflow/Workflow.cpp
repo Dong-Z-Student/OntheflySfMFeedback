@@ -112,21 +112,23 @@ void WorkFlow::onEstimateFinished(quint32 imageID1, quint32 imageID2) {
 void WorkFlow::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
 	m_workData->AddReconstructedImage(imageID1);
 	m_workData->AddReconstructedImage(imageID2);
-	emit changeLastRegistedImageID(imageID2);
-	emit reconstructUpdated();
+
+	emit reconstructUpdated(imageID2);
 	emit updateSimulationSpeed(
-		m_workData->GetEstimatedImagesCount(),
+		m_workData->DatabaseReadImageNum(),
 		m_workData->GetReconstructedImagesCount()
 	);
 }
 
 void WorkFlow::onRegistedSuccess(quint32 imageID) {
 	m_workData->AddReconstructedImage(imageID);
+
+	// feedback task
 	Feedback();
-	emit changeLastRegistedImageID(imageID);
-	emit reconstructUpdated();
+
+	emit reconstructUpdated(imageID);
 	emit updateSimulationSpeed(
-		m_workData->GetEstimatedImagesCount(),
+		m_workData->DatabaseReadImageNum(),
 		m_workData->GetReconstructedImagesCount()
 	);
 }
