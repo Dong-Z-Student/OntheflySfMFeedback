@@ -146,6 +146,7 @@
     <ClInclude Include="Math.h" />
     <ClInclude Include="misc.h" />
     <ClInclude Include="nanoflann.h" />
+    <ClInclude Include="pidctl.h" />
     <ClInclude Include="ply.h" />
     <ClInclude Include="SQLite3Base.h" />
     <ClInclude Include="stdredirector.h" />

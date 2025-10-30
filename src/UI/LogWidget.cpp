@@ -160,7 +160,7 @@ void LogWidget::Flush()
 	}
 
 	while (!localBuffer.empty()) {
-		auto& logEntry = localBuffer.front();
+		std::pair<std::string, google::LogSeverity> logEntry = localBuffer.front();
 		localBuffer.pop();
 
 		QString prefix = GetLogPrefix(logEntry.second);
@@ -220,7 +220,7 @@ void LogWidget::StartLogFileThread()
 			}
 
 			while (!localQueue.empty()) {
-				auto& logEntry = localQueue.front();
+				std::pair<std::string, google::LogSeverity> logEntry = localQueue.front();
 				localQueue.pop();
 
 				QString prefix = this->GetLogPrefix(logEntry.second);
@@ -237,7 +237,7 @@ void LogWidget::StartLogFileThread()
 		{
 			QMutexLocker locker(&m_fileQueueMutex);
 			while (!m_fileLogQueue.empty()) {
-				auto& logEntry = m_fileLogQueue.front();
+				std::pair<std::string, google::LogSeverity> logEntry = m_fileLogQueue.front();
 				m_fileLogQueue.pop();
 
 				QString prefix = this->GetLogPrefix(logEntry.second);

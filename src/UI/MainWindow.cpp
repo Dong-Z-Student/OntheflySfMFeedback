@@ -95,7 +95,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 
 // ================= 初始化相关 =================
 void MainWindow::SetupWidgets() {
-	resize(600, 600);
+	resize(800, 600);
 	setWindowTitle(tr("On-the-fly SfM"));
 	setWindowIcon(QIcon(":/media/WindowIcon.png"));
 
@@ -424,10 +424,12 @@ void MainWindow::onTabChanged(int index) {
 		statusLabel->setText(modelViewerWidget->status_label);
 	}
 }
+
 void MainWindow::OnTrackModelToggled(bool checked)
 {
 	workflow->SetForceRefresh(checked);
 }
+
 //主界面使用一个QLabel显示状态，子标签页发送status信号主界面接收，主界面切换页面改变页面序号，根据当前
 //页面序号接收status字符串，更新status显示内容。不会造成内存泄漏。
 void MainWindow::UpdateStatus(const QString& status) {
@@ -436,36 +438,16 @@ void MainWindow::UpdateStatus(const QString& status) {
 	}
 }
 
-
 // ================= 流程控制相关 =================
 void MainWindow::UpdateSimulationSpeed(quint32 read, quint32 reconstructed)
 {
-	constexpr quint32 MIN_READ = 30;
-	constexpr quint32 IDEAL_QUEUE = 50;
-	constexpr quint32 MAX_QUEUE = 100;
-	constexpr float BASE_INTERVAL = 1000.0f;
-
-	if (read < MIN_READ) {
-		simulationSpeed.store(800);  // 初始稍快
-		return;
-	}
-
-	quint32 pending = read - reconstructed;
-	float ratio;
-
-	if (pending <= IDEAL_QUEUE) {
-		ratio = 0.7f;  // 加速
-	}
-	else if (pending >= MAX_QUEUE) {
-		ratio = 1.8f;  // 减速
-	}
-	else {
-		// 线性过渡
-		ratio = 0.7f + 1.1f * (static_cast<float>(pending - IDEAL_QUEUE) /
-			(MAX_QUEUE - IDEAL_QUEUE));
-	}
-
-	simulationSpeed.store(static_cast<int>(BASE_INTERVAL * ratio));
+	pidController.processed(read, reconstructed);
+	double nextInputDelay = pidController.getInputInterval();
+	//LOG(INFO) << "已处理: " << reconstructed << "/" << read
+	//	<< ", 缓冲区: " << (read - reconstructed)
+	//	<< ", 处理速度: " << pidController.getProcessSpeed() << " ms"
+	//	<< ", 输入间隔: " << nextInputDelay << " ms" << std::endl;
+	simulationSpeed.store(nextInputDelay);
 }
 
 

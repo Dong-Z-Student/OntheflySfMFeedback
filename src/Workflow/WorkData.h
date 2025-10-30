@@ -213,6 +213,7 @@ public:
 
 	//// === DatabaseCache 相关操作 ===
 	std::set<size_t> getImageMask(const int length, bool contain = true) {
+		QReadLocker locker(&m_reconstructedSet_lock);
 		if (reconstructedImages.empty()) {
 			return {};
 		}
@@ -323,21 +324,13 @@ public:
 	void AddEstimatedImage(size_t image_id) {
 		QWriteLocker locker(&m_estimatedSet_lock);
 		estimatedImages.insert(image_id);
+		estimatedImagesNum.store(estimatedImages.size());
 	}
 
 	void AddReconstructedImage(size_t image_id) {
 		QWriteLocker locker(&m_reconstructedSet_lock);
 		reconstructedImages.insert(image_id);
-	}
-
-	size_t GetEstimatedImagesCount() const {
-		QReadLocker locker(&m_estimatedSet_lock);
-		return estimatedImages.size();
-	}
-
-	size_t GetReconstructedImagesCount() const {
-		QReadLocker locker(&m_reconstructedSet_lock);
-		return reconstructedImages.size();
+		reconstructImagesNum.store(reconstructedImages.size(), std::memory_order_acquire);
 	}
 
 public:
@@ -349,6 +342,9 @@ public:
 	tbb::concurrent_map<std::size_t, std::atomic_size_t> geometricVerificationTimes;
 	//// 重建计数器
 	tbb::concurrent_unordered_map<size_t, std::atomic_size_t> numMatchingPairs;
+	std::atomic_size_t readImagesNum{ 0 };
+	std::atomic_size_t reconstructImagesNum{ 0 };
+	std::atomic_size_t estimatedImagesNum{ 0 };
 	//// 用于UI显示的数据
 	std::shared_ptr<const RenderData> render_data; // 反馈数据
 	std::shared_ptr<Reconstruction> readModelPtr; // 双缓冲设计，用于缓存关键的模型数据供UI线程读取

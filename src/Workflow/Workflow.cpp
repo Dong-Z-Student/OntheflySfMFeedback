@@ -102,34 +102,24 @@ void WorkFlow::onMatchTaskFinished(quint32 imageID1, quint32 imageID2)
 
 void WorkFlow::onEstimateFinished(quint32 imageID1, quint32 imageID2) {
 	QMutexLocker locker(&mu_reconstructTasks);
-	if (m_workData->GetEstimatedImagesCount() == 0) {
-		m_workData->AddEstimatedImage(imageID1);
-	}
-	m_workData->AddEstimatedImage(imageID2);
 	ReconstructImage(imageID2);
 }
 
 void WorkFlow::onRegistedInitialImagePair(quint32 imageID1, quint32 imageID2) {
-	m_workData->AddReconstructedImage(imageID1);
-	m_workData->AddReconstructedImage(imageID2);
-
 	emit reconstructUpdated(imageID2);
 	emit updateSimulationSpeed(
-		m_workData->DatabaseReadImageNum(),
-		m_workData->GetReconstructedImagesCount()
+		m_workData->readImagesNum.load(),
+		m_workData->reconstructImagesNum.load()
 	);
 }
 
 void WorkFlow::onRegistedSuccess(quint32 imageID) {
-	m_workData->AddReconstructedImage(imageID);
-
 	// feedback task
 	Feedback();
-
 	emit reconstructUpdated(imageID);
 	emit updateSimulationSpeed(
-		m_workData->DatabaseReadImageNum(),
-		m_workData->GetReconstructedImagesCount()
+		m_workData->readImagesNum.load(),
+		m_workData->reconstructImagesNum.load()
 	);
 }
 
@@ -141,13 +131,12 @@ void WorkFlow::onFeedbackFinished()
 bool WorkFlow::ReconstructImage(quint32 imageID)
 {
 	Config& config = Config::getInstance();
-	const size_t estimatedImageNum = m_workData->GetEstimatedImagesCount();
+	const size_t estimatedImageNum = m_workData->estimatedImagesNum.load();
 	if (estimatedImageNum >= config.pipeline.MinEstimatedImageNum) {
 		if (estimatedImageNum == config.pipeline.MinEstimatedImageNum) {
 			LOG(INFO) << "[Reconstruct] initializing model: " << 0;
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, -1, ReconstructType::AddModel, this);
 			connect(m_reconstructTask, &ReconstructTask::registedInitialImagePair, this, &WorkFlow::onRegistedInitialImagePair);
-			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess);
 			m_reconstruct_threadPool->start(m_reconstructTask);
 		}
 		else {
@@ -164,7 +153,7 @@ void WorkFlow::Feedback()
 	auto& config = Config::getInstance();
 	int startFeedback = config.feedback.StartCreateMesh;
 	int step = config.feedback.Step;
-	const size_t reconstructedImageNum = m_workData->GetReconstructedImagesCount();
+	const size_t reconstructedImageNum = m_workData->reconstructImagesNum.load();
 
 	if (reconstructedImageNum == startFeedback ||
 		(reconstructedImageNum > startFeedback && reconstructedImageNum % step == 0)) {

@@ -398,13 +398,15 @@ void ModelViewerWidget::ReloadReconstruction() {
 			static_cast<int>(reg_image_ids.size()),
 			static_cast<int>(points3D.size())
 		);
+
+		// 时间统计
 		double avgSeconds = reg_image_ids.empty() ? 0.0 :
 			static_cast<double>(totalTimer.ElapsedMicroSeconds()) / reg_image_ids.size() / 1e6;
-
 		labelString += QString().asprintf("  (%.2f s / image)", avgSeconds);
-
 		UpdateStatus(labelString); // 在Upload渲染数据之前统计平均处理时间，以免造成多余时间统计 
+
 		Upload();
+		update();
 	}
 	catch (const std::exception& e)
 	{
@@ -879,11 +881,8 @@ void ModelViewerWidget::Upload() {
 
 	UploadPointData();
 	UploadImageData();
-	UploadMovieGrabberData();
 	UploadPointConnectionData();
 	UploadImageConnectionData();
-
-	update();
 }
 
 void ModelViewerWidget::UploadCoordinateGridData() {

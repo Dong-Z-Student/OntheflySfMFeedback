@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "../Base/pidctl.h"
 #include "../Workflow/Receiver.h"
 #include "../Workflow/Workflow.h"
 #include "ImageListWidget.h"
@@ -40,7 +41,7 @@ private slots:
 	void addNewImageInWidget(QString p_imagePath);
 	void UpdateStatus(const QString& status);
 
-	void UpdateSimulationSpeed(quint32 read, quint32 reconstructed);
+	void UpdateSimulationSpeed(quint32 read, quint32 reconstructed); // 更新影像模拟器传入速度
 
 	// Feedback UI相关槽函数
 	void OnShowMeshChanged();
@@ -96,5 +97,6 @@ private:
 
 	std::atomic_bool render_flag_{ false };
 
-	std::atomic_int simulationSpeed = 800; // 发送影像的间隔时间，单位:ms
+	std::atomic_int simulationSpeed = 800; // 初始发送影像的间隔时间，单位:ms
+	BufferPIDController pidController;
 };

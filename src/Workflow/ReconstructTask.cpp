@@ -135,6 +135,7 @@ bool ReconstructTask::Reconstruct(bool init)
 
 				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 
+				m_data->AddReconstructedImage(nextImageID);
 				if (m_data->forceRefresh.load()) CopyEssentialReconstruction();
 				emit registedSuccess(nextImageID);
 
@@ -274,6 +275,8 @@ bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& opt
 	ExtractColors(options, initImageID1, model);
 	//Callback(INITIAL_IMAGE_PAIR_REG_CALLBACK);
 
+	m_data->AddReconstructedImage(initImageID1);
+	m_data->AddReconstructedImage(initImageID2);
 	emit registedInitialImagePair(initImageID1, initImageID2);
 	return true;
 }

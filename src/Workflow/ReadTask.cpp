@@ -37,6 +37,7 @@ void ReadTask::run()
 		m_data->WriteBitmap(bitmap, imageID);
 
 		m_data->setImageStatus(imagePathstr, CImageStatusFlag::CRead);
+		m_data->readImagesNum.store(m_data->DatabaseReadImageNum());
 		emit readTaskDone(imageID, imagePath);
 	}
 	delete imageReader;
