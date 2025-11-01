@@ -32,8 +32,9 @@ public:
 	void setData(Database* p_database, ReconstructionManager* p_modelManager);
 	void LoadPython();
 	std::shared_ptr<const RenderData> GetRenderingData() const { return m_workData->render_data; }
-	std::shared_ptr<const Reconstruction> GetRenderReconstructionData() const { return m_workData->readModelPtr; } // 用于渲染的Reconstruction数据（不完整）
-	void SetForceRefresh(bool checked) { m_workData->forceRefresh.store(checked); }
+	QMutex& GetRenderingLock() { return m_workData->m_rendering_lock; }
+	void SetRenderingFlag(bool flag) { m_workData->renderingFlag.store(flag); }
+	const bool GetRenderingFlag() const { return m_workData->renderingFlag.load(); }
 
 signals:
 	void readImageFinished(QString p_imagePath);

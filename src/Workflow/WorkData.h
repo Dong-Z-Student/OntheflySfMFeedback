@@ -301,20 +301,6 @@ public:
 	}
 
 	//// === 模型锁相关操作 ===
-	QReadWriteLock& getModelLock(size_t model_index) {
-		if (model_index >= m_models_lock.size()) {
-			throw std::out_of_range("Model index out of range");
-		}
-		return m_models_lock[model_index];
-	}
-
-	const QReadWriteLock& getModelLock(size_t model_index) const {
-		if (model_index >= m_models_lock.size()) {
-			throw std::out_of_range("Model index out of range");
-		}
-		return m_models_lock[model_index];
-	}
-
 	size_t getMaxModelCount() const {
 		return m_models_lock.size();
 	}
@@ -330,7 +316,7 @@ public:
 	void AddReconstructedImage(size_t image_id) {
 		QWriteLocker locker(&m_reconstructedSet_lock);
 		reconstructedImages.insert(image_id);
-		reconstructImagesNum.store(reconstructedImages.size(), std::memory_order_acquire);
+		reconstructImagesNum.store(reconstructedImages.size());
 	}
 
 public:
@@ -347,8 +333,18 @@ public:
 	std::atomic_size_t estimatedImagesNum{ 0 };
 	//// 用于UI显示的数据
 	std::shared_ptr<const RenderData> render_data; // 反馈数据
-	std::shared_ptr<Reconstruction> readModelPtr; // 双缓冲设计，用于缓存关键的模型数据供UI线程读取
-	std::atomic_bool forceRefresh{ true }; // 重建过程强制更新模型数据到readModelPtr中
+	std::atomic_bool renderingFlag{ true };
+
+	//// 互斥锁
+	mutable QReadWriteLock m_database_lock;
+	mutable QReadWriteLock m_modelmanager_lock;
+	mutable std::array<QReadWriteLock, 10> m_models_lock;
+	mutable QReadWriteLock m_imageidpath_lock;
+	mutable QReadWriteLock m_bitmap_lock;
+	QMutex m_imagestatus_lock;
+	mutable QReadWriteLock m_estimatedSet_lock;
+	mutable QReadWriteLock m_reconstructedSet_lock;
+	mutable QMutex m_rendering_lock;
 
 private:
 	//// 工作变量
@@ -366,16 +362,6 @@ private:
 	std::set<size_t> estimatedImages;
 	std::set<size_t> reconstructedImages;
 	std::set<size_t> imageIDsMask;  // 当前缓冲区中的imageID掩膜
-
-	//// 互斥锁
-	mutable QReadWriteLock m_database_lock;
-	mutable QReadWriteLock m_modelmanager_lock;
-	std::array<QReadWriteLock, 10> m_models_lock; // 最多支持10个子模型
-	mutable QReadWriteLock m_imageidpath_lock;
-	mutable QReadWriteLock m_bitmap_lock;
-	QMutex m_imagestatus_lock;
-	mutable QReadWriteLock m_estimatedSet_lock;
-	mutable QReadWriteLock m_reconstructedSet_lock;
 };
 
 #endif // WORKDATA_H

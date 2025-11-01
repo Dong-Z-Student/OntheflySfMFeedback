@@ -374,16 +374,13 @@ void MainWindow::NewProject() {
 }
 
 void MainWindow::ChangeSelectModel() {
-	isForcedRender = true;
 	RenderNow();
-	isForcedRender = false;
 }
 
 void MainWindow::RenderNow() {
 #ifdef DISABLE_MODELVIEWER
 	return;
 #endif
-
 	try {
 		if (reconstructionManager->Size() == 0) {
 			reconstructionManagerWidget->SelectReconstruction(ReconstructionManagerWidget::kNewestReconstructionIdx);
@@ -398,9 +395,20 @@ void MainWindow::RenderNow() {
 			}
 		}
 
-		if (isTrackModelCheckBox->isChecked() || isForcedRender) {
-			modelViewerWidget->reconstruction = workflow->GetRenderReconstructionData();
-			modelViewerWidget->ReloadReconstruction();
+		if (isTrackModelCheckBox->isChecked()) {
+			QMutex& renderLock = workflow->GetRenderingLock();
+			if (renderLock.tryLock()) {
+				modelViewerWidget->reconstruction = reconstructionManager->Get(0);
+				modelViewerWidget->ReloadReconstruction();
+				renderLock.unlock();
+				workflow->SetRenderingFlag(false);
+			}
+			else {
+				workflow->SetRenderingFlag(true);
+			}
+		}
+		else {
+			workflow->SetRenderingFlag(false);
 		}
 	}
 	catch (const std::exception& e) {
@@ -427,7 +435,10 @@ void MainWindow::onTabChanged(int index) {
 
 void MainWindow::OnTrackModelToggled(bool checked)
 {
-	workflow->SetForceRefresh(checked);
+	workflow->SetRenderingFlag(false);
+	if (checked) {
+		RenderNow();
+	}
 }
 
 //主界面使用一个QLabel显示状态，子标签页发送status信号主界面接收，主界面切换页面改变页面序号，根据当前
@@ -443,10 +454,6 @@ void MainWindow::UpdateSimulationSpeed(quint32 read, quint32 reconstructed)
 {
 	pidController.processed(read, reconstructed);
 	double nextInputDelay = pidController.getInputInterval();
-	//LOG(INFO) << "已处理: " << reconstructed << "/" << read
-	//	<< ", 缓冲区: " << (read - reconstructed)
-	//	<< ", 处理速度: " << pidController.getProcessSpeed() << " ms"
-	//	<< ", 输入间隔: " << nextInputDelay << " ms" << std::endl;
 	simulationSpeed.store(nextInputDelay);
 }
 
@@ -504,6 +511,6 @@ void MainWindow::OnRenderNow(quint32 p_lastRegistedImageID)
 
 // ================== 组件通讯 ===============
 void MainWindow::SetModelWidgetLastRegistedImageID(quint32 p_imageID) {
-	modelViewerWidget->lastRegistedImageID.store(p_imageID, std::memory_order_release);
+	modelViewerWidget->lastRegistedImageID.store(p_imageID);
 }
 

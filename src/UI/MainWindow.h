@@ -93,9 +93,6 @@ private:
 	QToolBar* reconstructToolBar;
 	QToolBar* feedbackToolBar;
 	QCheckBox* isTrackModelCheckBox;
-	bool isForcedRender = false;
-
-	std::atomic_bool render_flag_{ false };
 
 	std::atomic_int simulationSpeed = 800; // 初始发送影像的间隔时间，单位:ms
 	BufferPIDController pidController;

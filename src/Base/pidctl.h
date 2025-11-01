@@ -1,39 +1,39 @@
-#pragma once
+ï»¿#pragma once
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 
 class BufferPIDController {
 private:
-	// PID ²ÎÊı
-	double Kp = 15.0;      // ±ÈÀıÏµÊı£º¿ìËÙÏìÓ¦Îó²î
-	double Ki = 0.3;       // »ı·ÖÏµÊı£ºÏû³ıÎÈÌ¬Îó²î
-	double Kd = 80.0;      // Î¢·ÖÏµÊı£ºÒÖÖÆÕğµ´
+	// PID å‚æ•°
+	double Kp = 8.0;      // æ¯”ä¾‹ç³»æ•°ï¼šå¿«é€Ÿå“åº”è¯¯å·®
+	double Ki = 0.15;       // ç§¯åˆ†ç³»æ•°ï¼šæ¶ˆé™¤ç¨³æ€è¯¯å·®
+	double Kd = 60.0;      // å¾®åˆ†ç³»æ•°ï¼šæŠ‘åˆ¶éœ‡è¡
 
-	// Ä¿±êÖµºÍÔ¼Êø
-	const double TARGET_BUFFER = 60.0;
-	const double MIN_INPUT_INTERVAL = 500.0;   // ×îĞ¡ÊäÈë¼ä¸ô (ms)
-	const double MAX_INPUT_INTERVAL = 5000.0;  // ×î´óÊäÈë¼ä¸ô (ms)
+	// ç›®æ ‡å€¼å’Œçº¦æŸ
+	const double TARGET_BUFFER = 70.0;
+	const double MIN_INPUT_INTERVAL = 500.0;   // æœ€å°è¾“å…¥é—´éš” (ms)
+	const double MAX_INPUT_INTERVAL = 5000.0;  // æœ€å¤§è¾“å…¥é—´éš” (ms)
 
-	// PID ×´Ì¬±äÁ¿
+	// PID çŠ¶æ€å˜é‡
 	double integral = 0.0;
 	double prevError = 0.0;
-	double inputInterval = 1800.0;  // ³õÊ¼ÊäÈë¼ä¸ô£¬ÂÔÂıÓÚÆ½¾ù´¦ÀíËÙ¶È
+	double inputInterval = 1800.0;  // åˆå§‹è¾“å…¥é—´éš”ï¼Œç•¥æ…¢äºå¹³å‡å¤„ç†é€Ÿåº¦
 
-	// Ê±¼ä¸ú×Ù
-	long long lastCallTime = 0;     // ÉÏ´Îµ÷ÓÃÊ±¼ä´Á£¨ºÁÃë£©
-	double processSpeed = 1750.0;   // µ±Ç°´¦ÀíËÙ¶È£¨ºÁÃë£©£¬³õÊ¼ÖµÎªÖĞ¼äÖµ
+	// æ—¶é—´è·Ÿè¸ª
+	long long lastCallTime = 0;     // ä¸Šæ¬¡è°ƒç”¨æ—¶é—´æˆ³ï¼ˆæ¯«ç§’ï¼‰
+	double processSpeed = 1750.0;   // å½“å‰å¤„ç†é€Ÿåº¦ï¼ˆæ¯«ç§’ï¼‰ï¼Œåˆå§‹å€¼ä¸ºä¸­é—´å€¼
 	bool isFirstCall = true;
 
-	// »ı·Ö¿¹±¥ºÍ
+	// ç§¯åˆ†æŠ—é¥±å’Œ
 	const double MAX_INTEGRAL = 5000.0;
 	const double MIN_INTEGRAL = -5000.0;
 
-	// ´¦ÀíËÙ¶ÈÆ½»¬£¨¿ÉÑ¡£ºÊ¹ÓÃÒÆ¶¯Æ½¾ù£©
-	const double SPEED_SMOOTH_FACTOR = 0.6;  // Æ½»¬ÏµÊı£¬0-1Ö®¼ä£¬Ô½´óÔ½Ãô¸Ğ
+	// å¤„ç†é€Ÿåº¦å¹³æ»‘ï¼ˆå¯é€‰ï¼šä½¿ç”¨ç§»åŠ¨å¹³å‡ï¼‰
+	const double SPEED_SMOOTH_FACTOR = 0.8;  // å¹³æ»‘ç³»æ•°ï¼Œ0-1ä¹‹é—´ï¼Œè¶Šå¤§è¶Šæ•æ„Ÿ
 
 	/**
-	 * »ñÈ¡µ±Ç°Ê±¼ä´Á£¨ºÁÃë£©
+	 * è·å–å½“å‰æ—¶é—´æˆ³ï¼ˆæ¯«ç§’ï¼‰
 	 */
 	long long getCurrentTimeMs() {
 		return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -44,103 +44,103 @@ private:
 public:
 	BufferPIDController() {}
 
-	// ×Ô¶¨Òå PID ²ÎÊı
+	// è‡ªå®šä¹‰ PID å‚æ•°
 	BufferPIDController(double kp, double ki, double kd)
 		: Kp(kp), Ki(ki), Kd(kd) {}
 
 	/**
-	 * ÔÚÃ¿´Î´¦ÀíÍêÒ»ÕÅÕÕÆ¬ºóµ÷ÓÃ
-	 * @param totalNum ×ÜÊı¾İÁ¿
-	 * @param processedNum ÒÑ´¦ÀíÊı¾İÁ¿
+	 * åœ¨æ¯æ¬¡å¤„ç†å®Œä¸€å¼ ç…§ç‰‡åè°ƒç”¨
+	 * @param totalNum æ€»æ•°æ®é‡
+	 * @param processedNum å·²å¤„ç†æ•°æ®é‡
 	 */
 	void processed(int totalNum, int processedNum) {
-		// 1. »ñÈ¡µ±Ç°Ê±¼ä²¢¼ÆËã´¦ÀíËÙ¶È
+		// 1. è·å–å½“å‰æ—¶é—´å¹¶è®¡ç®—å¤„ç†é€Ÿåº¦
 		long long currentTime = getCurrentTimeMs();
 
 		if (!isFirstCall && lastCallTime > 0) {
-			// ¼ÆËãÊµ¼Ê´¦ÀíËÙ¶È£¨Á½´Îµ÷ÓÃµÄÊ±¼ä¼ä¸ô£©
+			// è®¡ç®—å®é™…å¤„ç†é€Ÿåº¦ï¼ˆä¸¤æ¬¡è°ƒç”¨çš„æ—¶é—´é—´éš”ï¼‰
 			double measuredSpeed = static_cast<double>(currentTime - lastCallTime);
 
-			// Ê¹ÓÃÖ¸ÊıÒÆ¶¯Æ½¾ùÆ½»¬´¦ÀíËÙ¶È£¨¼õÉÙÔëÉùÓ°Ïì£©
+			// ä½¿ç”¨æŒ‡æ•°ç§»åŠ¨å¹³å‡å¹³æ»‘å¤„ç†é€Ÿåº¦ï¼ˆå‡å°‘å™ªå£°å½±å“ï¼‰
 			processSpeed = SPEED_SMOOTH_FACTOR * measuredSpeed +
 				(1.0 - SPEED_SMOOTH_FACTOR) * processSpeed;
 
-			// ÏŞÖÆ processSpeed ÔÚºÏÀí·¶Î§ÄÚ£¨·ÀÖ¹Òì³£Öµ£©
+			// é™åˆ¶ processSpeed åœ¨åˆç†èŒƒå›´å†…ï¼ˆé˜²æ­¢å¼‚å¸¸å€¼ï¼‰
 			processSpeed = std::clamp(processSpeed, 1000.0, 3000.0);
 		}
 
 		lastCallTime = currentTime;
 
-		// 2. ¼ÆËãµ±Ç°»º³åÇø´óĞ¡£¨´ı´¦ÀíÊı¾İÁ¿£©
+		// 2. è®¡ç®—å½“å‰ç¼“å†²åŒºå¤§å°ï¼ˆå¾…å¤„ç†æ•°æ®é‡ï¼‰
 		int currentBuffer = totalNum - processedNum;
 
-		// 3. ¼ÆËãÎó²î£¨ÕıÖµ±íÊ¾»º³åÇø²»×ã£¬ĞèÒª¼Ó¿ìÊäÈë£©
+		// 3. è®¡ç®—è¯¯å·®ï¼ˆæ­£å€¼è¡¨ç¤ºç¼“å†²åŒºä¸è¶³ï¼Œéœ€è¦åŠ å¿«è¾“å…¥ï¼‰
 		double error = TARGET_BUFFER - currentBuffer;
 
-		// 4. Ê×´Îµ÷ÓÃÌØÊâ´¦Àí
+		// 4. é¦–æ¬¡è°ƒç”¨ç‰¹æ®Šå¤„ç†
 		if (isFirstCall) {
 			prevError = error;
 			isFirstCall = false;
 
-			// ¸ù¾İ³õÊ¼»º³åÇøÉèÖÃ³õÊ¼ÊäÈë¼ä¸ô
+			// æ ¹æ®åˆå§‹ç¼“å†²åŒºè®¾ç½®åˆå§‹è¾“å…¥é—´éš”
 			if (currentBuffer < 40) {
-				inputInterval = 1000.0;  // »º³åÇø¹ıÉÙ£¬¿ìËÙÊäÈë
+				inputInterval = 1000.0;  // ç¼“å†²åŒºè¿‡å°‘ï¼Œå¿«é€Ÿè¾“å…¥
 			}
 			else if (currentBuffer > 120) {
-				inputInterval = 3000.0;  // »º³åÇø¹ı¶à£¬¼õÂıÊäÈë
+				inputInterval = 3000.0;  // ç¼“å†²åŒºè¿‡å¤šï¼Œå‡æ…¢è¾“å…¥
 			}
 			return;
 		}
 
-		// 5. Ê±¼ä¼ä¸ô£¨Ê¹ÓÃ×Ô¶¯¸üĞÂµÄ processSpeed£©
-		double dt = processSpeed / 1000.0;  // ×ª»»ÎªÃë
+		// 5. æ—¶é—´é—´éš”ï¼ˆä½¿ç”¨è‡ªåŠ¨æ›´æ–°çš„ processSpeedï¼‰
+		double dt = processSpeed / 1000.0;  // è½¬æ¢ä¸ºç§’
 
-		// 6. PID ¼ÆËã
-		// P: ±ÈÀıÏî - ¶Ôµ±Ç°Îó²îµÄ¼´Ê±ÏìÓ¦
+		// 6. PID è®¡ç®—
+		// P: æ¯”ä¾‹é¡¹ - å¯¹å½“å‰è¯¯å·®çš„å³æ—¶å“åº”
 		double P = Kp * error;
 
-		// I: »ı·ÖÏî - Ïû³ı³¤ÆÚÀÛ»ıÎó²î£¨´ø¿¹±¥ºÍ£©
+		// I: ç§¯åˆ†é¡¹ - æ¶ˆé™¤é•¿æœŸç´¯ç§¯è¯¯å·®ï¼ˆå¸¦æŠ—é¥±å’Œï¼‰
 		integral += error * dt;
 		integral = std::clamp(integral, MIN_INTEGRAL, MAX_INTEGRAL);
 		double I = Ki * integral;
 
-		// D: Î¢·ÖÏî - Ô¤²âÎó²î±ä»¯Ç÷ÊÆ£¬ÒÖÖÆÕğµ´
+		// D: å¾®åˆ†é¡¹ - é¢„æµ‹è¯¯å·®å˜åŒ–è¶‹åŠ¿ï¼ŒæŠ‘åˆ¶éœ‡è¡
 		double derivative = (error - prevError) / dt;
 		double D = Kd * derivative;
 
-		// 7. PID Êä³ö£¨×¢Òâ·ûºÅ£ºÕıÊä³ö±íÊ¾ĞèÒª¼õĞ¡¼ä¸ô£©
+		// 7. PID è¾“å‡ºï¼ˆæ³¨æ„ç¬¦å·ï¼šæ­£è¾“å‡ºè¡¨ç¤ºéœ€è¦å‡å°é—´éš”ï¼‰
 		double pidOutput = P + I + D;
 
-		// 8. ¸üĞÂÊäÈë¼ä¸ô
-		// Îó²îÎªÕı£¨»º³åÇø²»×ã£©-> pidOutput ÎªÕı -> ¼õĞ¡¼ä¸ô£¨¼Ó¿ìÊäÈë£©
-		// Îó²îÎª¸º£¨»º³åÇø¹ı¶à£©-> pidOutput Îª¸º -> Ôö´ó¼ä¸ô£¨¼õÂıÊäÈë£©
+		// 8. æ›´æ–°è¾“å…¥é—´éš”
+		// è¯¯å·®ä¸ºæ­£ï¼ˆç¼“å†²åŒºä¸è¶³ï¼‰-> pidOutput ä¸ºæ­£ -> å‡å°é—´éš”ï¼ˆåŠ å¿«è¾“å…¥ï¼‰
+		// è¯¯å·®ä¸ºè´Ÿï¼ˆç¼“å†²åŒºè¿‡å¤šï¼‰-> pidOutput ä¸ºè´Ÿ -> å¢å¤§é—´éš”ï¼ˆå‡æ…¢è¾“å…¥ï¼‰
 		inputInterval = inputInterval - pidOutput;
 
-		// 9. ÏŞÖÆÊäÈë¼ä¸ô·¶Î§
+		// 9. é™åˆ¶è¾“å…¥é—´éš”èŒƒå›´
 		inputInterval = std::clamp(inputInterval, MIN_INPUT_INTERVAL, MAX_INPUT_INTERVAL);
 
-		// 10. ±£´æµ±Ç°Îó²î¹©ÏÂ´ÎÊ¹ÓÃ
+		// 10. ä¿å­˜å½“å‰è¯¯å·®ä¾›ä¸‹æ¬¡ä½¿ç”¨
 		prevError = error;
 	}
 
 	/**
-	 * »ñÈ¡µ±Ç°½¨ÒéµÄÊäÈë¼ä¸ôÊ±¼ä£¨ºÁÃë£©
-	 * @return ÏÂÒ»ÕÅÕÕÆ¬Ó¦¸ÃÔÚ¶à¾ÃºóÊäÈë
+	 * è·å–å½“å‰å»ºè®®çš„è¾“å…¥é—´éš”æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰
+	 * @return ä¸‹ä¸€å¼ ç…§ç‰‡åº”è¯¥åœ¨å¤šä¹…åè¾“å…¥
 	 */
 	double getInputInterval() const {
 		return inputInterval;
 	}
 
 	/**
-	 * »ñÈ¡µ±Ç°²âÁ¿µÄ´¦ÀíËÙ¶È£¨ºÁÃë£©
-	 * @return µ±Ç°Æ½¾ù´¦ÀíËÙ¶È
+	 * è·å–å½“å‰æµ‹é‡çš„å¤„ç†é€Ÿåº¦ï¼ˆæ¯«ç§’ï¼‰
+	 * @return å½“å‰å¹³å‡å¤„ç†é€Ÿåº¦
 	 */
 	double getProcessSpeed() const {
 		return processSpeed;
 	}
 
 	/**
-	 * »ñÈ¡µ±Ç°»º³åÇø×´Ì¬ĞÅÏ¢£¨ÓÃÓÚµ÷ÊÔºÍ¼à¿Ø£©
+	 * è·å–å½“å‰ç¼“å†²åŒºçŠ¶æ€ä¿¡æ¯ï¼ˆç”¨äºè°ƒè¯•å’Œç›‘æ§ï¼‰
 	 */
 	struct Status {
 		double inputInterval;
@@ -154,7 +154,7 @@ public:
 	}
 
 	/**
-	 * ÖØÖÃ PID ¿ØÖÆÆ÷×´Ì¬
+	 * é‡ç½® PID æ§åˆ¶å™¨çŠ¶æ€
 	 */
 	void reset() {
 		integral = 0.0;
@@ -166,7 +166,7 @@ public:
 	}
 
 	/**
-	 * ¶¯Ì¬µ÷Õû PID ²ÎÊı£¨ÓÃÓÚÔËĞĞÊ±µ÷ÓÅ£©
+	 * åŠ¨æ€è°ƒæ•´ PID å‚æ•°ï¼ˆç”¨äºè¿è¡Œæ—¶è°ƒä¼˜ï¼‰
 	 */
 	void setPIDParams(double kp, double ki, double kd) {
 		Kp = kp;
@@ -175,7 +175,7 @@ public:
 	}
 
 	/**
-	 * ÉèÖÃÄ¿±ê»º³åÇø´óĞ¡£¨Èç¹ûĞèÒª¶¯Ì¬µ÷ÕûÄ¿±ê£©
+	 * è®¾ç½®ç›®æ ‡ç¼“å†²åŒºå¤§å°ï¼ˆå¦‚æœéœ€è¦åŠ¨æ€è°ƒæ•´ç›®æ ‡ï¼‰
 	 */
 	void setTargetBuffer(double target) {
 		const_cast<double&>(TARGET_BUFFER) = target;

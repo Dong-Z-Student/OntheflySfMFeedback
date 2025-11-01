@@ -402,7 +402,7 @@ void ModelViewerWidget::ReloadReconstruction() {
 		// 时间统计
 		double avgSeconds = reg_image_ids.empty() ? 0.0 :
 			static_cast<double>(totalTimer.ElapsedMicroSeconds()) / reg_image_ids.size() / 1e6;
-		labelString += QString().asprintf("  (%.2f s / image)", avgSeconds);
+		labelString += QString().asprintf("  (Total time: %.2f s / image)", avgSeconds);
 		UpdateStatus(labelString); // 在Upload渲染数据之前统计平均处理时间，以免造成多余时间统计 
 
 		Upload();
@@ -1105,7 +1105,7 @@ void ModelViewerWidget::UploadPointConnectionData() {
 
 void ModelViewerWidget::UploadImageData(const bool selection_mode) {
 	makeCurrent();
-	image_t lastRegistedImageIDValue = lastRegistedImageID.load(std::memory_order_acquire);
+	image_t lastRegistedImageIDValue = lastRegistedImageID.load();
 	std::vector<LinePainter::Data> line_data;
 	line_data.reserve(8 * reg_image_ids.size());
 
