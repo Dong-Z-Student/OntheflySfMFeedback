@@ -489,7 +489,6 @@ public:
 	DelaunayTriangulationRayCaster* ray_caster = nullptr;
 	DelaunayMeshingEdgeWeightComputer* edge_weight_computer = nullptr;
 	std::shared_ptr<PlyMesh> mesh;
-	static std::atomic<bool> isbusy;
 	std::vector<float> surface_facet_areas; // 存储面片面积
 	std::vector<Delaunay::Facet> surface_facets;
 	std::vector<float> surface_facet_side_lengths;

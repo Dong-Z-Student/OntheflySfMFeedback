@@ -198,7 +198,13 @@ public:
 	}
 
 	TwoViewGeometry DatabaseReadTwoViewGeometry(image_t id1, image_t id2) {
+		QReadLocker locker(&m_database_lock);
 		return database->ReadTwoViewGeometry(id1, id2);
+	}
+
+	void ReadTwoViewGeometryNumInliers(std::vector<std::pair<image_t, image_t>>& imgPairs, std::vector<int>& numInliers) {
+		QReadLocker locker(&m_database_lock);
+		database->ReadTwoViewGeometryNumInliers(&imgPairs, &numInliers);
 	}
 
 	//// === ModelManager 相关操作 ===

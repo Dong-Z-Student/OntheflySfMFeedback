@@ -1,4 +1,5 @@
-﻿#include "../Base/misc.h"
+﻿#include "../Base/config.h"
+#include "../Base/misc.h"
 #include "../Base/timer.h"
 #include "../Estimator/IncrementalMapper.h"
 #include "glog/logging.h"
@@ -78,7 +79,8 @@ bool ReconstructTask::Reconstruct(bool init)
 		// IncrementalMapping
 		reconstructionTimer.Restart();
 		size_t registerTime = 0;
-		const std::vector<image_t> nextImageIDs = mapper->FindNextImages(init_mapper_options);
+		std::vector<image_t> nextImageIDs;
+		nextImageIDs = mapper->FindNextImages(init_mapper_options);
 		registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
 		model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 
@@ -106,6 +108,7 @@ bool ReconstructTask::Reconstruct(bool init)
 				{
 					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 					LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
+					m_data->usedFrame.release(); // 重建失败，需要释放资源
 					continue;
 				}
 
@@ -125,104 +128,39 @@ bool ReconstructTask::Reconstruct(bool init)
 
 				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 			}
-			m_data->AddReconstructedImage(nextImageID);
-			emit registedSuccess(nextImageID);
 
 #ifdef GaussianSplatting_Output
-			if (modelID != 0)
-			{
-				continue;
+			Config& config = Config::getInstance();
+			if (config.pipeline.AutoExportModel) {
+				QReadLocker locker(&(m_data->m_models_lock[0]));
+				const int step = config.pipeline.AutoExportFrame;
+				const size_t numRegImages = model->NumRegImages();
+				if (numRegImages > 1 && numRegImages % step == 0)
+				{
+					const std::string basePath = StringReplace(EnsureTrailingSlash(GetParentDir(Database::exportPath)), "\\", "/");
+
+					const std::string modelExportDir = basePath + "models/" + std::to_string(numRegImages);
+					CreateDirIfNotExists(modelExportDir + "/bin", true);
+					CreateDirIfNotExists(modelExportDir + "/text", true);
+					model->WriteBinary(modelExportDir + "/bin");
+					model->WriteText(modelExportDir + "/text");
+					model->OutputDebugResult(modelExportDir);
+
+					LOG(INFO) << "[Export] output model " << numRegImages << " completed!";
+				}
 			}
-			const size_t numRegImages = modelManager->Get(modelID)->NumRegImages();
-			if (numRegImages % 1 == 0 && numRegImages != 0 && numRegImages > 1)
-			{
-				const std::string basePath = StringReplace(EnsureTrailingSlash(GetParentDir(Database::exportPath)), "\\", "/");
-
-				const std::string modelExportDir = basePath + "models/" + to_string(numRegImages);
-				CreateDirIfNotExists(modelExportDir + "/bin", true);
-				CreateDirIfNotExists(modelExportDir + "/text", true);
-				modelManager->Get(modelID)->WriteBinary(modelExportDir + "/bin");
-				modelManager->Get(modelID)->WriteText(modelExportDir + "/text");
-				modelManager->Get(modelID)->OutputDebugResult(modelExportDir);
-
-				//const size_t imageNum = database->NumImages();
-				//const size_t imageOutNum = (imageNum / 20) * 20;
-				const size_t imageOutNum = numRegImages;
-				const vector<image_t> RegImagesIds = modelManager->Get(modelID)->RegImageIds();
-
-				vector<pair<image_t, image_t>> imagePairs(0);
-				vector<int> numInliers(0);
-				database->ReadTwoViewGeometryNumInliers(&imagePairs, &numInliers);
-				for (int i = 0; i < imagePairs.size(); i++)
-				{
-					const image_pair_t imagePairID = Database::ImagePairToPairId(imagePairs[i].first, imagePairs[i].second);
-					const size_t numInlierMatches = numInliers[i];
-					matchMatrix[imagePairID] = numInlierMatches;
-				}
-
-				std::ofstream MatchMatrixImageName(modelExportDir + "/match_matrix_image_name.txt");
-				for (size_t i = 1; i <= imageOutNum; i++)
-				{
-					if (i < imageOutNum)
-					{
-						const image_t imageId = RegImagesIds[i - 1];
-						MatchMatrixImageName << RemoveExtension(database->ReadImage(imageId).Name()) << ",";
-					}
-					if (i == imageOutNum)
-					{
-						const image_t imageId = RegImagesIds[i - 1];
-						MatchMatrixImageName << RemoveExtension(database->ReadImage(imageId).Name()) << endl;
-					}
-
-				}
-				MatchMatrixImageName.close();
-
-				std::ofstream MatchMatrixValue(modelExportDir + "/match_matrix_value.txt");
-				for (size_t i = 1; i <= imageOutNum; i++)
-				{
-					for (size_t j = 1; j <= imageOutNum; j++)
-					{
-						const image_t imageID1 = RegImagesIds[i - 1];
-						const image_t imageID2 = RegImagesIds[j - 1];
-						const size_t value = GetMatrixValue(imageID1, imageID2);
-						if (j < imageOutNum)
-						{
-							if (j != i)
-							{
-								MatchMatrixValue << value << ",";
-							}
-							if (j == i)
-							{
-								MatchMatrixValue << database->NumKeypointsForImage(imageID1) << ",";
-							}
-						}
-						if (j == imageOutNum)
-						{
-							if (j != i)
-							{
-								MatchMatrixValue << value;
-							}
-							if (j == i)
-							{
-								MatchMatrixValue << database->NumKeypointsForImage(imageID1);
-							}
-						}
-					}
-					MatchMatrixValue << endl;
-				}
-
-				cout << (boost::format("Export %1% models completed!") % numRegImages).str() << endl;
-		}
 #endif
+			m_data->AddReconstructedImage(nextImageID);
+			emit registedSuccess(nextImageID);
 			m_data->usedFrame.release(); // 重建完毕，释放渲染帧
+		}
 	}
-}
 	{
 		QWriteLocker locker(&(m_data->m_models_lock[0]));
 		mapper->EndReconstruction(false);
 	}
 	return true;
-			}
+}
 
 bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper)
 {

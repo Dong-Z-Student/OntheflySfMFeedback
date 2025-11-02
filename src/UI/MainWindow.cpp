@@ -394,6 +394,7 @@ void MainWindow::RenderNow() {
 				reconstruction_idx = reconstructionManager->Size() - 1;
 			}
 		}
+		LOG(INFO) << "[Render]: Wait for rendering...";
 		workflow->AcquireUsedFrame();
 		if (isTrackModelCheckBox->isChecked()) {
 			QReadLocker locker(&(workflow->GetModelLock(0)));
@@ -401,6 +402,7 @@ void MainWindow::RenderNow() {
 			modelViewerWidget->ReloadReconstruction();
 		}
 		workflow->ReleaseFreeFrame();
+		LOG(INFO) << "[Render]: Render finished.";
 	}
 	catch (const std::exception& e) {
 		std::cout << "RenderNow unknown exception caught" << endl;

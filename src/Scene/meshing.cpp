@@ -18,8 +18,6 @@
 #include <unordered_map>
 #include <vector>
 
-std::atomic<bool> MeshManager::isbusy{ false };
-
 namespace {
 	std::vector<Eigen::Vector4f> generateColorsWithQuantiles(
 		const std::vector<double>& weights,
@@ -578,8 +576,6 @@ void MeshManager::CopyFromReconstruction(const Reconstruction& reconstruction)
 }
 
 void MeshManager::CreateMesh() {
-	isbusy = true;
-
 	timer.start("创建Delaunay三角剖分");
 	input_data.CreateSubSampledDelaunayTriangulation(options.max_proj_dist, options.max_depth_dist, triangulation);
 	timer.stop();
@@ -835,7 +831,6 @@ void MeshManager::CreateMesh() {
 				triangulation.vertex_triple_index(facet.second, 2))));
 	}
 	timer.stop();
-	isbusy = false;
 	timer.printExecutionTimes();
 
 	//mesh = FilterSurfaceFacetsWithBoundaryAdaptation(
@@ -870,7 +865,6 @@ void MeshManager::CreateMesh() {
 }
 
 void MeshManager::UpdateMesh() {
-	isbusy = true;
 	StackTimer timer;
 
 	/*timer.start("总耗时");
@@ -1235,7 +1229,6 @@ void MeshManager::UpdateMesh() {
 
 	timer.stop();
 	timer.stop();
-	isbusy = false;
 	timer.printExecutionTimes();
 	// ExportLargestFacets(10);
 	WriteTextPlyMesh("D:/PROJECT/On_the_fly_SfME/x64/Release/mesh.ply", *mesh);
@@ -1772,7 +1765,6 @@ std::vector<double> MeshManager::QualityAssessment()
 
 // 渐进式连续构建Mesh，权重部分累积，提取部分重新构建
 void MeshManager::CreateMeshSimulatly(const Reconstruction& reconstruction) {
-	isbusy = true;
 	StackTimer timer;
 
 	timer.start("总耗时");
@@ -2072,7 +2064,6 @@ void MeshManager::CreateMeshSimulatly(const Reconstruction& reconstruction) {
 	}
 	timer.stop();
 	timer.stop();
-	isbusy = false;
 	timer.printExecutionTimes();
 }
 
