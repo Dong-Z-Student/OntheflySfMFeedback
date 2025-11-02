@@ -394,25 +394,17 @@ void MainWindow::RenderNow() {
 				reconstruction_idx = reconstructionManager->Size() - 1;
 			}
 		}
-
+		workflow->AcquireUsedFrame();
 		if (isTrackModelCheckBox->isChecked()) {
-			QMutex& renderLock = workflow->GetRenderingLock();
-			if (renderLock.tryLock()) {
-				modelViewerWidget->reconstruction = reconstructionManager->Get(0);
-				modelViewerWidget->ReloadReconstruction();
-				renderLock.unlock();
-				workflow->SetRenderingFlag(false);
-			}
-			else {
-				workflow->SetRenderingFlag(true);
-			}
+			QReadLocker locker(&(workflow->GetModelLock(0)));
+			modelViewerWidget->reconstruction = reconstructionManager->Get(0);
+			modelViewerWidget->ReloadReconstruction();
 		}
-		else {
-			workflow->SetRenderingFlag(false);
-		}
+		workflow->ReleaseFreeFrame();
 	}
 	catch (const std::exception& e) {
 		std::cout << "RenderNow unknown exception caught" << endl;
+		LOG(INFO) << "Exception: " << e.what();
 	}
 }
 
@@ -435,10 +427,7 @@ void MainWindow::onTabChanged(int index) {
 
 void MainWindow::OnTrackModelToggled(bool checked)
 {
-	workflow->SetRenderingFlag(false);
-	if (checked) {
-		RenderNow();
-	}
+	// TODO: 强制渲染一次模型
 }
 
 //主界面使用一个QLabel显示状态，子标签页发送status信号主界面接收，主界面切换页面改变页面序号，根据当前

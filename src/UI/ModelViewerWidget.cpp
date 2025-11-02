@@ -406,7 +406,6 @@ void ModelViewerWidget::ReloadReconstruction() {
 		UpdateStatus(labelString); // 在Upload渲染数据之前统计平均处理时间，以免造成多余时间统计 
 
 		Upload();
-		update();
 	}
 	catch (const std::exception& e)
 	{
@@ -883,6 +882,7 @@ void ModelViewerWidget::Upload() {
 	UploadImageData();
 	UploadPointConnectionData();
 	UploadImageConnectionData();
+	update();
 }
 
 void ModelViewerWidget::UploadCoordinateGridData() {

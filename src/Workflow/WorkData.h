@@ -15,6 +15,7 @@
 #include <QMutexLocker>
 #include <QObject>
 #include <QReadWriteLock>
+#include <QSemaphore>
 #include <QThread>
 
 enum CImageStatusFlag : char {
@@ -333,7 +334,8 @@ public:
 	std::atomic_size_t estimatedImagesNum{ 0 };
 	//// 用于UI显示的数据
 	std::shared_ptr<const RenderData> render_data; // 反馈数据
-	std::atomic_bool renderingFlag{ true };
+	QSemaphore freeFrame{ 1 }; // 产生空闲帧数据
+	QSemaphore usedFrame{ 0 }; // 渲染已有帧数据
 
 	//// 互斥锁
 	mutable QReadWriteLock m_database_lock;
@@ -344,7 +346,6 @@ public:
 	QMutex m_imagestatus_lock;
 	mutable QReadWriteLock m_estimatedSet_lock;
 	mutable QReadWriteLock m_reconstructedSet_lock;
-	mutable QMutex m_rendering_lock;
 
 private:
 	//// 工作变量

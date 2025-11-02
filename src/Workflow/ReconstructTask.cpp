@@ -31,7 +31,11 @@ bool ReconstructTask::Reconstruct(bool init)
 	IncrementalMapper* mapper = m_data->getIncrementalMapper();
 
 	std::shared_ptr<Reconstruction> model = m_data->getModelManager()->Get(modelID);
-	mapper->BeginReconstruction(model);
+
+	{
+		QWriteLocker locker(&(m_data->m_models_lock[0]));
+		mapper->BeginReconstruction(model);
+	}
 
 	IncrementalMapper::Options init_mapper_options;
 
@@ -45,7 +49,7 @@ bool ReconstructTask::Reconstruct(bool init)
 			}
 			// 只对空模型尝试初始化
 			{
-				QWriteLocker locker(&(m_data->m_models_lock[modelID]));
+				QWriteLocker locker(&(m_data->m_models_lock[0]));
 				if (InitializeEmptyModel(init_mapper_options, *model, *mapper))
 				{
 					//lastRegModelID = modelID;
@@ -93,10 +97,7 @@ bool ReconstructTask::Reconstruct(bool init)
 		int itNum = 0;
 		for (size_t nextImageID : orderedNextImageIDs)
 		{
-			m_data->renderingFlag.store(true);
-			// 渲染锁，在重建的时候需要写入模型数据，然而UI线程渲染需要读取模型数据
-			QMutex& renderLock = m_data->m_rendering_lock;
-			renderLock.lock();
+			m_data->freeFrame.acquire(); // 获取生产帧
 			reconstructionTimer.Restart();
 			const std::string nextImageName = m_data->DatabaseReadImage(nextImageID).Name();
 			{
@@ -124,7 +125,6 @@ bool ReconstructTask::Reconstruct(bool init)
 
 				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 			}
-			renderLock.unlock();
 			m_data->AddReconstructedImage(nextImageID);
 			emit registedSuccess(nextImageID);
 
@@ -212,21 +212,23 @@ bool ReconstructTask::Reconstruct(bool init)
 				}
 
 				cout << (boost::format("Export %1% models completed!") % numRegImages).str() << endl;
-			}
-#endif
-			while (m_data->renderingFlag.load())
-			{
-				QThread::msleep(18); // 等待渲染信号传递生效
-			}
 		}
+#endif
+			m_data->usedFrame.release(); // 重建完毕，释放渲染帧
 	}
-	mapper->EndReconstruction(false);
-	return true;
 }
+	{
+		QWriteLocker locker(&(m_data->m_models_lock[0]));
+		mapper->EndReconstruction(false);
+	}
+	return true;
+			}
 
 bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper)
 {
 	LOG(INFO) << "Finding good initial image pair...";
+
+	m_data->freeFrame.acquire(); // 获取生产帧
 
 	image_t initImageID1 = std::numeric_limits<image_t>::max();
 	image_t initImageID2 = std::numeric_limits<image_t>::max();
@@ -268,6 +270,7 @@ bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& opt
 	m_data->AddReconstructedImage(initImageID1);
 	m_data->AddReconstructedImage(initImageID2);
 	emit registedInitialImagePair(initImageID1, initImageID2);
+	m_data->usedFrame.release(); // 释放渲染帧
 	return true;
 }
 

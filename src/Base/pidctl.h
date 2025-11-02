@@ -8,11 +8,11 @@ private:
 	// PID 参数
 	double Kp = 8.0;      // 比例系数：快速响应误差
 	double Ki = 0.15;       // 积分系数：消除稳态误差
-	double Kd = 60.0;      // 微分系数：抑制震荡
+	double Kd = 80.0;      // 微分系数：抑制震荡
 
 	// 目标值和约束
 	const double TARGET_BUFFER = 70.0;
-	const double MIN_INPUT_INTERVAL = 500.0;   // 最小输入间隔 (ms)
+	const double MIN_INPUT_INTERVAL = 800.0;   // 最小输入间隔 (ms)
 	const double MAX_INPUT_INTERVAL = 5000.0;  // 最大输入间隔 (ms)
 
 	// PID 状态变量

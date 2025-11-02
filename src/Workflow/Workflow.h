@@ -16,6 +16,7 @@
 #include "WorkData.h"
 #include <QMutex>
 #include <QObject>
+#include <QReadWriteLock>
 #include <QString>
 #include <QtConcurrent>
 #include <QThread>
@@ -32,9 +33,9 @@ public:
 	void setData(Database* p_database, ReconstructionManager* p_modelManager);
 	void LoadPython();
 	std::shared_ptr<const RenderData> GetRenderingData() const { return m_workData->render_data; }
-	QMutex& GetRenderingLock() { return m_workData->m_rendering_lock; }
-	void SetRenderingFlag(bool flag) { m_workData->renderingFlag.store(flag); }
-	const bool GetRenderingFlag() const { return m_workData->renderingFlag.load(); }
+	QReadWriteLock& GetModelLock(int modelID) { return m_workData->m_models_lock[modelID]; }
+	void AcquireUsedFrame() { m_workData->usedFrame.acquire(); }
+	void ReleaseFreeFrame() { m_workData->freeFrame.release(); }
 
 signals:
 	void readImageFinished(QString p_imagePath);

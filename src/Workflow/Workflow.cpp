@@ -23,7 +23,7 @@ WorkFlow::WorkFlow(QObject* parent)
 	m_gextract_threadPool->setMaxThreadCount(1);
 	m_retrieve_threadPool->setMaxThreadCount(2);
 	m_match_threadPool->setMaxThreadCount(3);
-	m_estimate_threadPool->setMaxThreadCount(6);
+	m_estimate_threadPool->setMaxThreadCount(4);
 	m_reconstruct_threadPool->setMaxThreadCount(1);
 	m_feedback_threadPool->setMaxThreadCount(1);
 }
