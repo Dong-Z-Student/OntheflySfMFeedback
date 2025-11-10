@@ -2125,6 +2125,49 @@ void MeshManager::GenerateRenderMeshData() {
 			});
 	}
 
+	// 目前显示已飞行的航线
+	std::vector<std::pair<image_t, const DelaunayMeshingInput::Image*>> images_order;
+	images_order.reserve(input_data.images.size());
+	for (auto& [key, img] : input_data.images) {
+		images_order.emplace_back(key, &img);
+	}
+	std::sort(images_order.begin(), images_order.end(),
+		[](const auto& a, const auto& b) {
+			return a.first < b.first;
+		});
+	const Eigen::Vector4f Red{ 1.0f,0.0f,1.0f,1.0f };
+	const Eigen::Vector4f Orange{ 1.0f, 0.647f, 0.0f,1.0f };
+	const Eigen::Vector4f Green{ 0.0f, 1.0f, 0.0f,1.0f };
+	Eigen::Vector3f previous_cam_center;
+	bool initialized = false;
+	for (auto& [id, img] : images_order) {
+		const Eigen::Vector3f cam_center = img->proj_center;
+		Eigen::Matrix3f R = img->proj_matrix.block<3, 3>(0, 0);
+		Eigen::Vector3f cam_dir = R.transpose() * Eigen::Vector3f(0, 0, 1);
+		cam_dir.normalize();
+		float line_length = 1.0f;
+		Eigen::Vector3f line_end = cam_center + line_length * cam_dir;
+		rendata->guide_points.emplace_back(PointPainterData{
+		cam_center.x(),cam_center.y(),cam_center.z(),Red.x(),Red.y(),Red.z(),Red.w()
+			});
+		rendata->guide_directions.emplace_back(LinePainterData{
+			cam_center.x(),cam_center.y(),cam_center.z(),Green.x(),Green.y(),Green.z(),Green.w(),
+			line_end.x(),line_end.y(),line_end.z(),Green.x(),Green.y(),Green.z(),Green.w()
+			});
+
+		if (initialized) {
+			rendata->guide_lines.emplace_back(LinePainterData{
+			previous_cam_center.x(),previous_cam_center.y(),previous_cam_center.z(),Orange.x(),Orange.y(),Orange.z(),Orange.w(),
+			cam_center.x(),cam_center.y(),cam_center.z(),Orange.x(),Orange.y(),Orange.z(),Orange.w()
+				});
+		}
+		else
+		{
+			initialized = true;
+		}
+		previous_cam_center = cam_center;
+	}
+
 	renderdata = rendata;
 }
 

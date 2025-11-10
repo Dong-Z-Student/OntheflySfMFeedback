@@ -366,6 +366,9 @@ void ModelViewerWidget::paintGL() {
 	mesh_line_painter_.Render(pmv_matrix, width(), height(), 1);
 	mesh_triangle_painter_.Render(pmv_matrix);
 	quality_triangle_painter_.Render(pmv_matrix);
+	guide_viewpoint_painter_.Render(pmv_matrix, 10.0f);
+	guide_path_painter_.Render(pmv_matrix, width(), height(), 2.5f);
+	guide_direction_painter_.Render(pmv_matrix, width(), height(), 2.5f);
 }
 
 void ModelViewerWidget::resizeGL(int width, int height) {
@@ -419,6 +422,7 @@ void ModelViewerWidget::ReloadFeedback(bool showMesh, bool showQuality, bool sho
 	{
 		UploadMeshData(showMesh, !showQuality);
 		UploadQualityData(showQuality);
+		UploadPlanningData(showGuidePath);
 		update();
 	}
 	catch (const std::exception& e)
@@ -856,6 +860,9 @@ void ModelViewerWidget::SetupPainters() {
 	mesh_triangle_painter_.Setup();//Mesh表面
 	mesh_line_painter_.Setup();//Mesh轮廓线
 	quality_triangle_painter_.Setup();//质量评估三角面片
+	guide_viewpoint_painter_.Setup();
+	guide_direction_painter_.Setup();
+	guide_path_painter_.Setup();
 
 	movie_grabber_path_painter_.Setup();
 	movie_grabber_line_painter_.Setup();
@@ -1279,6 +1286,52 @@ void ModelViewerWidget::UploadQualityData(bool showQuality)
 	}
 
 	quality_triangle_painter_.Upload(triangle_data);
+}
+
+void ModelViewerWidget::UploadPlanningData(bool showPath)
+{
+	makeCurrent();
+
+	std::vector<PointPainter::Data> potint_data;
+	std::vector<LinePainter::Data> guideline_data;
+	std::vector<LinePainter::Data> direction_data;
+
+	if (showPath) {
+		potint_data.reserve(render_data->guide_points.size());
+		for (const auto& pts : render_data->guide_points) {
+			potint_data.emplace_back(
+				PointPainter::Data(
+					pts[0], pts[1], pts[2], pts[3], pts[4], pts[5], pts[6]
+				)
+			);
+		}
+		guideline_data.reserve(render_data->guide_lines.size());
+		for (const auto& pts : render_data->guide_lines) {
+			guideline_data.emplace_back(
+				PointPainter::Data(
+					pts[0], pts[1], pts[2], pts[3], pts[4], pts[5], pts[6]
+				),
+				PointPainter::Data(
+					pts[7], pts[8], pts[9], pts[10], pts[11], pts[12], pts[13]
+				)
+			);
+		}
+		direction_data.reserve(render_data->guide_directions.size());
+		for (const auto& pts : render_data->guide_directions) {
+			direction_data.emplace_back(
+				PointPainter::Data(
+					pts[0], pts[1], pts[2], pts[3], pts[4], pts[5], pts[6]
+				),
+				PointPainter::Data(
+					pts[7], pts[8], pts[9], pts[10], pts[11], pts[12], pts[13]
+				)
+			);
+		}
+	}
+
+	guide_viewpoint_painter_.Upload(potint_data);
+	guide_path_painter_.Upload(guideline_data);
+	guide_direction_painter_.Upload(direction_data);
 }
 
 void ModelViewerWidget::ComposeProjectionMatrix() {

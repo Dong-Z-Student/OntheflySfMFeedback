@@ -126,6 +126,7 @@ private:
 	void UploadMovieGrabberData();
 	void UploadMeshData(bool showMesh = true, bool showMeshface = true, bool showMeshline = true);
 	void UploadQualityData(bool showQuality = true);
+	void UploadPlanningData(bool showPath = true);
 
 	void ComposeProjectionMatrix();
 
@@ -158,6 +159,9 @@ private:
 	TrianglePainter mesh_triangle_painter_;
 	LinePainter mesh_line_painter_;
 	TrianglePainter quality_triangle_painter_;
+	PointPainter guide_viewpoint_painter_;
+	LinePainter guide_path_painter_;
+	LinePainter guide_direction_painter_;
 
 	Database* database = nullptr;
 
