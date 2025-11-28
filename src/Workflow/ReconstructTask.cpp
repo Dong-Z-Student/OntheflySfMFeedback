@@ -73,6 +73,45 @@ bool ReconstructTask::Reconstruct(bool init)
 			mapper->EndReconstruction(true);
 			return false;
 		}
+		size_t registerTime = 0;
+		std::vector<image_t> nextImageIDs;
+		nextImageIDs = mapper->FindNextImages(init_mapper_options);
+		for (size_t nextImageID : nextImageIDs)
+		{
+			m_data->freeFrame.acquire(); // 获取生产帧
+			reconstructionTimer.Restart();
+			const std::string nextImageName = m_data->DatabaseReadImage(nextImageID).Name();
+			{
+				QWriteLocker locker(&(m_data->m_models_lock[0]));
+				if (!mapper->RegisterNextImage(init_mapper_options, nextImageID))
+				{
+					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+					LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
+					m_data->usedFrame.release(); // 重建失败，需要释放资源
+					continue;
+				}
+
+				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+				registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
+				model->registerTimes.push_back(registerTime);
+				LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered successfully!";
+
+				reconstructionTimer.Restart();
+				TriangulateImage(init_mapper_options, nextImageID, *mapper);
+				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+				model->triangulateTimes.push_back(reconstructionTimer.ElapsedMicroSeconds() / 1000);
+
+				reconstructionTimer.Restart();
+				LocalBundleAdjustment(init_mapper_options, nextImageID, *mapper);
+				ExtractColors(init_mapper_options, nextImageID, *model);
+
+				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+			}
+
+			m_data->AddReconstructedImage(nextImageID);
+			emit registedSuccess(nextImageID);
+			m_data->usedFrame.release(); // 重建完毕，释放渲染帧
+		}
 		model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 	}
 	else {

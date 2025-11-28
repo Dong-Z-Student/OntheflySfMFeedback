@@ -137,6 +137,7 @@ bool WorkFlow::ReconstructImage(quint32 imageID)
 			LOG(INFO) << "[Reconstruct] initializing model: " << 0;
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, -1, ReconstructType::AddModel, this);
 			connect(m_reconstructTask, &ReconstructTask::registedInitialImagePair, this, &WorkFlow::onRegistedInitialImagePair);
+			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess);
 			m_reconstruct_threadPool->start(m_reconstructTask);
 		}
 		else {
