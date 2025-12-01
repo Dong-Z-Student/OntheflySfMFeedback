@@ -9,7 +9,7 @@
 *.sln.docstates
 *.env
 **/log/
-
+settings.ini
 
 scripts/pyscripts/PCA_dims32768to2048.model
 scripts/pyscripts/VGG16_64_desc_cen.hdf5
@@ -476,3 +476,4 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+/x64/settings.ini
