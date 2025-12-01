@@ -148,6 +148,8 @@ bool ReconstructTask::Reconstruct(bool init)
 					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 					LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
 					m_data->usedFrame.release(); // 重建失败，需要释放资源
+					m_data->usedFrame.acquire();
+					m_data->freeFrame.release();
 					continue;
 				}
 
@@ -297,12 +299,12 @@ void ReconstructTask::LocalBundleAdjustment(const IncrementalMapper::Options& op
 
 		localBATimes.push_back(localBATime);
 		localBAErrors.push_back(finalCost);
-	}
+		}
 	mapper.ClearModifiedPoints3D();
 
 	mapper.GetReconstruction()->localBAErrors.push_back(localBAErrors);
 	mapper.GetReconstruction()->localBATimes.push_back(localBATimes);
-}
+	}
 
 void ReconstructTask::GlobalBundleAdjustment(const IncrementalMapper::Options& options, IncrementalMapper& mapper)
 {
