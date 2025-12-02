@@ -181,3 +181,91 @@ public:
 		const_cast<double&>(TARGET_BUFFER) = target;
 	}
 };
+
+class SimpleBufferController {
+private:
+	// 控制参数
+	const double TARGET_BUFFER = 70.0;
+	const double MIN_INPUT_INTERVAL = 500.0;   // 最小输入间隔 (ms) - 0.5秒
+	const double MAX_INPUT_INTERVAL = 4000.0;  // 最大输入间隔 (ms) - 4秒
+
+	double inputInterval = 1000.0;  // 初始输入间隔，设为中间值2秒
+
+	// 线性控制参数
+	const double MAX_BUFFER_DIFF = 100.0;  // 最大缓冲区差异（用于线性映射）
+
+public:
+	SimpleBufferController() {}
+
+	/**
+	 * 在每次处理完一张照片后调用
+	 * @param totalNum 总数据量
+	 * @param processedNum 已处理数据量
+	 */
+	void processed(int totalNum, int processedNum) {
+		// 计算当前缓冲区大小（待处理数据量）
+		int currentBuffer = totalNum - processedNum;
+
+		// 计算与目标缓冲区的差异
+		double bufferDiff = currentBuffer - TARGET_BUFFER;
+
+		// 线性映射：缓冲区差异 -> 输入间隔
+		// 缓冲区越大（正差异），间隔越大（减慢输入）
+		// 缓冲区越小（负差异），间隔越小（加快输入）
+
+		// 限制缓冲区差异范围
+		bufferDiff = std::clamp(bufferDiff, -MAX_BUFFER_DIFF, MAX_BUFFER_DIFF);
+
+		// 线性计算输入间隔
+		// bufferDiff = -100 时 -> MIN_INPUT_INTERVAL (500ms)
+		// bufferDiff = 0 时 -> 中间值 (2250ms)
+		// bufferDiff = 100 时 -> MAX_INPUT_INTERVAL (4000ms)
+
+		if (bufferDiff <= 0) {
+			// 缓冲区不足或刚好：在500ms到2250ms之间线性变化
+			inputInterval = MIN_INPUT_INTERVAL +
+				(inputInterval - MIN_INPUT_INTERVAL) * (1.0 + bufferDiff / MAX_BUFFER_DIFF);
+		}
+		else {
+			// 缓冲区过多：在2250ms到4000ms之间线性变化
+			inputInterval = inputInterval +
+				(MAX_INPUT_INTERVAL - inputInterval) * (bufferDiff / MAX_BUFFER_DIFF);
+		}
+
+		// 确保在限制范围内
+		inputInterval = std::clamp(inputInterval, MIN_INPUT_INTERVAL, MAX_INPUT_INTERVAL);
+	}
+
+	/**
+	 * 获取当前建议的输入间隔时间（毫秒）
+	 * @return 下一张照片应该在多久后输入
+	 */
+	double getInputInterval() const {
+		return inputInterval;
+	}
+
+	/**
+	 * 重置控制器状态
+	 */
+	void reset() {
+		inputInterval = 2000.0;  // 重置为中间值
+	}
+
+	/**
+	 * 设置目标缓冲区大小
+	 */
+	void setTargetBuffer(double target) {
+		const_cast<double&>(TARGET_BUFFER) = target;
+	}
+
+	/**
+	 * 获取当前状态信息
+	 */
+	struct Status {
+		double inputInterval;
+	};
+
+	Status getStatus() const {
+		return { inputInterval };
+	}
+};

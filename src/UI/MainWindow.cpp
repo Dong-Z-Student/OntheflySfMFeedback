@@ -443,8 +443,8 @@ void MainWindow::UpdateStatus(const QString& status) {
 // ================= 流程控制相关 =================
 void MainWindow::UpdateSimulationSpeed(quint32 read, quint32 reconstructed)
 {
-	pidController.processed(read, reconstructed);
-	double nextInputDelay = pidController.getInputInterval();
+	bufferController.processed(read, reconstructed);
+	double nextInputDelay = bufferController.getInputInterval();
 	simulationSpeed.store(nextInputDelay);
 }
 

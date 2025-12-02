@@ -477,3 +477,4 @@ compile_commands.json
 
 *_qmlcache.qrc
 /x64/settings.ini
+/src/settings.ini

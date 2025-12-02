@@ -3,9 +3,12 @@
 #include "MainWindow.h"
 #include <QApplication>          
 #include <QTranslator>          
+#include <windows.h>
 
 int main(int argc, char* argv[])
 {
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+
 	Config::getInstance("../settings.ini");
 	InitializeGlog(argv);
 
