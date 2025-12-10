@@ -228,6 +228,7 @@ void MainWindow::CreateStatusbar() {
 
 void MainWindow::SetupConnections() const {
 	connect(receiver, &Receiver::newDataReceived, workflow, &WorkFlow::onProcessNewImage);
+	connect(receiver, &Receiver::newDataReceived, this, &MainWindow::onProcessNewImage);
 	connect(workflow, &WorkFlow::readImageFinished, this, &MainWindow::addNewImageInWidget);
 	connect(workflow, &WorkFlow::reconstructUpdated, this, &MainWindow::OnRenderNow);
 	connect(workflow, &WorkFlow::feedbackFinished, this, &MainWindow::OnFeedback);
@@ -236,17 +237,16 @@ void MainWindow::SetupConnections() const {
 
 // ================= 业务逻辑 =================
 void MainWindow::RunFunc() {
-	modelViewerWidget->StartTimer();
-	const std::string baseImagePath = Database::imageDir;
-	const vector<std::string> images = GetImageFileList(baseImagePath);
+	//const std::string baseImagePath = Database::imageDir;
+	//const vector<std::string> images = GetImageFileList(baseImagePath);
 
-	QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
-	this_thread::sleep_for(chrono::milliseconds(200));
-	for (int i = 0; i < images.size(); i++) {
-		const QString imagePath = StdString2QString2(images[i]);
-		settings.setValue("NewImage", imagePath);
-		this_thread::sleep_for(chrono::milliseconds(simulationSpeed.load()));
-	}
+	//QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
+	//this_thread::sleep_for(chrono::milliseconds(200));
+	//for (int i = 0; i < images.size(); i++) {
+	//	const QString imagePath = StdString2QString2(images[i]);
+	//	settings.setValue("NewImage", imagePath);
+	//	this_thread::sleep_for(chrono::milliseconds(simulationSpeed.load()));
+	//}
 }
 
 void MainWindow::StartReceive() {
@@ -254,8 +254,8 @@ void MainWindow::StartReceive() {
 	startReceiveAction->setEnabled(false);
 	stopReceiverAction->setEnabled(true);
 
-	std::thread experimentThread(&MainWindow::RunFunc, this);
-	experimentThread.detach();
+	//std::thread experimentThread(&MainWindow::RunFunc, this);
+	//experimentThread.detach();
 }
 
 void MainWindow::StopReceive() {
@@ -430,6 +430,11 @@ void MainWindow::onTabChanged(int index) {
 void MainWindow::OnTrackModelToggled(bool checked)
 {
 	// TODO: 强制渲染一次模型
+}
+
+void MainWindow::onProcessNewImage()
+{
+	modelViewerWidget->StartTimer();
 }
 
 //主界面使用一个QLabel显示状态，子标签页发送status信号主界面接收，主界面切换页面改变页面序号，根据当前

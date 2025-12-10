@@ -192,4 +192,5 @@ private:
 	float background_color_[3];
 
 	Timer totalTimer;
+	bool isStarted;
 };

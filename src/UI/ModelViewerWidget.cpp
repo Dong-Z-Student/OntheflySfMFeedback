@@ -300,6 +300,8 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent) : QOpenGLWidget(parent), m
 	point_size_ = static_cast<float>(devicePixelRatio() * point_size_);
 
 	status_label = "0 Images - 0 Points";
+
+	isStarted = false;
 }
 
 void ModelViewerWidget::SetDatabase(Database* database)
@@ -767,7 +769,11 @@ void ModelViewerWidget::SetBackgroundColor(const float r,
 
 void ModelViewerWidget::StartTimer()
 {
+	if (isStarted) {
+		return;
+	}
 	totalTimer.Start();
+	isStarted = true;
 }
 
 void ModelViewerWidget::mousePressEvent(QMouseEvent* event) {
