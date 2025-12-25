@@ -250,6 +250,8 @@ void MainWindow::RunFunc() {
 }
 
 void MainWindow::StartReceive() {
+	QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
+	settings.setValue("NewImage", "");
 	receiver->Start();
 	startReceiveAction->setEnabled(false);
 	stopReceiverAction->setEnabled(true);
