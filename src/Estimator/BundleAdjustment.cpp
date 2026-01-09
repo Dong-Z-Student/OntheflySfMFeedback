@@ -267,7 +267,9 @@ bool BundleAdjuster::Solve(Reconstruction* reconstruction, double& finalCost) {
 	const size_t kMaxNumImagesDirectSparseSolver = 1000;
 	const size_t num_images = config_.NumImages();
 	if (num_images <= kMaxNumImagesDirectDenseSolver) {
+		LOG(INFO) << "[Solver]: Using cuda for dense solver.";
 		solver_options.linear_solver_type = ceres::DENSE_SCHUR;
+		solver_options.dense_linear_algebra_library_type = ceres::DenseLinearAlgebraLibraryType::CUDA;
 	}
 	else if (num_images <= kMaxNumImagesDirectSparseSolver && has_sparse) {
 		solver_options.linear_solver_type = ceres::SPARSE_SCHUR;

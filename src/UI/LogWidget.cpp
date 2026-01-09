@@ -163,13 +163,13 @@ void LogWidget::Flush()
 		std::pair<std::string, google::LogSeverity> logEntry = localBuffer.front();
 		localBuffer.pop();
 
-		QString prefix = GetLogPrefix(logEntry.second);
+		//QString prefix = GetLogPrefix(logEntry.second);
 		QString message = QString::fromStdString(logEntry.first);
 
 		if (message.endsWith('\n')) message.chop(1);
 
-		QString fullMessage = prefix + message;
-		m_textEdit->appendPlainText(fullMessage);
+		//QString fullMessage = prefix + message;
+		m_textEdit->appendPlainText(message);
 	}
 
 	if (m_autoScrollCheckBox->isChecked()) {
