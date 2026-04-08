@@ -43,6 +43,7 @@
     <ClInclude Include="Projection.h" />
     <ClInclude Include="Reconstruction.h" />
     <ClInclude Include="ReconstructionManager.h" />
+    <ClInclude Include="SharedMemoryChannel.h" />
     <ClInclude Include="Track.h" />
     <ClInclude Include="RenderData.h" />
     <ClInclude Include="VisibilityPyramid.h" />
@@ -63,6 +64,7 @@
     <ClCompile Include="Projection.cpp" />
     <ClCompile Include="Reconstruction.cpp" />
     <ClCompile Include="ReconstructionManager.cpp" />
+    <ClCompile Include="SharedMemoryChannel.cpp" />
     <ClCompile Include="Track.cpp" />
     <ClCompile Include="VisibilityPyramid.cpp" />
   </ItemGroup>

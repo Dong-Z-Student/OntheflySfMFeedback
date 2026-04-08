@@ -2223,4 +2223,9 @@ void MeshManager::WriteDelaunayTriangulationPly(const std::string& path,
 	}
 }
 
+void MeshManager::OutputCompactModel()
+{
+
+}
+
 

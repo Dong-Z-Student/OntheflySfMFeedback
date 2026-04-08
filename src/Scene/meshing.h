@@ -528,6 +528,8 @@ public:
 	void WriteDelaunayTriangulationPly(const std::string& path,
 		const Delaunay& triangulation);
 
+	void OutputCompactModel();
+
 private:
 	std::shared_ptr<RenderData> renderdata;
 

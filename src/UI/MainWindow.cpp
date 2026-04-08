@@ -237,16 +237,16 @@ void MainWindow::SetupConnections() const {
 
 // ================= 业务逻辑 =================
 void MainWindow::RunFunc() {
-	//const std::string baseImagePath = Database::imageDir;
-	//const vector<std::string> images = GetImageFileList(baseImagePath);
+	const std::string baseImagePath = Database::imageDir;
+	const vector<std::string> images = GetImageFileList(baseImagePath);
 
-	//QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
-	//this_thread::sleep_for(chrono::milliseconds(200));
-	//for (int i = 0; i < images.size(); i++) {
-	//	const QString imagePath = StdString2QString2(images[i]);
-	//	settings.setValue("NewImage", imagePath);
-	//	this_thread::sleep_for(chrono::milliseconds(simulationSpeed.load()));
-	//}
+	QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
+	this_thread::sleep_for(chrono::milliseconds(200));
+	for (int i = 0; i < images.size(); i++) {
+		const QString imagePath = StdString2QString2(images[i]);
+		settings.setValue("NewImage", imagePath);
+		this_thread::sleep_for(chrono::milliseconds(1000));
+	}
 }
 
 void MainWindow::StartReceive() {
@@ -256,8 +256,8 @@ void MainWindow::StartReceive() {
 	startReceiveAction->setEnabled(false);
 	stopReceiverAction->setEnabled(true);
 
-	//std::thread experimentThread(&MainWindow::RunFunc, this);
-	//experimentThread.detach();
+	std::thread experimentThread(&MainWindow::RunFunc, this);
+	experimentThread.detach();
 }
 
 void MainWindow::StopReceive() {
