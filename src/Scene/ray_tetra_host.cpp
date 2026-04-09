@@ -254,7 +254,7 @@ namespace RayTetra
 		std::vector<HullFacet> hullfacets = BuildHullFacets(delaunay);
 
 		tbb::enumerable_thread_specific<std::vector<RayInput>> thread_local_data;
-		tbb::parallel_for(tbb::blocked_range<size_t>(0, importRays.size()),
+		tbb::parallel_for(tbb::blocked_range<size_t>(0, importRays.size(), 10240),
 			[&](const tbb::blocked_range<size_t>& range) {
 				auto& local = thread_local_data.local();
 				if (local.empty()) {

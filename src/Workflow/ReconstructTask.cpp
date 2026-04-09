@@ -194,7 +194,8 @@ bool ReconstructTask::Reconstruct(bool init)
 #endif
 			{
 				if (model->NumRegImages() >= start &&
-					(model->NumRegImages() - start) % step == 0) {
+					(model->NumRegImages() - start) % step == 0 &&
+					!m_data->m_feedback_lock) {
 					QReadLocker locker(&(m_data->m_models_lock[0]));
 					m_data->setRawData(std::make_unique<RawData>(CopyReconstruction(*model)));
 				}

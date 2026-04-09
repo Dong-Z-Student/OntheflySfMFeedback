@@ -11,10 +11,10 @@ int main(int argc, char* argv[])
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
 	// 资源限制
-	tbb::global_control tbb_limit(
-		tbb::global_control::max_allowed_parallelism,
-		8
-	);
+	//tbb::global_control tbb_limit(
+	//	tbb::global_control::max_allowed_parallelism,
+	//	8
+	//);
 
 	Config::getInstance("../settings.ini");
 	InitializeGlog(argv);

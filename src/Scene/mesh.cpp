@@ -153,7 +153,7 @@ bool GenerateMeshModel(RawData& raw) {
 
 	tbb::enumerable_thread_specific<CellGraphData> thread_local_data;
 	tbb::parallel_for(
-		tbb::blocked_range<size_t>(0, raw.rays.size()),
+		tbb::blocked_range<size_t>(0, raw.rays.size(), 10240),
 		[&](const tbb::blocked_range<size_t>& range) {
 			auto& local_cell_graph = thread_local_data.local();
 
@@ -326,7 +326,7 @@ bool GenerateMeshModel(RawData& raw) {
 		std::cerr << "warning: mesh is not a valid polygon mesh" << std::endl;
 	}
 
-	fs::path outputDir = "./output";
+	fs::path outputDir = "../output";
 	fs::create_directories(outputDir);
 
 	fs::path outputPath = outputDir / ("output_" + std::to_string(raw.images.size()) + ".ply");

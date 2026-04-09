@@ -355,6 +355,7 @@ public:
 	QMutex m_imagestatus_lock;
 	mutable QReadWriteLock m_estimatedSet_lock;
 	mutable QReadWriteLock m_reconstructedSet_lock;
+	std::atomic_bool m_feedback_lock{ false };
 
 private:
 	//// 工作变量
