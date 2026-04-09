@@ -8,6 +8,7 @@
 #include "../Feature/ImageReader.h"
 #include "../Scene/Database.h"
 #include "../Scene/DatabaseCache.h"
+#include "../Scene/rawio.h"
 #include "../Scene/ReconstructionManager.h"
 #include "../Scene/RenderData.h"
 #include "tbb/concurrent_map.h"
@@ -119,7 +120,9 @@ public:
 		globalFeatureExtractor = p_globalFeatureExtractor;
 		globalFeatureRetriever = p_globalFeatureRetriever;
 	}
-
+	void setRawData(std::unique_ptr<RawData> input) { rawdata = std::move(input); }
+	const RawData* getRawData() const { return rawdata.get(); }
+	RawData* getRawData() { return rawdata.get(); }
 
 	//// === Database 相关操作 ===
 	camera_t DatabaseWriteCamera(Camera camera) {
@@ -361,6 +364,7 @@ private:
 	IncrementalMapper* mapper;
 	CGlobalFeatureExtractor* globalFeatureExtractor;
 	CGlobalFeatureRetriever* globalFeatureRetriever;
+	std::unique_ptr<RawData> rawdata{};
 
 	std::unordered_map<std::size_t, std::string> allImages;
 	std::unordered_map<std::string, std::size_t> allImagePaths;

@@ -54,16 +54,7 @@
     <ClInclude Include="ReconstructionManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="meshing.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="graph_cut.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="DBSCAN.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="mesh_operate.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="IO.h">
@@ -73,6 +64,36 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="SharedMemoryChannel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="block.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="cgal_types.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="delaunay.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="dynamic_graph_cut.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="entities.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="graph.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rawio.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ray_tetra_cuda.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ray_tetra_host.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -113,16 +134,7 @@
     <ClCompile Include="ReconstructionManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="meshing.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="graph_cut.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="DBSCAN.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="mesh_operate.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="IO.cpp">
@@ -131,5 +143,31 @@
     <ClCompile Include="SharedMemoryChannel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="delaunay.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="dynamic_graph_cut.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="graph.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="maxflow.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rawio.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ray_tetra_host.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="ray_tetra_cuda.cu">
+      <Filter>源文件</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

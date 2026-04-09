@@ -14,11 +14,15 @@ public:
 		quint32 p_imageID,
 		quint32 p_modelID,
 		ReconstructType p_type,
+		quint32 p_start,
+		quint32 p_step,
 		QObject* parent = nullptr)
 		: BaseTask(data, parent)
 		, imageID(p_imageID)
 		, modelID(p_modelID)
-		, type(p_type) {}
+		, type(p_type)
+		, start(p_start)
+		, step(p_step) {}
 	void run() override;
 	bool Reconstruct(bool init = false);
 	bool InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper);
@@ -39,4 +43,6 @@ private:
 	quint32 imageID;
 	quint32 modelID;
 	ReconstructType type;
+	quint32 start;
+	quint32 step;
 };

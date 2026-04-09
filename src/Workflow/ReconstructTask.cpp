@@ -2,6 +2,7 @@
 #include "../Base/misc.h"
 #include "../Base/timer.h"
 #include "../Estimator/IncrementalMapper.h"
+#include "../Scene/mesh.h"
 #include "glog/logging.h"
 #include "ReconstructTask.h"
 #include "WorkData.h"
@@ -10,7 +11,7 @@
 void ReconstructTask::run()
 {
 	// bufferSize：缓冲区大小，反映了数据库更新的频率。缓冲区越小更新频率越高，重建速度也会变慢，缓冲区大则更新频率缓慢，处理速度会变快
-	const int bufferSize = 50;
+	const int bufferSize = 120;
 	const bool isCached = m_data->CheckCache(imageID);
 	if (isCached) return;
 	m_data->LoadCache(bufferSize);
@@ -191,6 +192,13 @@ bool ReconstructTask::Reconstruct(bool init)
 				}
 			}
 #endif
+			{
+				if (model->NumRegImages() >= start &&
+					(model->NumRegImages() - start) % step == 0) {
+					QReadLocker locker(&(m_data->m_models_lock[0]));
+					m_data->setRawData(std::make_unique<RawData>(CopyReconstruction(*model)));
+				}
+			}
 			m_data->AddReconstructedImage(nextImageID);
 			emit registedSuccess(nextImageID);
 			m_data->usedFrame.release(); // 重建完毕，释放渲染帧
@@ -299,12 +307,12 @@ void ReconstructTask::LocalBundleAdjustment(const IncrementalMapper::Options& op
 
 		localBATimes.push_back(localBATime);
 		localBAErrors.push_back(finalCost);
-		}
+	}
 	mapper.ClearModifiedPoints3D();
 
 	mapper.GetReconstruction()->localBAErrors.push_back(localBAErrors);
 	mapper.GetReconstruction()->localBATimes.push_back(localBATimes);
-	}
+}
 
 void ReconstructTask::GlobalBundleAdjustment(const IncrementalMapper::Options& options, IncrementalMapper& mapper)
 {
