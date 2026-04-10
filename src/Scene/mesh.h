@@ -1,4 +1,5 @@
 #pragma once
+#include "../Base/ply.h"
 #include "delaunay.h"
 #include "Reconstruction.h"
 #include "RenderData.h"
@@ -151,7 +152,11 @@ double ComputeCosFacetCellAngle(const Delaunay& triangulation,
 
 RawData CopyReconstruction(Reconstruction& model);
 bool GenerateMeshModel(RawData& raw, RenderData& renderData);
+void QualityAssessment(const RawData& raw, PlyMesh& mesh, std::vector<double>& weights);
 void GenerateRenderData(const CMesh& mesh, RenderData& renderData);
+void GenerateRenderData(const PlyMesh& mesh,
+	const std::vector<Eigen::Vector4f>& face_colors,
+	RenderData& renderData);
 void OutputMeshPly(const CMesh& mesh, int imagenum);
 using CellGraphData = std::unordered_map<uint64_t, DelaunayCellData>;
 

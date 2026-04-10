@@ -305,6 +305,8 @@ namespace rawio
 			recpt.x = static_cast<float>(xyz.x());
 			recpt.y = static_cast<float>(xyz.y());
 			recpt.z = static_cast<float>(xyz.z());
+			recpt.track = point3D.second.Track().Length();
+			recpt.error = point3D.second.Error();
 			outData.points[recpt.raw_point_id] = recpt;
 
 			for (const auto& element : point3D.second.Track().Elements()) {

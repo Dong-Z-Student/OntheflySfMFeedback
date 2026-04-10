@@ -20,6 +20,88 @@
 
 namespace fs = std::filesystem;
 
+namespace {
+	struct EdgeHash {
+		size_t operator()(const std::pair<size_t, size_t>& e) const noexcept {
+			size_t h1 = std::hash<size_t>{}(e.first);
+			size_t h2 = std::hash<size_t>{}(e.second);
+			return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
+		}
+	};
+
+	std::vector<Eigen::Vector4f> generateColorsWithQuantiles(
+		const std::vector<double>& weights,
+		std::vector<double>& quantiles_out)
+	{
+		const Eigen::Vector4f RED(0.70f, 0.0f, 0.13f, 1.0f);
+		const Eigen::Vector4f WHITE(1.0f, 1.0f, 1.0f, 1.0f);
+		const Eigen::Vector4f BLUE(0.23f, 0.29f, 0.75f, 1.0f);
+
+		const size_t n = weights.size();
+		quantiles_out.clear();
+
+		if (n == 0) {
+			return {};
+		}
+
+		std::vector<Eigen::Vector4f> colors(n);
+		quantiles_out.resize(n);
+
+		if (n == 1) {
+			quantiles_out[0] = 0.0;
+			colors[0] = BLUE;
+			colors[0][3] = 1.0f;
+			return colors;
+		}
+
+		std::vector<size_t> indices(n);
+		std::iota(indices.begin(), indices.end(), 0);
+
+		std::sort(indices.begin(), indices.end(),
+			[&weights](size_t a, size_t b) {
+				return weights[a] < weights[b];
+			});
+
+		const double inv = 1.0 / static_cast<double>(n - 1);
+
+		size_t i = 0;
+		while (i < n) {
+			size_t j = i + 1;
+			const double v = weights[indices[i]];
+
+			while (j < n && weights[indices[j]] == v) {
+				++j;
+			}
+
+			const double q = static_cast<double>(j - 1) * inv;
+			for (size_t k = i; k < j; ++k) {
+				quantiles_out[indices[k]] = q;
+			}
+
+			i = j;
+		}
+
+		for (size_t k = 0; k < n; ++k) {
+			const double q = quantiles_out[k];
+			Eigen::Vector4f color;
+
+			if (q < 0.5) {
+				const float t = static_cast<float>(q * 2.0); // q / 0.5
+				color = (1.0f - t) * BLUE + t * WHITE;
+			}
+			else {
+				const float t = static_cast<float>((q - 0.5) * 2.0); // (q - 0.5) / 0.5
+				color = (1.0f - t) * WHITE + t * RED;
+			}
+
+			color[3] = 1.0f;
+			colors[k] = color;
+		}
+
+		return colors;
+	}
+}
+
 double ComputeCosFacetCellAngle(const Delaunay& triangulation, const Delaunay::Facet& facet)
 {
 	if (triangulation.is_infinite(facet.first)) {
@@ -216,23 +298,27 @@ bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 
 	gc.computeMaxFlow();
 
-	std::unordered_set<Delaunay::Vertex_handle> surface_vertices;
+	PlyMesh mesh;
+	std::unordered_set<Vertex_handle> surface_vertices;
 	std::vector<Delaunay::Facet> surface_facets;
 	surface_vertices.reserve(dt.number_of_vertices());
 	surface_facets.reserve(dt.number_of_finite_cells() * 4);
 
-	for (auto it = dt.finite_facets_begin(); it != dt.finite_facets_end(); ++it) {
+	for (auto it = dt.finite_facets_begin();
+		it != dt.finite_facets_end();
+		++it) {
+
 		if (dt.is_infinite(it->first->neighbor(it->second))) {
 			continue;
 		}
 
 		const auto& cell_data = cell_graph_data.at(it->first->info());
-		const auto& mirror_cell_data = cell_graph_data.at(it->first->neighbor(it->second)->info());
+		const auto& mirror_cell_data =
+			cell_graph_data.at(it->first->neighbor(it->second)->info());
 
 		const size_t nodeid = cell_data.index;
 		const size_t mirror_nodeid = mirror_cell_data.index;
-		const bool cell_is_source =
-			gc.getSegment(nodeid) == DynamicGraphCut::GraphType::SOURCE;
+		const bool cell_is_source = gc.getSegment(nodeid) == DynamicGraphCut::GraphType::SOURCE;
 		const bool mirror_cell_is_source =
 			gc.getSegment(mirror_nodeid) == DynamicGraphCut::GraphType::SOURCE;
 
@@ -254,12 +340,100 @@ bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 		}
 	}
 
-	CMesh mesh = delaunay::build_surface_mesh(surface_vertices, surface_facets);
+	std::unordered_map<Delaunay::Vertex_handle, size_t>
+		surface_vertex_indices;
+	surface_vertex_indices.reserve(surface_vertices.size());
+	mesh.vertices.reserve(surface_vertices.size());
+	for (const auto& vertex : surface_vertices) {
+		mesh.vertices.emplace_back(
+			vertex->point().x(), vertex->point().y(), vertex->point().z(), vertex->info());
+		surface_vertex_indices.emplace(vertex, surface_vertex_indices.size());
+	}
+	mesh.faces.reserve(surface_facets.size());
+	for (size_t i = 0; i < surface_facets.size(); ++i) {
+		const auto& facet = surface_facets[i];
+		mesh.faces.emplace_back(
+			surface_vertex_indices.at(facet.first->vertex(
+				dt.vertex_triple_index(facet.second, 0))),
+			surface_vertex_indices.at(facet.first->vertex(
+				dt.vertex_triple_index(facet.second, 1))),
+			surface_vertex_indices.at(facet.first->vertex(
+				dt.vertex_triple_index(facet.second, 2))));
+	}
 
-	// Generate Render Data
-	GenerateRenderData(mesh, renderData);
+	std::vector<double> weights, quantiles;
+	QualityAssessment(raw, mesh, weights);
+	auto colors = generateColorsWithQuantiles(weights, quantiles);
+	GenerateRenderData(mesh, colors, renderData);
 
 	return true;
+}
+
+void QualityAssessment(const RawData& raw, PlyMesh& mesh, std::vector<double>& weights)
+{
+	std::vector<double> all_img_track;
+	std::vector<double> all_reproj_error;
+	const size_t face_count = mesh.faces.size();
+	all_img_track.reserve(face_count);
+	all_reproj_error.reserve(face_count);
+	weights.reserve(face_count);
+
+	for (auto& f : mesh.faces) {
+		auto track1 = raw.points.at(mesh.vertices[f.vertex_idx1].point3D_idx).track;
+		auto track2 = raw.points.at(mesh.vertices[f.vertex_idx2].point3D_idx).track;
+		auto track3 = raw.points.at(mesh.vertices[f.vertex_idx3].point3D_idx).track;
+		f.img_track = static_cast<double>(track1 + track2 + track3) / 3.0;
+
+		auto error1 = raw.points.at(mesh.vertices[f.vertex_idx1].point3D_idx).error;
+		auto error2 = raw.points.at(mesh.vertices[f.vertex_idx2].point3D_idx).error;
+		auto error3 = raw.points.at(mesh.vertices[f.vertex_idx3].point3D_idx).error;
+		f.reprojection_error = (error1 + error2 + error3) / 3.0;
+
+		all_img_track.push_back(f.img_track);
+		all_reproj_error.push_back(f.reprojection_error);
+	}
+
+	// 计算 5%-95% 分位数
+	double img_track_min = 0.0, img_track_max = 0.0;
+	double reproj_error_min = 0.0, reproj_error_max = 0.0;
+
+	if (!all_img_track.empty()) {
+		std::sort(all_img_track.begin(), all_img_track.end());
+		size_t min_idx = static_cast<size_t>(all_img_track.size() * 0.05);
+		size_t max_idx = std::min(static_cast<size_t>(all_img_track.size() * 0.95), all_img_track.size() - 1);
+		img_track_min = all_img_track[min_idx];
+		img_track_max = all_img_track[max_idx];
+	}
+
+	if (!all_reproj_error.empty()) {
+		std::sort(all_reproj_error.begin(), all_reproj_error.end());
+		size_t min_idx = static_cast<size_t>(all_reproj_error.size() * 0.05);
+		size_t max_idx = std::min(static_cast<size_t>(all_reproj_error.size() * 0.95), all_reproj_error.size() - 1);
+		reproj_error_min = all_reproj_error[min_idx];
+		reproj_error_max = all_reproj_error[max_idx];
+	}
+
+	double w_track = 0.8;
+	double w_error = 0.2;
+
+	for (auto& f : mesh.faces) {
+		double range_track = img_track_max - img_track_min;
+		double range_error = reproj_error_max - reproj_error_min;
+
+		if (range_track <= 0.0) range_track = 1.0;
+		if (range_error <= 0.0) range_error = 1.0;
+
+		double normalized_track = (f.img_track - img_track_min) / range_track;
+		double normalized_error = (reproj_error_max - f.reprojection_error) / range_error;
+
+		normalized_track = std::max(0.0, std::min(1.0, normalized_track));
+		normalized_error = std::max(0.0, std::min(1.0, normalized_error));
+
+		f.Qtotal = w_track * normalized_track +
+			w_error * normalized_error;
+
+		weights.push_back(f.Qtotal);
+	}
 }
 
 void GenerateRenderData(const CMesh& mesh, RenderData& renderData)
@@ -307,6 +481,78 @@ void GenerateRenderData(const CMesh& mesh, RenderData& renderData)
 		renderData.mesh_lines.emplace_back(LinePainterData{
 			static_cast<float>(p0.x()), static_cast<float>(p0.y()), static_cast<float>(p0.z()), er, eg, eb, ea,
 			static_cast<float>(p1.x()), static_cast<float>(p1.y()), static_cast<float>(p1.z()), er, eg, eb, ea
+			});
+	}
+}
+
+void GenerateRenderData(const PlyMesh& mesh,
+	const std::vector<Eigen::Vector4f>& face_colors,
+	RenderData& renderData) {
+	using TriangleElement = std::tuple<image_t, point2D_t, point2D_t, point2D_t>;
+	const auto& vertices = mesh.vertices;
+	const auto& faces = mesh.faces;
+
+	renderData.mesh_data.reserve(faces.size());
+	renderData.mesh_lines.reserve(faces.size() * 3);
+
+	std::unordered_set<std::pair<size_t, size_t>, EdgeHash> drawnEdges;
+	drawnEdges.reserve(faces.size() * 3);
+
+	constexpr float fill_r = 0.678f;
+	constexpr float fill_g = 0.847f;
+	constexpr float fill_b = 0.902f;
+	constexpr float fill_a = 1.0f;
+
+	constexpr float line_r = 0.0f;
+	constexpr float line_g = 0.7f;
+	constexpr float line_b = 0.0f;
+	constexpr float line_a = 1.0f;
+
+	for (size_t idx = 0; idx < faces.size(); ++idx) {
+		const auto& f = faces[idx];
+		const auto& v0 = vertices[f.vertex_idx1];
+		const auto& v1 = vertices[f.vertex_idx2];
+		const auto& v2 = vertices[f.vertex_idx3];
+
+		renderData.mesh_data.emplace_back(TrianglePainterData{
+			v0.x, v0.y, v0.z, fill_r, fill_g, fill_b, fill_a,
+			v1.x, v1.y, v1.z, fill_r, fill_g, fill_b, fill_a,
+			v2.x, v2.y, v2.z, fill_r, fill_g, fill_b, fill_a
+			});
+
+		std::array<std::pair<size_t, size_t>, 3> edges{ {
+			{f.vertex_idx1, f.vertex_idx2},
+			{f.vertex_idx2, f.vertex_idx3},
+			{f.vertex_idx1, f.vertex_idx3}
+		} };
+
+		for (const auto& edge : edges) {
+			size_t i = edge.first;
+			size_t j = edge.second;
+
+			if (i > j) {
+				std::swap(i, j);
+			}
+			std::pair<size_t, size_t> normalized{ i, j };
+			if (drawnEdges.emplace(normalized).second) {
+				const auto& a = vertices[i];
+				const auto& b = vertices[j];
+
+				renderData.mesh_lines.emplace_back(LinePainterData{
+					a.x, a.y, a.z, line_r, line_g, line_b, line_a,
+					b.x, b.y, b.z, line_r, line_g, line_b, line_a
+					});
+			}
+		}
+
+		Eigen::Vector4f color(fill_r, fill_g, fill_b, fill_a);
+		if (idx < face_colors.size()) {
+			color = face_colors[idx];
+		}
+		renderData.quality_data.emplace_back(TrianglePainterData{
+			v0.x, v0.y, v0.z, color[0], color[1], color[2], color[3],
+			v1.x, v1.y, v1.z, color[0], color[1], color[2], color[3],
+			v2.x, v2.y, v2.z, color[0], color[1], color[2], color[3]
 			});
 	}
 }

@@ -20,6 +20,10 @@ struct RawPointRecord
 	float    x;
 	float    y;
 	float    z;
+
+	// raw point info
+	uint8_t track;
+	float error;
 };
 
 // images
