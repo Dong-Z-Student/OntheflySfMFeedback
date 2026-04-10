@@ -19,7 +19,7 @@ private:
 	};
 
 	std::map<std::pair<int, int>, EdgeInfo> edge_map_;
-	bool first_maxflow_;
+	bool first_maxflow_{ true };
 
 public:
 	DynamicGraphCut(int num_nodes, int estimated_edges = 0);

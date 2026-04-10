@@ -59,14 +59,12 @@ RawData CopyReconstruction(Reconstruction& model)
 	return raw;
 }
 
-bool GenerateMeshModel(RawData& raw) {
+bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 	rawio::FilterScene(raw);
-	std::cout << "read data done\n";
-	auto start = std::chrono::high_resolution_clock::now();
 
 	DelaunayData delaunayData;
 	delaunay::Build(raw, delaunayData);
-	delaunay::PrintSummary(delaunayData);
+	//delaunay::PrintSummary(delaunayData);
 
 	// =============== 权重图计算部分 ===============
 	CellGraphData cell_graph_data;
@@ -79,58 +77,6 @@ bool GenerateMeshModel(RawData& raw) {
 	}
 
 	const double epsilon = 1e-3;
-
-	if (false) {
-		fs::path modelDir = "./out_model";
-
-		std::vector<std::tuple<double, double, double, double, double, double>> exportRays;
-		std::vector<std::tuple<double, double, double>> exportPoints;
-
-		for (const auto& [idx, pt] : raw.points) {
-			(void)idx;
-			exportPoints.emplace_back(pt.x, pt.y, pt.z);
-		}
-
-		for (const auto& ray : raw.rays) {
-			const auto& startV = raw.images[ray.raw_image_id];
-			const auto& endV = raw.points[ray.raw_point_id];
-
-			K::Point_3 start(startV.cx, startV.cy, startV.cz);
-			K::Point_3 end(endV.x, endV.y, endV.z);
-			K::Vector_3 direction(start, end);
-			const K::Ray_3 viewing_ray = K::Ray_3(start, end);
-			(void)viewing_ray;
-
-			double length = std::sqrt(CGAL::to_double(direction.squared_length()));
-			K::Vector_3 normalized_direction = direction / length;
-			K::Point_3 end_front = end - normalized_direction * epsilon;
-
-			exportRays.emplace_back(
-				start.x(), start.y(), start.z(),
-				end_front.x(), end_front.y(), end_front.z());
-		}
-
-		fs::path exportDir = modelDir / "export";
-		fs::create_directories(exportDir);
-
-		std::ofstream pointsFile((exportDir / "points.txt").string());
-		std::ofstream raysFile((exportDir / "rays.txt").string());
-
-		pointsFile << std::fixed << std::setprecision(8);
-		raysFile << std::fixed << std::setprecision(8);
-
-		for (const auto& [x, y, z] : exportPoints) {
-			pointsFile << x << "," << y << "," << z << "\n";
-		}
-
-		for (const auto& [x1, y1, z1, x2, y2, z2] : exportRays) {
-			raysFile << x1 << "," << y1 << "," << z1 << ","
-				<< x2 << "," << y2 << "," << z2 << "\n";
-		}
-
-		pointsFile.close();
-		raysFile.close();
-	}
 
 	std::vector<Segment> rays_seg;
 	rays_seg.reserve(raw.rays.size());
@@ -146,10 +92,6 @@ bool GenerateMeshModel(RawData& raw) {
 	std::unordered_map<uint64_t, RayTetra::RayTraceResult> trace_results;
 	std::string errMsg;
 	RayTetra::BuildAndTraceRays(dt, rays_seg, trace_results, errMsg);
-
-	auto end = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "duration: " << duration.count() << " ms" << std::endl;
 
 	tbb::enumerable_thread_specific<CellGraphData> thread_local_data;
 	tbb::parallel_for(
@@ -233,7 +175,6 @@ bool GenerateMeshModel(RawData& raw) {
 		}
 	}
 
-	// =============== 图割计算部分 ===============
 	int num_nodes = dt.number_of_cells() + 2;
 	DynamicGraphCut gc(num_nodes, 0);
 
@@ -273,13 +214,12 @@ bool GenerateMeshModel(RawData& raw) {
 		}
 	}
 
-	gc.computeMaxFlow(false);
+	gc.computeMaxFlow();
 
-	// =============== 提取Mesh表面部分 ===============
 	std::unordered_set<Delaunay::Vertex_handle> surface_vertices;
 	std::vector<Delaunay::Facet> surface_facets;
-	std::vector<float> surface_facet_side_lengths;
-	(void)surface_facet_side_lengths;
+	surface_vertices.reserve(dt.number_of_vertices());
+	surface_facets.reserve(dt.number_of_finite_cells() * 4);
 
 	for (auto it = dt.finite_facets_begin(); it != dt.finite_facets_end(); ++it) {
 		if (dt.is_infinite(it->first->neighbor(it->second))) {
@@ -316,6 +256,63 @@ bool GenerateMeshModel(RawData& raw) {
 
 	CMesh mesh = delaunay::build_surface_mesh(surface_vertices, surface_facets);
 
+	// Generate Render Data
+	GenerateRenderData(mesh, renderData);
+
+	return true;
+}
+
+void GenerateRenderData(const CMesh& mesh, RenderData& renderData)
+{
+	renderData.mesh_data.clear();
+	renderData.mesh_lines.clear();
+
+	renderData.mesh_data.reserve(mesh.number_of_faces());
+	renderData.mesh_lines.reserve(mesh.number_of_edges());
+
+	constexpr float fr = 0.678f;
+	constexpr float fg = 0.847f;
+	constexpr float fb = 0.902f;
+	constexpr float fa = 1.0f;
+
+	constexpr float er = 0.0f;
+	constexpr float eg = 0.7f;
+	constexpr float eb = 0.0f;
+	constexpr float ea = 1.0f;
+
+	for (CMesh::Face_index f : mesh.faces())
+	{
+		const auto h0 = mesh.halfedge(f);
+		const auto h1 = mesh.next(h0);
+		const auto h2 = mesh.next(h1);
+
+		const Point& p0 = mesh.point(mesh.target(h0));
+		const Point& p1 = mesh.point(mesh.target(h1));
+		const Point& p2 = mesh.point(mesh.target(h2));
+
+		renderData.mesh_data.emplace_back(TrianglePainterData{
+			static_cast<float>(p0.x()), static_cast<float>(p0.y()), static_cast<float>(p0.z()), fr, fg, fb, fa,
+			static_cast<float>(p1.x()), static_cast<float>(p1.y()), static_cast<float>(p1.z()), fr, fg, fb, fa,
+			static_cast<float>(p2.x()), static_cast<float>(p2.y()), static_cast<float>(p2.z()), fr, fg, fb, fa
+			});
+	}
+
+	for (CMesh::Edge_index e : mesh.edges())
+	{
+		const auto h = mesh.halfedge(e);
+
+		const Point& p0 = mesh.point(mesh.source(h));
+		const Point& p1 = mesh.point(mesh.target(h));
+
+		renderData.mesh_lines.emplace_back(LinePainterData{
+			static_cast<float>(p0.x()), static_cast<float>(p0.y()), static_cast<float>(p0.z()), er, eg, eb, ea,
+			static_cast<float>(p1.x()), static_cast<float>(p1.y()), static_cast<float>(p1.z()), er, eg, eb, ea
+			});
+	}
+}
+
+void OutputMeshPly(const CMesh& mesh, int imagenum)
+{
 	std::cout << "mesh info: "
 		<< mesh.number_of_vertices() << " vertices, "
 		<< mesh.number_of_faces() << " faces, "
@@ -329,14 +326,14 @@ bool GenerateMeshModel(RawData& raw) {
 	fs::path outputDir = "../output";
 	fs::create_directories(outputDir);
 
-	fs::path outputPath = outputDir / ("output_" + std::to_string(raw.images.size()) + ".ply");
+	fs::path outputPath = outputDir / ("output_" + std::to_string(imagenum) + ".ply");
 	if (!CGAL::IO::write_polygon_mesh(
 		outputPath.string(),
 		mesh,
 		CGAL::parameters::stream_precision(17)))
 	{
 		std::cerr << "failed to write: " << outputPath << std::endl;
-		return false;
+		return;
 	}
 	else {
 		std::cout << "saved to " << outputPath << std::endl;

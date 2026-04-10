@@ -233,9 +233,6 @@ namespace RayTetra
 		results.clear();
 		errMsg.clear();
 
-		// ------------------------------------------------------------
-		// 导出有限四面体到 GPU 扁平结构
-		// ------------------------------------------------------------
 		std::vector<GPUTetra> tetraHost;
 		std::unordered_map<Cell_handle, int, CGAL::Handle_hash_function> cellToIndex;
 		std::unordered_map<int, uint64_t> denseidx_to_cellidx;
@@ -246,9 +243,6 @@ namespace RayTetra
 			return false;
 		}
 
-		// ------------------------------------------------------------
-		// 为每条 ray 求 entry cell 和 target cell
-		// ------------------------------------------------------------
 		std::vector<RayInput> rayHost;
 		rayHost.reserve(importRays.size());
 		std::vector<HullFacet> hullfacets = BuildHullFacets(delaunay);
@@ -325,15 +319,13 @@ namespace RayTetra
 				std::make_move_iterator(local.end()));
 		}
 
-		// ------------------------------------------------------------
 		// 调用 CUDA
-		// ------------------------------------------------------------
 		std::vector<int> outCounts;
 		std::vector<uint64_t> outCellInfos;
 		std::vector<int> outNeighbors;
 		std::vector<int> outStatus;
 
-		std::cout << "start ray tracing on delaunay tetra, total rays: " << rayHost.size() << "\n";
+		std::cout << "ray tracing on delaunay tetra, total rays: " << rayHost.size() << "\n";
 		auto t1 = std::chrono::high_resolution_clock::now();
 
 		bool cudaOk = LaunchCudaTrace(
@@ -348,14 +340,12 @@ namespace RayTetra
 
 		auto t2 = std::chrono::high_resolution_clock::now();
 		double ms = std::chrono::duration<double, std::milli>(t2 - t1).count();
-		std::cout << "LaunchCudaTrace total time: " << ms << " ms\n";
+		std::cout << "Cuda Trace total time: " << ms << " ms\n";
 
 		if (!cudaOk)
 			return false;
 
-		// ------------------------------------------------------------
 		// 整理输出
-		// ------------------------------------------------------------
 
 		for (size_t rid = 0; rid < rayHost.size(); ++rid)
 		{

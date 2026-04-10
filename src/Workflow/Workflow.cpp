@@ -125,7 +125,7 @@ void WorkFlow::onRegistedSuccess(quint32 imageID) {
 
 void WorkFlow::onFeedbackFinished()
 {
-	//emit feedbackFinished();
+	emit feedbackFinished();
 }
 
 bool WorkFlow::ReconstructImage(quint32 imageID)

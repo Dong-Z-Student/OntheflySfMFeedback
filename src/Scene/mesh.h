@@ -1,6 +1,7 @@
 #pragma once
 #include "delaunay.h"
 #include "Reconstruction.h"
+#include "RenderData.h"
 #include <array>
 
 const double alphafree = 1000.0;
@@ -149,8 +150,9 @@ double ComputeCosFacetCellAngle(const Delaunay& triangulation,
 	const Delaunay::Facet& facet);
 
 RawData CopyReconstruction(Reconstruction& model);
-bool GenerateMeshModel(RawData& raw);
-
+bool GenerateMeshModel(RawData& raw, RenderData& renderData);
+void GenerateRenderData(const CMesh& mesh, RenderData& renderData);
+void OutputMeshPly(const CMesh& mesh, int imagenum);
 using CellGraphData = std::unordered_map<uint64_t, DelaunayCellData>;
 
 using IntersectionVec = std::vector<DelaunayTriangulationRayCaster::Intersection>;
