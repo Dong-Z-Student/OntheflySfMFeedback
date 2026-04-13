@@ -60,6 +60,7 @@ void WorkFlow::LoadPython()
 }
 
 void WorkFlow::onProcessNewImage(const QString& value) {
+	PushbackImage();
 	ReadTask* m_readTask = new ReadTask(m_workData, value, this);
 	connect(m_readTask, &ReadTask::readTaskDone, this, &WorkFlow::onReadTaskFinished);
 	m_read_threadPool->start(m_readTask);
@@ -121,6 +122,7 @@ void WorkFlow::onRegistedSuccess(quint32 imageID) {
 		m_workData->readImagesNum.load(),
 		m_workData->reconstructImagesNum.load()
 	);
+	PopoutImage();
 }
 
 void WorkFlow::onFeedbackFinished()

@@ -36,6 +36,9 @@ public:
 	QReadWriteLock& GetModelLock(int modelID) { return m_workData->m_models_lock[modelID]; }
 	void AcquireUsedFrame() { m_workData->usedFrame.acquire(); }
 	void ReleaseFreeFrame() { m_workData->freeFrame.release(); }
+	void PopoutImage() { m_workData->imagesInRcon.fetch_sub(1); }
+	void PushbackImage() { m_workData->imagesInRcon.fetch_add(1); }
+	bool SpeedCtrl(size_t t) { return m_workData->imagesInRcon.load() > t && m_workData->estimatedImagesNum.load() > 20; }
 
 signals:
 	void readImageFinished(QString p_imagePath);

@@ -245,6 +245,10 @@ void MainWindow::RunFunc() {
 	for (int i = 0; i < images.size(); i++) {
 		const QString imagePath = StdString2QString2(images[i]);
 		settings.setValue("NewImage", imagePath);
+		while (workflow->SpeedCtrl(50))
+		{
+			this_thread::sleep_for(chrono::milliseconds(500));
+		}
 		this_thread::sleep_for(chrono::milliseconds(1000));
 	}
 }

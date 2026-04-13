@@ -341,6 +341,7 @@ public:
 	std::atomic_size_t readImagesNum{ 0 };
 	std::atomic_size_t reconstructImagesNum{ 0 };
 	std::atomic_size_t estimatedImagesNum{ 0 };
+	std::atomic_size_t imagesInRcon{ 0 };
 	//// 用于UI显示的数据
 	std::shared_ptr<const RenderData> render_data; // 反馈数据
 	QSemaphore freeFrame{ 1 }; // 产生空闲帧数据
