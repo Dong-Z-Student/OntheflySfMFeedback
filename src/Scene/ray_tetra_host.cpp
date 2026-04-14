@@ -1,6 +1,5 @@
 ﻿#include "ray_tetra_cuda.h"
 #include "ray_tetra_host.h"
-
 #include <array>
 #include <chrono>
 #include <cmath>
@@ -174,10 +173,9 @@ namespace RayTetra
 	}
 
 	static bool ExportFiniteCells(
-		Delaunay& delaunay,
+		const Delaunay& delaunay,
 		std::vector<GPUTetra>& tetraHost,
-		std::unordered_map<Cell_handle, int, CGAL::Handle_hash_function>& cellToIndex,
-		std::unordered_map<int, uint64_t>& denseidx_to_cellidx)
+		std::unordered_map<uint64_t, int>& cellToIndex)
 	{
 		tetraHost.clear();
 		cellToIndex.clear();
@@ -185,15 +183,15 @@ namespace RayTetra
 		int idx = 0; // use dense idx
 		for (auto cit = delaunay.finite_cells_begin(); cit != delaunay.finite_cells_end(); ++cit)
 		{
-			cellToIndex[cit] = idx++;
-			denseidx_to_cellidx[idx] = cit->info();
+			cellToIndex[cit->info()] = idx;
+			idx++;
 		}
 
 		tetraHost.resize(cellToIndex.size());
 
 		for (auto cit = delaunay.finite_cells_begin(); cit != delaunay.finite_cells_end(); ++cit)
 		{
-			int cid = cellToIndex[cit];
+			int cid = cellToIndex[cit->info()];
 			GPUTetra gt{};
 
 			for (int i = 0; i < 4; ++i)
@@ -210,7 +208,7 @@ namespace RayTetra
 				}
 				else
 				{
-					auto it = cellToIndex.find(nb);
+					auto it = cellToIndex.find(nb->info());
 					if (it == cellToIndex.end())
 						return false;
 					gt.neigh[i] = it->second;
@@ -225,19 +223,18 @@ namespace RayTetra
 	}
 
 	bool BuildAndTraceRays(
-		Delaunay& delaunay,
-		std::vector<Segment>& importRays,
+		DelaunayData& delaunaydata,
+		std::vector<RayTetra::DirectionRay>& importRays,
 		std::unordered_map<uint64_t, RayTraceResult>& results,
 		std::string& errMsg)
 	{
 		results.clear();
 		errMsg.clear();
-
+		const Delaunay& delaunay = delaunaydata.dt;
 		std::vector<GPUTetra> tetraHost;
-		std::unordered_map<Cell_handle, int, CGAL::Handle_hash_function> cellToIndex;
-		std::unordered_map<int, uint64_t> denseidx_to_cellidx;
+		std::unordered_map<uint64_t, int> cellidToDenseIndex;
 
-		if (!ExportFiniteCells(delaunay, tetraHost, cellToIndex, denseidx_to_cellidx))
+		if (!ExportFiniteCells(delaunay, tetraHost, cellidToDenseIndex))
 		{
 			errMsg = "ExportFiniteCells failed.";
 			return false;
@@ -255,34 +252,20 @@ namespace RayTetra
 					local.reserve(range.size());
 				}
 				for (size_t i = range.begin(); i < range.end(); ++i) {
-					const Segment& seg = importRays[i];
-
-					const Point& src = seg.source();
-					const Point& dst = seg.target();
-
+					const RayTetra::DirectionRay& dir_ray = importRays[i];
 					Vec3d p0 = MakeVec3d(
-						CGAL::to_double(src.x()),
-						CGAL::to_double(src.y()),
-						CGAL::to_double(src.z())
+						CGAL::to_double(dir_ray.start.x()),
+						CGAL::to_double(dir_ray.start.y()),
+						CGAL::to_double(dir_ray.start.z())
 					);
 					Vec3d p1 = MakeVec3d(
-						CGAL::to_double(dst.x()),
-						CGAL::to_double(dst.y()),
-						CGAL::to_double(dst.z())
-					);
-
-					const double t = 0.0001;
-					K::Vector_3 dir = dst - src;
-					double len = std::sqrt(CGAL::to_double(dir.squared_length()));
-					K::Vector_3 unit_dir = dir / len;
-					Point endPoint(
-						dst.x() - unit_dir.x() * t,
-						dst.y() - unit_dir.y() * t,
-						dst.z() - unit_dir.z() * t
+						CGAL::to_double(dir_ray.end.x()),
+						CGAL::to_double(dir_ray.end.y()),
+						CGAL::to_double(dir_ray.end.z())
 					);
 
 					Cell_handle entryCell;
-					Cell_handle targetCell = delaunay.locate(endPoint);
+					Cell_handle targetCell = delaunay.locate(dir_ray.nearEndPoint);
 					if (delaunay.is_infinite(targetCell)) {
 						continue;
 					}
@@ -294,9 +277,9 @@ namespace RayTetra
 						continue;
 					}
 
-					auto itEntry = cellToIndex.find(entryCell);
-					auto itTarget = cellToIndex.find(targetCell);
-					if (itEntry == cellToIndex.end() || itTarget == cellToIndex.end())
+					auto itEntry = cellidToDenseIndex.find(entryCell->info());
+					auto itTarget = cellidToDenseIndex.find(targetCell->info());
+					if (itEntry == cellidToDenseIndex.end() || itTarget == cellidToDenseIndex.end())
 					{
 						//errMsg = "Entry/target cell not found in exported cell map, ray id = " + std::to_string(i);
 						continue;

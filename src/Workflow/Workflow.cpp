@@ -158,7 +158,7 @@ void WorkFlow::Feedback()
 	int step = config.feedback.Step;
 	const size_t reconstructedImageNum = m_workData->reconstructImagesNum.load();
 	if (m_workData->m_feedback_lock) return;
-	if (reconstructedImageNum >= startFeedback &&
+	if (reconstructedImageNum > startFeedback &&
 		(reconstructedImageNum - startFeedback) % step == 0) {
 		FeedbackTask* m_feedbackTask = new FeedbackTask(m_workData, 0, this);
 		connect(m_feedbackTask, &FeedbackTask::taskFinished, this, &WorkFlow::onFeedbackFinished);

@@ -1,6 +1,7 @@
 #pragma once
 #include "../Base/ply.h"
 #include "delaunay.h"
+#include "ray_tetra_host.h"
 #include "Reconstruction.h"
 #include "RenderData.h"
 #include <array>
@@ -151,7 +152,12 @@ double ComputeCosFacetCellAngle(const Delaunay& triangulation,
 	const Delaunay::Facet& facet);
 
 RawData CopyReconstruction(Reconstruction& model);
-bool GenerateMeshModel(RawData& raw, RenderData& renderData);
+bool GenerateMeshModel(
+	std::shared_ptr<RawData>& pre_raw_ptr,
+	std::shared_ptr<DelaunayData>& delaunayData_ptr,
+	std::shared_ptr<RawData>& raw_ptr,
+	RenderData& renderData
+);  // FeedbackÈë¿Úµã
 void QualityAssessment(const RawData& raw, PlyMesh& mesh, std::vector<double>& weights);
 void GenerateRenderData(const CMesh& mesh, RenderData& renderData);
 void GenerateRenderData(const PlyMesh& mesh,

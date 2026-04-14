@@ -1,4 +1,5 @@
-﻿#include "dynamic_graph_cut.h"
+﻿#include "../Base/TimerProfiler.h"
+#include "dynamic_graph_cut.h"
 #include "mesh.h"
 #include "rawio.h"
 #include "ray_tetra_host.h"
@@ -102,6 +103,8 @@ namespace {
 	}
 }
 
+static TimerProfiler profiler;
+
 double ComputeCosFacetCellAngle(const Delaunay& triangulation, const Delaunay::Facet& facet)
 {
 	if (triangulation.is_infinite(facet.first)) {
@@ -141,12 +144,33 @@ RawData CopyReconstruction(Reconstruction& model)
 	return raw;
 }
 
-bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
-	rawio::FilterScene(raw);
+bool GenerateMeshModel(
+	std::shared_ptr<RawData>& pre_raw_ptr,
+	std::shared_ptr<DelaunayData>& delaunayData_ptr,
+	std::shared_ptr<RawData>& raw_ptr,
+	RenderData& renderData
+) {
+	RawData& raw = *raw_ptr;
+	rawio::FilterScene_SortBased(raw);
 
-	DelaunayData delaunayData;
+	//if (!delaunayData_ptr) {
+	//	delaunayData_ptr = std::make_shared<DelaunayData>();
+	//}
+	//DelaunayData& delaunayData = *delaunayData_ptr;
+	//if (!pre_raw_ptr || (delaunayData.rebuild_count % 2 != 0)) {
+	//	delaunay::Build(raw, delaunayData);
+	//}
+	//else {
+	//	RawData& pre_raw = *pre_raw_ptr;
+	//	SceneDiff diff = rawio::CompareSceneDiff(pre_raw, raw);
+	//	delaunay::Update(diff, pre_raw, raw, delaunayData);
+	//}
+
+	profiler.Start("Delaunay");
+	delaunayData_ptr = std::make_shared<DelaunayData>();
+	DelaunayData& delaunayData = *delaunayData_ptr;
 	delaunay::Build(raw, delaunayData);
-	//delaunay::PrintSummary(delaunayData);
+	profiler.Stop("Delaunay");
 
 	// =============== 权重图计算部分 ===============
 	CellGraphData cell_graph_data;
@@ -159,21 +183,38 @@ bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 	}
 
 	const double epsilon = 1e-3;
+	std::vector<RayTetra::DirectionRay> direction_rays(raw.rays.size());
+	tbb::parallel_for(
+		tbb::blocked_range<size_t>(0, raw.rays.size(), 10240),
+		[&](const tbb::blocked_range<size_t>& range) {
+			for (size_t i = range.begin(); i < range.end(); ++i) {
+				const auto& startV = raw.images[raw.rays[i].raw_image_id];
+				const auto& endV = raw.points[raw.rays[i].raw_point_id];
+				auto& dir_ray = direction_rays[i];
+				dir_ray.start = K::Point_3(startV.cx, startV.cy, startV.cz);
+				dir_ray.end = K::Point_3(endV.x, endV.y, endV.z);
+				K::Vector_3 direction(dir_ray.start, dir_ray.end);
+				double length = std::sqrt(CGAL::to_double(direction.squared_length()));
+				if (length > 1e-12) {
+					dir_ray.viewing_ray = K::Ray_3(dir_ray.start, dir_ray.end);
+					dir_ray.normalized_direction = direction / length;
+					dir_ray.nearEndPoint = dir_ray.end - dir_ray.normalized_direction * epsilon;
+					dir_ray.farEndPoint = dir_ray.end + dir_ray.normalized_direction * epsilon;
+				}
+				else {
+					dir_ray.viewing_ray = K::Ray_3(dir_ray.start, dir_ray.end);
+					dir_ray.normalized_direction = K::Vector_3(0.0, 0.0, 0.0);
+					dir_ray.nearEndPoint = dir_ray.end;
+					dir_ray.farEndPoint = dir_ray.end;
+				}
+			}
+		});
 
-	std::vector<Segment> rays_seg;
-	rays_seg.reserve(raw.rays.size());
-
-	for (const auto& r : raw.rays) {
-		const auto& startV = raw.images[r.raw_image_id];
-		const auto& endV = raw.points[r.raw_point_id];
-		Point start(startV.cx, startV.cy, startV.cz);
-		Point end(endV.x, endV.y, endV.z);
-		rays_seg.emplace_back(start, end);
-	}
-
+	profiler.Start("RayTracing");
 	std::unordered_map<uint64_t, RayTetra::RayTraceResult> trace_results;
 	std::string errMsg;
-	RayTetra::BuildAndTraceRays(dt, rays_seg, trace_results, errMsg);
+	RayTetra::BuildAndTraceRays(delaunayData, direction_rays, trace_results, errMsg);
+	profiler.Stop("RayTracing");
 
 	tbb::enumerable_thread_specific<CellGraphData> thread_local_data;
 	tbb::parallel_for(
@@ -182,16 +223,7 @@ bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 			auto& local_cell_graph = thread_local_data.local();
 
 			for (size_t i = range.begin(); i < range.end(); ++i) {
-				const auto& startV = raw.images[raw.rays[i].raw_image_id];
-				const auto& endV = raw.points[raw.rays[i].raw_point_id];
-
-				K::Point_3 start(startV.cx, startV.cy, startV.cz);
-				K::Point_3 end(endV.x, endV.y, endV.z);
-				K::Vector_3 direction(start, end);
-				const K::Ray_3 viewing_ray = K::Ray_3(start, end);
-
-				double length = std::sqrt(CGAL::to_double(direction.squared_length()));
-				K::Vector_3 normalized_direction = direction / length;
+				const auto& dir_ray = direction_rays[i];
 
 				bool flag = false;
 				auto fid = trace_results.find(i);
@@ -213,7 +245,7 @@ bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 
 				{
 					const Delaunay::Cell_handle behind_point_cell =
-						dt.locate(end + normalized_direction * epsilon);
+						dt.locate(dir_ray.farEndPoint);
 
 					int behind_neighbor_idx = -1;
 					double behind_distance_squared = 0.0;
@@ -224,9 +256,9 @@ bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 
 						K::Point_3 inter_point;
 						if (CGAL::assign(inter_point,
-							CGAL::intersection(viewing_ray, triangle))) {
+							CGAL::intersection(dir_ray.viewing_ray, triangle))) {
 							const double distance_squared =
-								(inter_point - end).squared_length();
+								(inter_point - dir_ray.end).squared_length();
 							if (distance_squared > behind_distance_squared) {
 								behind_distance_squared = distance_squared;
 								behind_neighbor_idx = neighbor_idx;
@@ -296,7 +328,9 @@ bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 		}
 	}
 
+	profiler.Start("GraphCut");
 	gc.computeMaxFlow();
+	profiler.Stop("GraphCut");
 
 	PlyMesh mesh;
 	std::unordered_set<Vertex_handle> surface_vertices;
@@ -365,7 +399,7 @@ bool GenerateMeshModel(RawData& raw, RenderData& renderData) {
 	QualityAssessment(raw, mesh, weights);
 	auto colors = generateColorsWithQuantiles(weights, quantiles);
 	GenerateRenderData(mesh, colors, renderData);
-
+	profiler.Print();
 	return true;
 }
 

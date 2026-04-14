@@ -18,13 +18,21 @@ struct DelaunayData
 	std::unordered_map<uint64_t, Cell_handle> cellIdToCell;
 
 	bool cellIndexBuilt = false;
+
+	size_t rebuild_count{ 0 };
 };
 
 namespace delaunay
 {
 	bool Build(const DenseData& dense, DelaunayData& outData);
 
-	bool Build(const RawData& raw, DelaunayData& outData);
+	bool Build(const RawData& rawdata, DelaunayData& outData);
+
+	bool Update(
+		const SceneDiff& diff,
+		const RawData& prev_rawdata,
+		const RawData& rawdata,
+		DelaunayData& outData);
 
 	// ต๗สิ
 	void PrintSummary(const DelaunayData& data);

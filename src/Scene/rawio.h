@@ -49,5 +49,7 @@ namespace rawio
 		RawData& outData);
 
 	void CopyFromReconstruction(Reconstruction& model, RawData& outData);
-	void FilterScene(RawData& inputData);
+	void FilterScene(RawData& inputData); // ∏¥‘”∂»O(n)
+	void FilterScene_SortBased(RawData& inputData); // ∏¥‘”∂»O(nlogn)
+	SceneDiff CompareSceneDiff(const RawData& prev, const RawData& next);
 }

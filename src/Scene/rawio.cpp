@@ -87,6 +87,26 @@ namespace
 			return h1 ^ (h2 + 0x9e3779b97f4a7c15ull + (h1 << 6) + (h1 >> 2));
 		}
 	};
+
+	struct PointEntry
+	{
+		uint64_t pointId;
+		PointKey key;
+		RawPointRecord* pt;
+	};
+
+	struct PointRemap
+	{
+		uint64_t oldPointId;
+		uint64_t canonicalPointId;
+	};
+
+	static inline bool PointKeyLess(const PointKey& a, const PointKey& b) noexcept
+	{
+		if (a.x != b.x) return a.x < b.x;
+		if (a.y != b.y) return a.y < b.y;
+		return a.z < b.z;
+	}
 }
 
 namespace rawio
@@ -299,6 +319,7 @@ namespace rawio
 		outData.images.reserve(reconstruction.NumImages());
 		outData.rays.reserve(reconstruction.NumPoints3D() * 6);
 		for (const auto& point3D : reconstruction.Points3D()) {
+			if (point3D.second.Track().Length() <= 3) continue;
 			RawPointRecord recpt{};
 			recpt.raw_point_id = point3D.first;
 			const auto& xyz = point3D.second.XYZ();
@@ -381,10 +402,6 @@ namespace rawio
 
 		for (const auto& ray : oldRays)
 		{
-			//if (inputData.images.find(ray.raw_image_id) == inputData.images.end())
-			//{
-			//	continue;
-			//}
 			auto itRemap = pointRemap.find(ray.raw_point_id);
 			if (itRemap == pointRemap.end())
 			{
@@ -402,5 +419,184 @@ namespace rawio
 					});
 			}
 		}
+	}
+
+	void FilterScene_SortBased(RawData& inputData)
+	{
+		std::unordered_map<uint64_t, RawPointRecord> oldPoints = std::move(inputData.points);
+		std::vector<RawRayRecord> oldRays = std::move(inputData.rays);
+
+		inputData.points.clear();
+		inputData.rays.clear();
+
+		std::vector<PointEntry> pointEntries;
+		pointEntries.reserve(oldPoints.size());
+
+		for (auto& kv : oldPoints)
+		{
+			pointEntries.push_back(PointEntry{
+				kv.first,
+				PointKey{
+					Quantize6(kv.second.x),
+					Quantize6(kv.second.y),
+					Quantize6(kv.second.z)
+				},
+				&kv.second
+				});
+		}
+
+		std::sort(pointEntries.begin(), pointEntries.end(),
+			[](const PointEntry& a, const PointEntry& b)
+			{
+				if (PointKeyLess(a.key, b.key)) return true;
+				if (PointKeyLess(b.key, a.key)) return false;
+				return a.pointId < b.pointId;
+			});
+
+		// old_point_id -> canonical_point_id
+		std::vector<PointRemap> remaps;
+		remaps.reserve(pointEntries.size());
+
+		inputData.points.reserve(oldPoints.size());
+		inputData.points.max_load_factor(0.7f);
+		for (size_t i = 0; i < pointEntries.size();)
+		{
+			size_t j = i + 1;
+			while (j < pointEntries.size() && pointEntries[i].key == pointEntries[j].key)
+			{
+				++j;
+			}
+			const uint64_t canonicalPointId = pointEntries[i].pointId;
+			inputData.points.emplace(canonicalPointId, std::move(*pointEntries[i].pt));
+			for (size_t k = i; k < j; ++k)
+			{
+				remaps.push_back(PointRemap{
+					pointEntries[k].pointId,
+					canonicalPointId
+					});
+			}
+			i = j;
+		}
+
+		std::sort(remaps.begin(), remaps.end(),
+			[](const PointRemap& a, const PointRemap& b)
+			{
+				return a.oldPointId < b.oldPointId;
+			});
+
+		std::sort(oldRays.begin(), oldRays.end(),
+			[](const RawRayRecord& a, const RawRayRecord& b)
+			{
+				if (a.raw_point_id != b.raw_point_id) return a.raw_point_id < b.raw_point_id;
+				return a.raw_image_id < b.raw_image_id;
+			});
+
+		std::vector<RawRayRecord> remappedRays;
+		remappedRays.reserve(oldRays.size());
+
+		size_t rayIdx = 0;
+		size_t remapIdx = 0;
+
+		while (rayIdx < oldRays.size() && remapIdx < remaps.size())
+		{
+			const uint64_t rayPointId = oldRays[rayIdx].raw_point_id;
+			const uint64_t remapPointId = remaps[remapIdx].oldPointId;
+
+			if (rayPointId < remapPointId)
+			{
+				const uint64_t missingId = rayPointId;
+				while (rayIdx < oldRays.size() && oldRays[rayIdx].raw_point_id == missingId)
+				{
+					++rayIdx;
+				}
+			}
+			else if (rayPointId > remapPointId)
+			{
+				++remapIdx;
+			}
+			else
+			{
+				const uint64_t canonicalPointId = remaps[remapIdx].canonicalPointId;
+
+				while (rayIdx < oldRays.size() && oldRays[rayIdx].raw_point_id == rayPointId)
+				{
+					remappedRays.push_back(RawRayRecord{
+						oldRays[rayIdx].raw_image_id,
+						canonicalPointId
+						});
+					++rayIdx;
+				}
+				++remapIdx;
+			}
+		}
+
+		std::sort(remappedRays.begin(), remappedRays.end(),
+			[](const RawRayRecord& a, const RawRayRecord& b)
+			{
+				if (a.raw_image_id != b.raw_image_id) return a.raw_image_id < b.raw_image_id;
+				return a.raw_point_id < b.raw_point_id;
+			});
+
+		remappedRays.erase(
+			std::unique(remappedRays.begin(), remappedRays.end(),
+				[](const RawRayRecord& a, const RawRayRecord& b)
+				{
+					return a.raw_image_id == b.raw_image_id &&
+						a.raw_point_id == b.raw_point_id;
+				}),
+			remappedRays.end());
+
+		inputData.rays = std::move(remappedRays);
+
+		oldPoints.clear();
+		oldPoints.rehash(0);
+	}
+
+	SceneDiff CompareSceneDiff(const RawData& prev, const RawData& next)
+	{
+		SceneDiff diff;
+		std::vector<uint64_t> prev_ids;
+		std::vector<uint64_t> next_ids;
+		prev_ids.reserve(prev.points.size());
+		next_ids.reserve(next.points.size());
+
+		for (const auto& kv : prev.points) { prev_ids.push_back(kv.first); }
+		for (const auto& kv : next.points) { next_ids.push_back(kv.first); }
+
+		std::sort(prev_ids.begin(), prev_ids.end());
+		std::sort(next_ids.begin(), next_ids.end());
+
+		size_t i = 0;
+		size_t j = 0;
+		while (i < prev_ids.size() && j < next_ids.size())
+		{
+			if (prev_ids[i] == next_ids[j])
+			{
+				++i;
+				++j;
+			}
+			else if (prev_ids[i] < next_ids[j])
+			{
+				diff.removed_points.push_back(prev_ids[i]);
+				++i;
+			}
+			else
+			{
+				diff.added_points.push_back(next_ids[j]);
+				++j;
+			}
+		}
+		while (i < prev_ids.size())
+		{
+			diff.removed_points.push_back(prev_ids[i]);
+			++i;
+		}
+		while (j < next_ids.size())
+		{
+			diff.added_points.push_back(next_ids[j]);
+			++j;
+		}
+
+		return diff;
 	}
 }

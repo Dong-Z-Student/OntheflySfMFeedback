@@ -40,7 +40,24 @@ struct RawRayRecord
 {
 	uint64_t raw_image_id;
 	uint64_t raw_point_id;
+
+	bool operator==(const RawRayRecord& other) const
+	{
+		return raw_image_id == other.raw_image_id &&
+			raw_point_id == other.raw_point_id;
+	}
 };
+
+struct RayRecordHash
+{
+	size_t operator()(const RawRayRecord& r) const
+	{
+		size_t h1 = std::hash<uint64_t>{}(r.raw_image_id);
+		size_t h2 = std::hash<uint64_t>{}(r.raw_point_id);
+		return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
+	}
+};
+
 
 // Dense 映射后的 CPU 内部结构
 
@@ -62,6 +79,12 @@ struct DenseImage
 	float cx;
 	float cy;
 	float cz;
+};
+
+struct SceneDiff
+{
+	std::vector<uint64_t> added_points;
+	std::vector<uint64_t> removed_points;
 };
 
 namespace RayTetra

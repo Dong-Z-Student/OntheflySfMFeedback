@@ -8,6 +8,7 @@
 #include "../Feature/ImageReader.h"
 #include "../Scene/Database.h"
 #include "../Scene/DatabaseCache.h"
+#include "../Scene/delaunay.h"
 #include "../Scene/rawio.h"
 #include "../Scene/ReconstructionManager.h"
 #include "../Scene/RenderData.h"
@@ -120,9 +121,15 @@ public:
 		globalFeatureExtractor = p_globalFeatureExtractor;
 		globalFeatureRetriever = p_globalFeatureRetriever;
 	}
-	void setRawData(std::unique_ptr<RawData> input) { rawdata = std::move(input); }
-	const RawData* getRawData() const { return rawdata.get(); }
-	RawData* getRawData() { return rawdata.get(); }
+
+	//// === Feedback 相关操作 ===
+	void setRawData(const std::shared_ptr<RawData>& data) { rawdata = data; }
+	void setPrevRawData(const std::shared_ptr<RawData>& data) { prev_rawdata = data; }
+	void setPrevDelaunay(const std::shared_ptr<DelaunayData>& data) { prev_delaunay = data; }
+	std::shared_ptr<RawData>& getRawData() { return rawdata; }
+	std::shared_ptr<RawData>& getPrevRawData() { return prev_rawdata; }
+	std::shared_ptr<DelaunayData>& getPrevDelaunay() { return prev_delaunay; }
+	void setPrevRawData() { prev_rawdata = rawdata; }
 
 	//// === Database 相关操作 ===
 	camera_t DatabaseWriteCamera(Camera camera) {
@@ -366,7 +373,9 @@ private:
 	IncrementalMapper* mapper;
 	CGlobalFeatureExtractor* globalFeatureExtractor;
 	CGlobalFeatureRetriever* globalFeatureRetriever;
-	std::unique_ptr<RawData> rawdata{};
+	std::shared_ptr<RawData> rawdata;
+	std::shared_ptr<RawData> prev_rawdata;
+	std::shared_ptr<DelaunayData> prev_delaunay;
 
 	std::unordered_map<std::size_t, std::string> allImages;
 	std::unordered_map<std::string, std::size_t> allImagePaths;

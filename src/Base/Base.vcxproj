@@ -129,7 +129,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,6 +153,7 @@
     <ClInclude Include="string.h" />
     <ClInclude Include="threading.h" />
     <ClInclude Include="timer.h" />
+    <ClInclude Include="TimerProfiler.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>
