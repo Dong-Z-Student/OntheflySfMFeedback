@@ -7,7 +7,7 @@ public:
 	const static size_t kNewestReconstructionIdx;
 
 	ReconstructionManagerWidget(
-		QWidget* parent ,
+		QWidget* parent,
 		std::shared_ptr<const ReconstructionManager> reconstruction_manager);
 
 	void Update();
@@ -17,5 +17,5 @@ public:
 
 private:
 	const std::shared_ptr<const ReconstructionManager> reconstruction_manager_;
-	mutable std::mutex mu;
+	//mutable std::mutex mu;
 };

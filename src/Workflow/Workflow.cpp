@@ -139,12 +139,12 @@ bool WorkFlow::ReconstructImage(quint32 imageID)
 			LOG(INFO) << "[Reconstruct] initializing model: " << 0;
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, -1, ReconstructType::AddModel, config.feedback.StartCreateMesh, config.feedback.Step, this);
 			connect(m_reconstructTask, &ReconstructTask::registedInitialImagePair, this, &WorkFlow::onRegistedInitialImagePair);
-			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess);
+			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess, Qt::BlockingQueuedConnection);
 			m_reconstruct_threadPool->start(m_reconstructTask);
 		}
 		else {
 			ReconstructTask* m_reconstructTask = new ReconstructTask(m_workData, imageID, 0, ReconstructType::AddImage, config.feedback.StartCreateMesh, config.feedback.Step, this);
-			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess);
+			connect(m_reconstructTask, &ReconstructTask::registedSuccess, this, &WorkFlow::onRegistedSuccess, Qt::BlockingQueuedConnection);
 			m_reconstruct_threadPool->start(m_reconstructTask);
 		}
 	}

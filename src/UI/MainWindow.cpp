@@ -401,13 +401,10 @@ void MainWindow::RenderNow() {
 			}
 		}
 		LOG(INFO) << "[Render]: Wait for rendering...";
-		workflow->AcquireUsedFrame();
 		if (isTrackModelCheckBox->isChecked()) {
-			QReadLocker locker(&(workflow->GetModelLock(0)));
 			modelViewerWidget->reconstruction = reconstructionManager->Get(0);
 			modelViewerWidget->ReloadReconstruction();
 		}
-		workflow->ReleaseFreeFrame();
 		LOG(INFO) << "[Render]: Render finished.";
 	}
 	catch (const std::exception& e) {

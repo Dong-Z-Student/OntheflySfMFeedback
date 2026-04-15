@@ -10,7 +10,6 @@
 
 void ReconstructTask::run()
 {
-	// bufferSize：缓冲区大小，反映了数据库更新的频率。缓冲区越小更新频率越高，重建速度也会变慢，缓冲区大则更新频率缓慢，处理速度会变快
 	const int bufferSize = 120;
 	const bool isCached = m_data->CheckCache(imageID);
 	if (isCached) return;
@@ -85,7 +84,7 @@ bool ReconstructTask::Reconstruct(bool init)
 				break;
 			}
 			const image_t nextImageID = nextImageIDs.front();
-			m_data->freeFrame.acquire();
+
 			reconstructionTimer.Restart();
 			const std::string nextImageName = m_data->DatabaseReadImage(nextImageID).Name();
 			bool success = false;
@@ -120,8 +119,6 @@ bool ReconstructTask::Reconstruct(bool init)
 
 			if (!success)
 			{
-				m_data->usedFrame.release();
-
 				if (lastFailedImageID == nextImageID)
 				{
 					++sameFailCount;
@@ -143,7 +140,6 @@ bool ReconstructTask::Reconstruct(bool init)
 
 			m_data->AddReconstructedImage(nextImageID);
 			emit registedSuccess(nextImageID);
-			m_data->usedFrame.release();
 		}
 		model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 	}
@@ -171,7 +167,6 @@ bool ReconstructTask::Reconstruct(bool init)
 		int itNum = 0;
 		for (size_t nextImageID : orderedNextImageIDs)
 		{
-			m_data->freeFrame.acquire(); // 获取生产帧
 			reconstructionTimer.Restart();
 			const std::string nextImageName = m_data->DatabaseReadImage(nextImageID).Name();
 			{
@@ -180,9 +175,6 @@ bool ReconstructTask::Reconstruct(bool init)
 				{
 					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 					LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
-					m_data->usedFrame.release(); // 重建失败，需要释放资源
-					m_data->usedFrame.acquire();
-					m_data->freeFrame.release();
 					continue;
 				}
 
@@ -234,7 +226,6 @@ bool ReconstructTask::Reconstruct(bool init)
 			}
 			m_data->AddReconstructedImage(nextImageID);
 			emit registedSuccess(nextImageID);
-			m_data->usedFrame.release(); // 重建完毕，释放渲染帧
 		}
 	}
 	{
@@ -247,8 +238,6 @@ bool ReconstructTask::Reconstruct(bool init)
 bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper)
 {
 	LOG(INFO) << "Finding good initial image pair...";
-
-	m_data->freeFrame.acquire(); // 获取生产帧
 
 	image_t initImageID1 = std::numeric_limits<image_t>::max();
 	image_t initImageID2 = std::numeric_limits<image_t>::max();
@@ -290,7 +279,6 @@ bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& opt
 	m_data->AddReconstructedImage(initImageID1);
 	m_data->AddReconstructedImage(initImageID2);
 	emit registedInitialImagePair(initImageID1, initImageID2);
-	m_data->usedFrame.release(); // 释放渲染帧
 	return true;
 }
 
@@ -340,12 +328,12 @@ void ReconstructTask::LocalBundleAdjustment(const IncrementalMapper::Options& op
 
 		localBATimes.push_back(localBATime);
 		localBAErrors.push_back(finalCost);
-	}
+		}
 	mapper.ClearModifiedPoints3D();
 
 	mapper.GetReconstruction()->localBAErrors.push_back(localBAErrors);
 	mapper.GetReconstruction()->localBATimes.push_back(localBATimes);
-}
+	}
 
 void ReconstructTask::GlobalBundleAdjustment(const IncrementalMapper::Options& options, IncrementalMapper& mapper)
 {

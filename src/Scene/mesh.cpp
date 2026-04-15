@@ -399,7 +399,7 @@ bool GenerateMeshModel(
 	QualityAssessment(raw, mesh, weights);
 	auto colors = generateColorsWithQuantiles(weights, quantiles);
 	GenerateRenderData(mesh, colors, renderData);
-	profiler.Print();
+	//profiler.Print();
 	return true;
 }
 
