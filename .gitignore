@@ -10,6 +10,7 @@
 *.env
 **/log/
 settings.ini
+x64
 
 scripts/pyscripts/PCA_dims32768to2048.model
 scripts/pyscripts/VGG16_64_desc_cen.hdf5
