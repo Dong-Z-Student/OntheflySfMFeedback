@@ -6,6 +6,22 @@
 #include <tbb/global_control.h>
 #include <windows.h>
 
+class SleepGuard : public QObject
+{
+public:
+	SleepGuard(QObject* parent = nullptr) : QObject(parent) {
+#ifdef Q_OS_WIN
+		SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+#endif
+	}
+
+	~SleepGuard() {
+#ifdef Q_OS_WIN
+		SetThreadExecutionState(ES_CONTINUOUS);
+#endif
+	}
+};
+
 int main(int argc, char* argv[])
 {
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
@@ -23,6 +39,7 @@ int main(int argc, char* argv[])
 	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
 	QApplication App(argc, argv);
+	SleepGuard guard;
 	QTranslator translator;
 	translator.load("C:\\Users\\WTG\\code\\OntheFlySfM\\src\\UI\\Translation_zh_CN.qm");
 	App.installTranslator(&translator);
