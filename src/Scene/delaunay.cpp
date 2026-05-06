@@ -5,6 +5,7 @@
 
 namespace delaunay
 {
+	const uint64_t kInfiniteVertexInfo = std::numeric_limits<uint64_t>::max();
 	// Build Delaunay with unique vertex index & unique cell index
 	bool Build(const DenseData& dense, DelaunayData& outData)
 	{
@@ -59,19 +60,34 @@ namespace delaunay
 			return false;
 		}
 
-		std::vector<std::pair<K::Point_3, uint64_t>> cgalPoints;
-		cgalPoints.reserve(rawdata.points.size());
+		std::vector<const std::pair<const uint64_t, RawPointRecord>*> sortedPoints;
+		sortedPoints.reserve(rawdata.points.size());
 
-		for (const auto& [idx, p] : rawdata.points)
+		for (const auto& kv : rawdata.points)
 		{
+			sortedPoints.emplace_back(&kv);
+		}
+
+		std::sort(sortedPoints.begin(), sortedPoints.end(),
+			[](const auto* a, const auto* b)
+			{
+				return a->first < b->first;
+			});
+
+		std::vector<std::pair<K::Point_3, uint64_t>> cgalPoints;
+		cgalPoints.reserve(sortedPoints.size());
+
+		for (const auto* kv : sortedPoints)
+		{
+			const auto& [idx, p] = *kv;
 			cgalPoints.emplace_back(K::Point_3(p.x, p.y, p.z), p.raw_point_id);
 		}
 
 		outData.dt.insert(cgalPoints.begin(), cgalPoints.end());
 
-		std::cout << "Delaunay vertices : " << outData.dt.number_of_vertices() << std::endl;
-		std::cout << "Delaunay finite cells : "
-			<< outData.dt.number_of_finite_cells() << std::endl;
+		//std::cout << "Delaunay vertices : " << outData.dt.number_of_vertices() << std::endl;
+		//std::cout << "Delaunay finite cells : "
+		//	<< outData.dt.number_of_finite_cells() << std::endl;
 
 		for (auto vit = outData.dt.finite_vertices_begin();
 			vit != outData.dt.finite_vertices_end(); ++vit)
@@ -81,79 +97,146 @@ namespace delaunay
 			outData.pointIdToVertex[pid] = vit_handle;
 		}
 
-		uint64_t cellId = 2;
+		outData.dt.infinite_vertex()->info() = kInfiniteVertexInfo;
+
+		uint64_t cellIdx = 2;
 		for (auto cit = outData.dt.all_cells_begin();
 			cit != outData.dt.all_cells_end(); ++cit)
 		{
 			Cell_handle cit_handle = cit;
-			cit_handle->info() = cellId;
-			outData.cellIdToCell[cellId] = cit_handle;
-			cellId++;
+			cit_handle->info() = cellIdx;
+			outData.cellIdToCell[cellIdx] = cit_handle;
+			outData.cellIdTocellIdx[cellIdx] = cellIdx;
+			outData.cellIdxTocellId[cellIdx] = cellIdx;
+			cellIdx++;
 		}
 
+		LOG(INFO) << "Delaunay vertices number  : " << outData.dt.number_of_vertices();
+		LOG(INFO) << "Delaunay cells number : " << outData.dt.number_of_cells();
+
 		outData.cellIndexBuilt = true;
-		outData.rebuild_count++;
 		return true;
 	}
 
-	bool Update(
-		const SceneDiff& diff,
-		const RawData& prev_rawdata,
-		const RawData& rawdata,
-		DelaunayData& outData)
+	bool Update(const RawData& scene, const RawData& last_scene, DelaunayData& outData)
 	{
-		const std::size_t beforeVertexCount = outData.dt.number_of_vertices();
+		std::unordered_set<uint64_t> last_cellid_set;
+		last_cellid_set.reserve(outData.dt.number_of_cells());
 
-		std::vector<std::pair<K::Point_3, uint64_t>> addCgalPoints;
-		for (const auto& addpid : diff.added_points) {
-			const auto& m_p = rawdata.points.at(addpid);
-			addCgalPoints.emplace_back(K::Point_3(m_p.x, m_p.y, m_p.z), m_p.raw_point_id);
+		uint64_t max_cellid = 1;
+		for (auto cit = outData.dt.all_cells_begin(); cit != outData.dt.all_cells_end(); ++cit)
+		{
+			const uint64_t cid = cit->info();
+			last_cellid_set.insert(cid);
+			if (max_cellid < cid) max_cellid = cid;
 		}
-		std::vector<Vertex_handle> removeCgalPoints;
-		for (const auto& removeid : diff.removed_points) {
-			removeCgalPoints.push_back(outData.pointIdToVertex.at(removeid));
+
+		std::vector<Vertex_handle> toRemove;
+		if (last_scene.points.size() > scene.points.size())
+		{
+			toRemove.reserve(last_scene.points.size() - scene.points.size());
 		}
 
-		const std::size_t insertCount = addCgalPoints.size();
-		const std::size_t removeCount = removeCgalPoints.size();
-		std::cout << "Current Delaunay vertex count : " << beforeVertexCount << std::endl;
-		std::cout << "Insert point count           : " << insertCount << std::endl;
-		std::cout << "Remove point count           : " << removeCount << std::endl;
+		for (const auto& kv : last_scene.points)
+		{
+			const uint64_t id = kv.first;
+			if (scene.points.find(id) != scene.points.end())
+			{
+				continue;
+			}
 
-		outData.dt.remove(removeCgalPoints.begin(), removeCgalPoints.end());
-		outData.dt.insert(addCgalPoints.begin(), addCgalPoints.end());
+			auto it = outData.pointIdToVertex.find(id);
+			if (it == outData.pointIdToVertex.end())
+			{
+				continue;
+			}
 
-		const std::size_t rawPointsCount = rawdata.points.size();
-		const std::size_t afterVertexCount = outData.dt.number_of_vertices();
-		std::cout << "Updated Delaunay vertex count: " << afterVertexCount << std::endl;
-		std::cout << "Current raw point count       : " << rawPointsCount << std::endl;
-		std::cout << "Delaunay finite cells        : "
-			<< outData.dt.number_of_finite_cells() << std::endl;
+			Vertex_handle vh = it->second;
+			if (vh != Vertex_handle() && !outData.dt.is_infinite(vh))
+			{
+				toRemove.push_back(vh);
+			}
+		}
 
-		outData.cellIdToCell.clear();
+		std::vector<std::pair<K::Point_3, uint64_t>> toInsert;
+		if (scene.points.size() > last_scene.points.size())
+		{
+			toInsert.reserve(scene.points.size() - last_scene.points.size());
+		}
+
+		for (const auto& kv : scene.points)
+		{
+			const uint64_t id = kv.first;
+			if (last_scene.points.find(id) != last_scene.points.end())
+			{
+				continue;
+			}
+
+			const RawPointRecord& p = kv.second;
+			toInsert.emplace_back(K::Point_3(p.x, p.y, p.z), p.raw_point_id);
+		}
+
+		const size_t removedCount = toRemove.size();
+		for (Vertex_handle vh : toRemove)
+		{
+			outData.dt.remove(vh);
+		}
+
+		const size_t addedCount = toInsert.size();
+		if (!toInsert.empty())
+		{
+			outData.dt.insert(toInsert.begin(), toInsert.end());
+		}
+
+		outData.dt.infinite_vertex()->info() = kInfiniteVertexInfo;
+
 		outData.pointIdToVertex.clear();
-		for (auto vit = outData.dt.finite_vertices_begin();
-			vit != outData.dt.finite_vertices_end(); ++vit)
+		outData.pointIdToVertex.reserve(outData.dt.number_of_vertices());
+		for (auto vit = outData.dt.finite_vertices_begin(); vit != outData.dt.finite_vertices_end(); ++vit)
 		{
-			Vertex_handle vit_handle = vit;
-			const uint64_t pid = vit_handle->info();
-			outData.pointIdToVertex[pid] = vit_handle;
+			Vertex_handle vh = vit;
+			outData.pointIdToVertex[vh->info()] = vh;
 		}
 
-		uint64_t cellId = 2;
-		for (auto cit = outData.dt.all_cells_begin();
-			cit != outData.dt.all_cells_end(); ++cit)
+		const size_t cellCount = outData.dt.number_of_cells();
+		outData.cellIdToCell.clear();
+		outData.cellIdToCell.reserve(cellCount);
+
+		outData.cellIdTocellIdx.clear();
+		outData.cellIdTocellIdx.reserve(cellCount);
+
+		outData.cellIdxTocellId.clear();
+		outData.cellIdxTocellId.reserve(cellCount);
+
+		uint64_t next_cellid = max_cellid + 1;
+		uint64_t cell_idx = 2;
+
+		for (auto cit = outData.dt.all_cells_begin(); cit != outData.dt.all_cells_end(); ++cit)
 		{
-			Cell_handle cit_handle = cit;
-			cit_handle->info() = cellId;
-			outData.cellIdToCell[cellId] = cit_handle;
-			cellId++;
+			if (last_cellid_set.find(cit->info()) == last_cellid_set.end())
+			{
+				cit->info() = next_cellid++;
+			}
+
+			const uint64_t cid = cit->info();
+			Cell_handle ch = cit;
+
+			outData.cellIdToCell[cid] = ch;
+			outData.cellIdTocellIdx[cid] = cell_idx;
+			outData.cellIdxTocellId[cell_idx] = cid;
+			++cell_idx;
 		}
 
 		outData.cellIndexBuilt = true;
-		outData.rebuild_count++;
+
+		//LOG(INFO) << "Added vertices : " << addedCount;
+		//LOG(INFO) << "Removed vertices : " << removedCount;
+		//LOG(INFO) << "Delaunay vertices : " << outData.dt.number_of_vertices();
+		//LOG(INFO) << "Delaunay finite cells : " << outData.dt.number_of_cells();
+
 		return true;
 	}
+
 
 	void PrintSummary(const DelaunayData& data)
 	{

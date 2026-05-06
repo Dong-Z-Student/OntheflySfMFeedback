@@ -31,7 +31,7 @@ enum CImageStatusFlag : char {
 	CTwoViewGeometryEstimated = 7
 };
 
-// 延迟锁
+// 延迟锁，用于缓解线程之间的资源争抢
 class DelayedWriteLocker {
 public:
 	DelayedWriteLocker(QReadWriteLock& lock, int maxRetries = 3, int delayMs = 100)

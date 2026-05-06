@@ -15,11 +15,19 @@ struct DelaunayData
 
 	std::unordered_map<uint64_t, Vertex_handle> pointIdToVertex;
 
+	// cell id ---> cell handle
 	std::unordered_map<uint64_t, Cell_handle> cellIdToCell;
 
-	bool cellIndexBuilt = false;
+	// cell idx ---> cell id
+	std::unordered_map<uint64_t, uint64_t> cellIdxTocellId;
 
-	size_t rebuild_count{ 0 };
+	// cell id ---> cell idx
+	std::unordered_map<uint64_t, uint64_t> cellIdTocellIdx;
+
+	inline uint64_t getCellIdx(uint64_t cellid) { return cellIdTocellIdx.at(cellid); }
+	inline uint64_t getCellId(uint64_t cellidx) { return cellIdxTocellId.at(cellidx); }
+
+	bool cellIndexBuilt = false;
 };
 
 namespace delaunay
@@ -28,11 +36,7 @@ namespace delaunay
 
 	bool Build(const RawData& rawdata, DelaunayData& outData);
 
-	bool Update(
-		const SceneDiff& diff,
-		const RawData& prev_rawdata,
-		const RawData& rawdata,
-		DelaunayData& outData);
+	bool Update(const RawData& scene, const RawData& last_scene, DelaunayData& outData);
 
 	// ต๗สิ
 	void PrintSummary(const DelaunayData& data);

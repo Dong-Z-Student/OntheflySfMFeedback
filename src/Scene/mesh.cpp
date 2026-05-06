@@ -151,28 +151,33 @@ bool GenerateMeshModel(
 	RenderData& renderData
 ) {
 	RawData& raw = *raw_ptr;
-	rawio::FilterScene_SortBased(raw);
+	rawio::FilterScene(raw);
 
-	//if (!delaunayData_ptr) {
-	//	delaunayData_ptr = std::make_shared<DelaunayData>();
-	//}
+	bool isFirstBuild = pre_raw_ptr == nullptr;
+	if (isFirstBuild)
+	{
+		delaunayData_ptr = std::make_shared<DelaunayData>();
+		if (!delaunay::Build(raw, *delaunayData_ptr))
+		{
+			std::cerr << "Build Delaunay failed." << std::endl;
+			return false;
+		}
+	}
+	else
+	{
+		if (!delaunay::Update(raw, *pre_raw_ptr, *delaunayData_ptr))
+		{
+			std::cerr << "Build Delaunay failed." << std::endl;
+			return false;
+		}
+	}
+
+	//delaunayData_ptr = std::make_shared<DelaunayData>();
 	//DelaunayData& delaunayData = *delaunayData_ptr;
-	//if (!pre_raw_ptr || (delaunayData.rebuild_count % 2 != 0)) {
-	//	delaunay::Build(raw, delaunayData);
-	//}
-	//else {
-	//	RawData& pre_raw = *pre_raw_ptr;
-	//	SceneDiff diff = rawio::CompareSceneDiff(pre_raw, raw);
-	//	delaunay::Update(diff, pre_raw, raw, delaunayData);
-	//}
-
-	profiler.Start("Delaunay");
-	delaunayData_ptr = std::make_shared<DelaunayData>();
-	DelaunayData& delaunayData = *delaunayData_ptr;
-	delaunay::Build(raw, delaunayData);
-	profiler.Stop("Delaunay");
+	//delaunay::Build(raw, delaunayData);
 
 	// =============== 权重图计算部分 ===============
+	DelaunayData& delaunayData = *delaunayData_ptr;
 	CellGraphData cell_graph_data;
 	Delaunay& dt = delaunayData.dt;
 	cell_graph_data.reserve(dt.number_of_cells());
@@ -210,11 +215,9 @@ bool GenerateMeshModel(
 			}
 		});
 
-	profiler.Start("RayTracing");
 	std::unordered_map<uint64_t, RayTetra::RayTraceResult> trace_results;
 	std::string errMsg;
 	RayTetra::BuildAndTraceRays(delaunayData, direction_rays, trace_results, errMsg);
-	profiler.Stop("RayTracing");
 
 	tbb::enumerable_thread_specific<CellGraphData> thread_local_data;
 	tbb::parallel_for(
@@ -296,7 +299,7 @@ bool GenerateMeshModel(
 	gc.setTerminalWeights(1, 0.0, std::numeric_limits<double>::max());
 
 	for (auto& cell_data : cell_graph_data) {
-		const size_t nodeid = cell_data.second.index;
+		const size_t nodeid = delaunayData.getCellIdx(cell_data.second.index);
 		gc.setTerminalWeights(
 			nodeid,
 			cell_data.second.source_weight,
@@ -323,7 +326,7 @@ bool GenerateMeshModel(
 			const float backward_edge_weight =
 				mirror_cell_data.edge_weights[mirror_facet.second] + edge_shape_weight;
 
-			const size_t mirror_nodeid = mirror_cell_data.index;
+			const size_t mirror_nodeid = delaunayData.getCellIdx(mirror_cell_data.index);
 			gc.addEdge(nodeid, mirror_nodeid, forward_edge_weight, backward_edge_weight);
 		}
 	}
@@ -350,8 +353,8 @@ bool GenerateMeshModel(
 		const auto& mirror_cell_data =
 			cell_graph_data.at(it->first->neighbor(it->second)->info());
 
-		const size_t nodeid = cell_data.index;
-		const size_t mirror_nodeid = mirror_cell_data.index;
+		const size_t nodeid = delaunayData.getCellIdx(cell_data.index);
+		const size_t mirror_nodeid = delaunayData.getCellIdx(mirror_cell_data.index);
 		const bool cell_is_source = gc.getSegment(nodeid) == DynamicGraphCut::GraphType::SOURCE;
 		const bool mirror_cell_is_source =
 			gc.getSegment(mirror_nodeid) == DynamicGraphCut::GraphType::SOURCE;
@@ -399,7 +402,6 @@ bool GenerateMeshModel(
 	QualityAssessment(raw, mesh, weights);
 	auto colors = generateColorsWithQuantiles(weights, quantiles);
 	GenerateRenderData(mesh, colors, renderData);
-	//profiler.Print();
 	return true;
 }
 
@@ -427,7 +429,6 @@ void QualityAssessment(const RawData& raw, PlyMesh& mesh, std::vector<double>& w
 		all_reproj_error.push_back(f.reprojection_error);
 	}
 
-	// 计算 5%-95% 分位数
 	double img_track_min = 0.0, img_track_max = 0.0;
 	double reproj_error_min = 0.0, reproj_error_max = 0.0;
 
