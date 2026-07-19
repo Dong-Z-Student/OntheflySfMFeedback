@@ -37,6 +37,7 @@ private slots:
 	void NewProject_SLOT();
 	void onTabChanged(int index);
 	void OnTrackModelToggled(bool checked);
+	void onProcessNewImage();
 
 	void addNewImageInWidget(QString p_imagePath);
 	void UpdateStatus(const QString& status);
@@ -95,5 +96,5 @@ private:
 	QCheckBox* isTrackModelCheckBox;
 
 	std::atomic_int simulationSpeed = 800; // 初始发送影像的间隔时间，单位:ms
-	BufferPIDController pidController;
+	SimpleBufferController bufferController;
 };

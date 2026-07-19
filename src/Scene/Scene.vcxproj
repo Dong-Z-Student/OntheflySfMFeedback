@@ -27,22 +27,31 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="block.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraModel.h" />
+    <ClInclude Include="cgal_types.h" />
     <ClInclude Include="CorrespondenceGraph.h" />
     <ClInclude Include="Database.h" />
     <ClInclude Include="DatabaseCache.h" />
     <ClInclude Include="DBSCAN.h" />
-    <ClInclude Include="graph_cut.h" />
+    <ClInclude Include="delaunay.h" />
+    <ClInclude Include="dynamic_graph_cut.h" />
+    <ClInclude Include="entities.h" />
+    <ClInclude Include="graph.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="IO.h" />
-    <ClInclude Include="meshing.h" />
-    <ClInclude Include="mesh_operate.h" />
+    <ClInclude Include="mesh.h" />
+	<ClInclude Include="PathPlanner.h" />
     <ClInclude Include="Point2D.h" />
     <ClInclude Include="Point3D.h" />
     <ClInclude Include="Projection.h" />
+    <ClInclude Include="rawio.h" />
+    <ClInclude Include="ray_tetra_cuda.h" />
+    <ClInclude Include="ray_tetra_host.h" />
     <ClInclude Include="Reconstruction.h" />
     <ClInclude Include="ReconstructionManager.h" />
+    <ClInclude Include="SharedMemoryChannel.h" />
     <ClInclude Include="Track.h" />
     <ClInclude Include="RenderData.h" />
     <ClInclude Include="VisibilityPyramid.h" />
@@ -54,17 +63,28 @@
     <ClCompile Include="Database.cpp" />
     <ClCompile Include="DatabaseCache.cpp" />
     <ClCompile Include="DBSCAN.cpp" />
-    <ClCompile Include="graph_cut.cpp" />
+    <ClCompile Include="delaunay.cpp" />
+    <ClCompile Include="dynamic_graph_cut.cpp" />
+    <ClCompile Include="graph.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="IO.cpp" />
-    <ClCompile Include="meshing.cpp" />
-    <ClCompile Include="mesh_operate.cpp" />
+    <ClCompile Include="maxflow.cpp" />
+    <ClCompile Include="mesh.cpp" />
+	<ClCompile Include="PathPlanner.cpp" />
     <ClCompile Include="Point3D.cpp" />
     <ClCompile Include="Projection.cpp" />
+    <ClCompile Include="rawio.cpp" />
+    <ClCompile Include="ray_tetra_host.cpp" />
     <ClCompile Include="Reconstruction.cpp" />
     <ClCompile Include="ReconstructionManager.cpp" />
+    <ClCompile Include="SharedMemoryChannel.cpp" />
     <ClCompile Include="Track.cpp" />
     <ClCompile Include="VisibilityPyramid.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="ray_tetra_cuda.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -122,6 +142,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.8.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -244,7 +265,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <FloatingPointModel>Fast</FloatingPointModel>
@@ -297,5 +318,6 @@
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.8.targets" />
   </ImportGroup>
 </Project>

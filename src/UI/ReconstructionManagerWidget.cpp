@@ -4,9 +4,9 @@ const size_t ReconstructionManagerWidget::kNewestReconstructionIdx =
 std::numeric_limits<size_t>::max();
 
 ReconstructionManagerWidget::ReconstructionManagerWidget(
-	QWidget* parent ,
+	QWidget* parent,
 	std::shared_ptr<const ReconstructionManager> reconstruction_manager)
-	: QComboBox(parent) ,
+	: QComboBox(parent),
 	reconstruction_manager_(std::move(reconstruction_manager)) {
 	QFont font;
 	font.setPointSize(10);
@@ -15,7 +15,6 @@ ReconstructionManagerWidget::ReconstructionManagerWidget(
 
 void ReconstructionManagerWidget::Update()
 {
-	std::lock_guard<std::mutex> lock(mu);
 	try
 	{
 		if (view()->isVisible()) {
@@ -33,17 +32,17 @@ void ReconstructionManagerWidget::Update()
 		int max_width = 0;
 		for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
 			const QString item = QString().asprintf(
-				"Model %d (%d images, %d points)" ,
-				static_cast<int>( i + 1 ) ,
-				static_cast<int>( reconstruction_manager_->Get(i)->NumRegImages() ) ,
-				static_cast<int>( reconstruction_manager_->Get(i)->NumPoints3D() ));
+				"Model %d (%d images, %d points)",
+				static_cast<int>(i + 1),
+				static_cast<int>(reconstruction_manager_->Get(i)->NumRegImages()),
+				static_cast<int>(reconstruction_manager_->Get(i)->NumPoints3D()));
 			QFontMetrics font_metrics(view()->font());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
 			const auto width = font_metrics.horizontalAdvance(item);
 #else
 			const auto width = font_metrics.width(item);
 #endif
-			max_width = std::max(max_width , width);
+			max_width = std::max(max_width, width);
 			addItem(item);
 		}
 
@@ -53,7 +52,7 @@ void ReconstructionManagerWidget::Update()
 			setCurrentIndex(0);
 		}
 		else {
-			const int max_idx = static_cast<int>( reconstruction_manager_->Size() );
+			const int max_idx = static_cast<int>(reconstruction_manager_->Size());
 			if (prev_idx <= max_idx) {
 				setCurrentIndex(prev_idx);
 			}
@@ -73,7 +72,6 @@ void ReconstructionManagerWidget::Update()
 
 size_t ReconstructionManagerWidget::SelectedReconstructionIdx() const
 {
-	std::lock_guard<std::mutex> lock(mu);
 	if (reconstruction_manager_->Size() == 0)
 	{
 		return kNewestReconstructionIdx;
@@ -93,7 +91,6 @@ size_t ReconstructionManagerWidget::SelectedReconstructionIdx() const
 
 void ReconstructionManagerWidget::SelectReconstruction(const size_t idx)
 {
-	std::lock_guard<std::mutex> lock(mu);
 	try
 	{
 		if (reconstruction_manager_->Size() == 0)

@@ -1,19 +1,20 @@
-#include "../Scene/meshing.h"
+#include "../Scene/mesh.h"
 #include "../Scene/ReconstructionManager.h"
 #include "FeedbackTask.h"
 #include "WorkData.h"
 
 void FeedbackTask::run()
 {
-	std::shared_ptr<MeshManager> meshManager = std::make_shared<MeshManager>();
 	ReconstructionManager* manager = m_data->getModelManager();
-	{
-		QReadLocker locker(&(m_data->m_models_lock[0]));
-		meshManager->CopyFromReconstruction(*(manager->Get(0)));
-	}
-	meshManager->CreateMesh();
-	meshManager->GenerateRenderMeshData();
-	m_data->render_data = meshManager->GetRenderingData();
-
+	m_data->m_feedback_lock = true;
+	std::shared_ptr<RenderData> newRenderData = std::make_shared<RenderData>();
+	GenerateMeshModel(
+		m_data->getPrevRawData(),
+		m_data->getPrevDelaunay(),
+		m_data->getRawData(),
+		*newRenderData);
+	m_data->setPrevRawData();
+	m_data->render_data = newRenderData;
+	m_data->m_feedback_lock = false;
 	emit taskFinished();
 }

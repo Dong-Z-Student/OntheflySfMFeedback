@@ -213,6 +213,9 @@ void MainWindow::CreateToolbar() {
 	reconstructToolBar->setMovable(false);
 
 	feedbackToolBar = addToolBar(tr("Feedback"));
+	feedbackToolBar->addAction(showMeshAction);
+	feedbackToolBar->addAction(showQualityAction);
+	feedbackToolBar->addAction(showGuidePathAction);
 	feedbackToolBar->setIconSize(QSize(16, 16));
 	feedbackToolBar->setMovable(false);
 }
@@ -228,6 +231,7 @@ void MainWindow::CreateStatusbar() {
 
 void MainWindow::SetupConnections() const {
 	connect(receiver, &Receiver::newDataReceived, workflow, &WorkFlow::onProcessNewImage);
+	connect(receiver, &Receiver::newDataReceived, this, &MainWindow::onProcessNewImage);
 	connect(workflow, &WorkFlow::readImageFinished, this, &MainWindow::addNewImageInWidget);
 	connect(workflow, &WorkFlow::reconstructUpdated, this, &MainWindow::OnRenderNow);
 	connect(workflow, &WorkFlow::feedbackFinished, this, &MainWindow::OnFeedback);
@@ -236,7 +240,6 @@ void MainWindow::SetupConnections() const {
 
 // ================= 业务逻辑 =================
 void MainWindow::RunFunc() {
-	modelViewerWidget->StartTimer();
 	const std::string baseImagePath = Database::imageDir;
 	const vector<std::string> images = GetImageFileList(baseImagePath);
 
@@ -245,11 +248,17 @@ void MainWindow::RunFunc() {
 	for (int i = 0; i < images.size(); i++) {
 		const QString imagePath = StdString2QString2(images[i]);
 		settings.setValue("NewImage", imagePath);
-		this_thread::sleep_for(chrono::milliseconds(simulationSpeed.load()));
+		while (workflow->SpeedCtrl(50))
+		{
+			this_thread::sleep_for(chrono::milliseconds(500));
+		}
+		this_thread::sleep_for(chrono::milliseconds(1000));
 	}
 }
 
 void MainWindow::StartReceive() {
+	QSettings settings("HKEY_CURRENT_USER\\Software\\RTPS\\CamFiTransmit", QSettings::NativeFormat);
+	settings.setValue("NewImage", "");
 	receiver->Start();
 	startReceiveAction->setEnabled(false);
 	stopReceiverAction->setEnabled(true);
@@ -395,13 +404,10 @@ void MainWindow::RenderNow() {
 			}
 		}
 		LOG(INFO) << "[Render]: Wait for rendering...";
-		workflow->AcquireUsedFrame();
 		if (isTrackModelCheckBox->isChecked()) {
-			QReadLocker locker(&(workflow->GetModelLock(0)));
 			modelViewerWidget->reconstruction = reconstructionManager->Get(0);
 			modelViewerWidget->ReloadReconstruction();
 		}
-		workflow->ReleaseFreeFrame();
 		LOG(INFO) << "[Render]: Render finished.";
 	}
 	catch (const std::exception& e) {
@@ -432,6 +438,11 @@ void MainWindow::OnTrackModelToggled(bool checked)
 	// TODO: 强制渲染一次模型
 }
 
+void MainWindow::onProcessNewImage()
+{
+	modelViewerWidget->StartTimer();
+}
+
 //主界面使用一个QLabel显示状态，子标签页发送status信号主界面接收，主界面切换页面改变页面序号，根据当前
 //页面序号接收status字符串，更新status显示内容。不会造成内存泄漏。
 void MainWindow::UpdateStatus(const QString& status) {
@@ -443,8 +454,8 @@ void MainWindow::UpdateStatus(const QString& status) {
 // ================= 流程控制相关 =================
 void MainWindow::UpdateSimulationSpeed(quint32 read, quint32 reconstructed)
 {
-	pidController.processed(read, reconstructed);
-	double nextInputDelay = pidController.getInputInterval();
+	bufferController.processed(read, reconstructed);
+	double nextInputDelay = bufferController.getInputInterval();
 	simulationSpeed.store(nextInputDelay);
 }
 

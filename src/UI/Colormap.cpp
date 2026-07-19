@@ -3,19 +3,22 @@
 
 PointColormapBase::PointColormapBase()
 	: scale(1.0f),
-	min(0.0f),
-	max(0.0f),
-	range(0.0f),
-	min_q(0.0f),
-	max_q(1.0f) {}
+	  min(0.0f),
+	  max(0.0f),
+	  range(0.0f),
+	  min_q(0.0f),
+	  max_q(1.0f) {}
 
-void PointColormapBase::UpdateScale(std::vector<float>* values) {
-	if (values->empty()) {
+void PointColormapBase::UpdateScale(std::vector<float> *values)
+{
+	if (values->empty())
+	{
 		min = 0.0f;
 		max = 0.0f;
 		range = 0.0f;
 	}
-	else {
+	else
+	{
 		std::sort(values->begin(), values->end());
 		min = (*values)[static_cast<size_t>(min_q * (values->size() - 1))];
 		max = (*values)[static_cast<size_t>(max_q * (values->size() - 1))];
@@ -23,11 +26,14 @@ void PointColormapBase::UpdateScale(std::vector<float>* values) {
 	}
 }
 
-float PointColormapBase::AdjustScale(const float gray) {
-	if (range == 0.0f) {
+float PointColormapBase::AdjustScale(const float gray)
+{
+	if (range == 0.0f)
+	{
 		return 0.0f;
 	}
-	else {
+	else
+	{
 		const float gray_clipped = std::min(std::max(gray, min), max);
 		const float gray_scaled = (gray_clipped - min) / range;
 		return std::pow(gray_scaled, scale);
@@ -35,28 +41,31 @@ float PointColormapBase::AdjustScale(const float gray) {
 }
 
 void PointColormapPhotometric::Prepare(
-	std::unordered_map<camera_t, Camera>& cameras,
-	std::unordered_map<image_t, Image>& images,
-	std::unordered_map<point3D_t, Point3D>& points3D,
-	std::vector<image_t>& reg_image_ids) {}
+	std::unordered_map<camera_t, Camera> &cameras,
+	std::unordered_map<image_t, const Image *> &images,
+	std::unordered_map<point3D_t, Point3D> &points3D,
+	std::vector<image_t> &reg_image_ids) {}
 
 Eigen::Vector4f PointColormapPhotometric::ComputeColor(
-	const point3D_t point3D_id, const Point3D& point3D) {
+	const point3D_t point3D_id, const Point3D &point3D)
+{
 	return Eigen::Vector4f(point3D.Color(0) / 255.0f,
-		point3D.Color(1) / 255.0f,
-		point3D.Color(2) / 255.0f,
-		1.0f);
+						   point3D.Color(1) / 255.0f,
+						   point3D.Color(2) / 255.0f,
+						   1.0f);
 }
 
 void PointColormapError::Prepare(
-	std::unordered_map<camera_t, Camera>& cameras,
-	std::unordered_map<image_t, Image>& images,
-	std::unordered_map<point3D_t, Point3D>& points3D,
-	std::vector<image_t>& reg_image_ids) {
+	std::unordered_map<camera_t, Camera> &cameras,
+	std::unordered_map<image_t, const Image *> &images,
+	std::unordered_map<point3D_t, Point3D> &points3D,
+	std::vector<image_t> &reg_image_ids)
+{
 	std::vector<float> errors;
 	errors.reserve(points3D.size());
 
-	for (const auto& point3D : points3D) {
+	for (const auto &point3D : points3D)
+	{
 		errors.push_back(static_cast<float>(point3D.second.Error()));
 	}
 
@@ -64,23 +73,26 @@ void PointColormapError::Prepare(
 }
 
 Eigen::Vector4f PointColormapError::ComputeColor(const point3D_t point3D_id,
-	const Point3D& point3D) {
+												 const Point3D &point3D)
+{
 	const float gray = AdjustScale(static_cast<float>(point3D.Error()));
 	return Eigen::Vector4f(JetColormap::Red(gray),
-		JetColormap::Green(gray),
-		JetColormap::Blue(gray),
-		1.0f);
+						   JetColormap::Green(gray),
+						   JetColormap::Blue(gray),
+						   1.0f);
 }
 
 void PointColormapTrackLen::Prepare(
-	std::unordered_map<camera_t, Camera>& cameras,
-	std::unordered_map<image_t, Image>& images,
-	std::unordered_map<point3D_t, Point3D>& points3D,
-	std::vector<image_t>& reg_image_ids) {
+	std::unordered_map<camera_t, Camera> &cameras,
+	std::unordered_map<image_t, const Image *> &images,
+	std::unordered_map<point3D_t, Point3D> &points3D,
+	std::vector<image_t> &reg_image_ids)
+{
 	std::vector<float> track_lengths;
 	track_lengths.reserve(points3D.size());
 
-	for (const auto& point3D : points3D) {
+	for (const auto &point3D : points3D)
+	{
 		track_lengths.push_back(point3D.second.Track().Length());
 	}
 
@@ -88,47 +100,53 @@ void PointColormapTrackLen::Prepare(
 }
 
 Eigen::Vector4f PointColormapTrackLen::ComputeColor(const point3D_t point3D_id,
-	const Point3D& point3D) {
+													const Point3D &point3D)
+{
 	const float gray = AdjustScale(point3D.Track().Length());
 	return Eigen::Vector4f(JetColormap::Red(gray),
-		JetColormap::Green(gray),
-		JetColormap::Blue(gray),
-		1.0f);
+						   JetColormap::Green(gray),
+						   JetColormap::Blue(gray),
+						   1.0f);
 }
 
 void PointColormapGroundResolution::Prepare(
-	std::unordered_map<camera_t, Camera>& cameras,
-	std::unordered_map<image_t, Image>& images,
-	std::unordered_map<point3D_t, Point3D>& points3D,
-	std::vector<image_t>& reg_image_ids) {
+	std::unordered_map<camera_t, Camera> &cameras,
+	std::unordered_map<image_t, const Image *> &images,
+	std::unordered_map<point3D_t, Point3D> &points3D,
+	std::vector<image_t> &reg_image_ids)
+{
 	std::vector<float> resolutions;
 	resolutions.reserve(points3D.size());
 
 	std::unordered_map<camera_t, float> focal_lengths;
 	std::unordered_map<camera_t, Eigen::Vector2f> principal_points;
-	for (const auto& camera : cameras) {
+	for (const auto &camera : cameras)
+	{
 		focal_lengths[camera.first] =
 			static_cast<float>(camera.second.MeanFocalLength());
 		principal_points[camera.first] =
 			Eigen::Vector2f(static_cast<float>(camera.second.PrincipalPointX()),
-				static_cast<float>(camera.second.PrincipalPointY()));
+							static_cast<float>(camera.second.PrincipalPointY()));
 	}
 
 	std::unordered_map<image_t, Eigen::Vector3f> proj_centers;
-	for (const auto& image : images) {
-		proj_centers[image.first] = image.second.ProjectionCenter().cast<float>();
+	for (const auto &image : images)
+	{
+		proj_centers[image.first] = image.second->ProjectionCenter().cast<float>();
 	}
 
-	for (const auto& point3D : points3D) {
+	for (const auto &point3D : points3D)
+	{
 		float min_resolution = std::numeric_limits<float>::max();
 
 		const Eigen::Vector3f xyz = point3D.second.XYZ().cast<float>();
 
-		for (const auto& track_el : point3D.second.Track().Elements()) {
-			const auto& image = images[track_el.image_id];
+		for (const auto &track_el : point3D.second.Track().Elements())
+		{
+			const Image &image = *images.at(track_el.image_id);
 			const float focal_length = focal_lengths[image.CameraId()];
 			const float focal_length2 = focal_length * focal_length;
-			const Eigen::Vector2f& pp = principal_points[image.CameraId()];
+			const Eigen::Vector2f &pp = principal_points[image.CameraId()];
 
 			const Eigen::Vector2f xy =
 				image.Point2D(track_el.point2D_idx).xy.cast<float>() - pp;
@@ -158,7 +176,8 @@ void PointColormapGroundResolution::Prepare(
 			// high resolution.
 			const float resolution = -dr * dr;
 
-			if (std::isfinite(resolution)) {
+			if (std::isfinite(resolution))
+			{
 				min_resolution = std::min(resolution, min_resolution);
 			}
 		}
@@ -171,53 +190,59 @@ void PointColormapGroundResolution::Prepare(
 }
 
 Eigen::Vector4f PointColormapGroundResolution::ComputeColor(
-	const point3D_t point3D_id, const Point3D& point3D) {
+	const point3D_t point3D_id, const Point3D &point3D)
+{
 	const float gray = AdjustScale(resolutions_[point3D_id]);
 	return Eigen::Vector4f(JetColormap::Red(gray),
-		JetColormap::Green(gray),
-		JetColormap::Blue(gray),
-		1.0f);
+						   JetColormap::Green(gray),
+						   JetColormap::Blue(gray),
+						   1.0f);
 }
 
 const Eigen::Vector4f ImageColormapBase::kDefaultPlaneColor = {
-	1.0f, 0.1f, 0.0f, 0.6f };
+	1.0f, 0.1f, 0.0f, 0.6f};
 const Eigen::Vector4f ImageColormapBase::kDefaultFrameColor = {
-	0.8f, 0.1f, 0.0f, 1.0f };
+	0.8f, 0.1f, 0.0f, 1.0f};
 
 ImageColormapBase::ImageColormapBase() {}
 
 void ImageColormapUniform::Prepare(
-	std::unordered_map<camera_t, Camera>& cameras,
-	std::unordered_map<image_t, Image>& images,
-	std::unordered_map<point3D_t, Point3D>& points3D,
-	std::vector<image_t>& reg_image_ids) {}
+	std::unordered_map<camera_t, Camera> &cameras,
+	std::unordered_map<image_t, const Image *> &images,
+	std::unordered_map<point3D_t, Point3D> &points3D,
+	std::vector<image_t> &reg_image_ids) {}
 
-void ImageColormapUniform::ComputeColor(const Image& image,
-	Eigen::Vector4f* plane_color,
-	Eigen::Vector4f* frame_color) {
+void ImageColormapUniform::ComputeColor(const Image &image,
+										Eigen::Vector4f *plane_color,
+										Eigen::Vector4f *frame_color)
+{
 	*plane_color = uniform_plane_color;
 	*frame_color = uniform_frame_color;
 }
 
 void ImageColormapNameFilter::Prepare(
-	std::unordered_map<camera_t, Camera>& cameras,
-	std::unordered_map<image_t, Image>& images,
-	std::unordered_map<point3D_t, Point3D>& points3D,
-	std::vector<image_t>& reg_image_ids) {}
+	std::unordered_map<camera_t, Camera> &cameras,
+	std::unordered_map<image_t, const Image *> &images,
+	std::unordered_map<point3D_t, Point3D> &points3D,
+	std::vector<image_t> &reg_image_ids) {}
 
 void ImageColormapNameFilter::AddColorForWord(
-	const std::string& word,
-	const Eigen::Vector4f& plane_color,
-	const Eigen::Vector4f& frame_color) {
+	const std::string &word,
+	const Eigen::Vector4f &plane_color,
+	const Eigen::Vector4f &frame_color)
+{
 	image_name_colors_.emplace_back(word,
-		std::make_pair(plane_color, frame_color));
+									std::make_pair(plane_color, frame_color));
 }
 
-void ImageColormapNameFilter::ComputeColor(const Image& image,
-	Eigen::Vector4f* plane_color,
-	Eigen::Vector4f* frame_color) {
-	for (const auto& image_name_color : image_name_colors_) {
-		if (StringContains(image.Name(), image_name_color.first)) {
+void ImageColormapNameFilter::ComputeColor(const Image &image,
+										   Eigen::Vector4f *plane_color,
+										   Eigen::Vector4f *frame_color)
+{
+	for (const auto &image_name_color : image_name_colors_)
+	{
+		if (StringContains(image.Name(), image_name_color.first))
+		{
 			*plane_color = image_name_color.second.first;
 			*frame_color = image_name_color.second.second;
 			return;

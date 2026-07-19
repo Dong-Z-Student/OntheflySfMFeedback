@@ -8,6 +8,8 @@
 #include "../Feature/ImageReader.h"
 #include "../Scene/Database.h"
 #include "../Scene/DatabaseCache.h"
+#include "../Scene/delaunay.h"
+#include "../Scene/rawio.h"
 #include "../Scene/ReconstructionManager.h"
 #include "../Scene/RenderData.h"
 #include "tbb/concurrent_map.h"
@@ -29,7 +31,7 @@ enum CImageStatusFlag : char {
 	CTwoViewGeometryEstimated = 7
 };
 
-// 延迟锁
+// 延迟锁，用于缓解线程之间的资源争抢
 class DelayedWriteLocker {
 public:
 	DelayedWriteLocker(QReadWriteLock& lock, int maxRetries = 3, int delayMs = 100)
@@ -120,6 +122,14 @@ public:
 		globalFeatureRetriever = p_globalFeatureRetriever;
 	}
 
+	//// === Feedback 相关操作 ===
+	void setRawData(const std::shared_ptr<RawData>& data) { rawdata = data; }
+	void setPrevRawData(const std::shared_ptr<RawData>& data) { prev_rawdata = data; }
+	void setPrevDelaunay(const std::shared_ptr<DelaunayData>& data) { prev_delaunay = data; }
+	std::shared_ptr<RawData>& getRawData() { return rawdata; }
+	std::shared_ptr<RawData>& getPrevRawData() { return prev_rawdata; }
+	std::shared_ptr<DelaunayData>& getPrevDelaunay() { return prev_delaunay; }
+	void setPrevRawData() { prev_rawdata = rawdata; }
 
 	//// === Database 相关操作 ===
 	camera_t DatabaseWriteCamera(Camera camera) {
@@ -338,6 +348,7 @@ public:
 	std::atomic_size_t readImagesNum{ 0 };
 	std::atomic_size_t reconstructImagesNum{ 0 };
 	std::atomic_size_t estimatedImagesNum{ 0 };
+	std::atomic_size_t imagesInRcon{ 0 };
 	//// 用于UI显示的数据
 	std::shared_ptr<const RenderData> render_data; // 反馈数据
 	QSemaphore freeFrame{ 1 }; // 产生空闲帧数据
@@ -352,6 +363,7 @@ public:
 	QMutex m_imagestatus_lock;
 	mutable QReadWriteLock m_estimatedSet_lock;
 	mutable QReadWriteLock m_reconstructedSet_lock;
+	std::atomic_bool m_feedback_lock{ false };
 
 private:
 	//// 工作变量
@@ -361,6 +373,9 @@ private:
 	IncrementalMapper* mapper;
 	CGlobalFeatureExtractor* globalFeatureExtractor;
 	CGlobalFeatureRetriever* globalFeatureRetriever;
+	std::shared_ptr<RawData> rawdata;
+	std::shared_ptr<RawData> prev_rawdata;
+	std::shared_ptr<DelaunayData> prev_delaunay;
 
 	std::unordered_map<std::size_t, std::string> allImages;
 	std::unordered_map<std::string, std::size_t> allImagePaths;

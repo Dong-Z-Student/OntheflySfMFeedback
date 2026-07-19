@@ -2,6 +2,7 @@
 #include "../Base/misc.h"
 #include "../Base/timer.h"
 #include "../Estimator/IncrementalMapper.h"
+#include "../Scene/mesh.h"
 #include "glog/logging.h"
 #include "ReconstructTask.h"
 #include "WorkData.h"
@@ -9,8 +10,7 @@
 
 void ReconstructTask::run()
 {
-	// bufferSize：缓冲区大小，反映了数据库更新的频率。缓冲区越小更新频率越高，重建速度也会变慢，缓冲区大则更新频率缓慢，处理速度会变快
-	const int bufferSize = 50;
+	const int bufferSize = 120;
 	const bool isCached = m_data->CheckCache(imageID);
 	if (isCached) return;
 	m_data->LoadCache(bufferSize);
@@ -74,43 +74,72 @@ bool ReconstructTask::Reconstruct(bool init)
 			return false;
 		}
 		size_t registerTime = 0;
-		std::vector<image_t> nextImageIDs;
-		nextImageIDs = mapper->FindNextImages(init_mapper_options);
-		for (size_t nextImageID : nextImageIDs)
+		image_t lastFailedImageID = kInvalidImageId;
+		size_t sameFailCount = 0;
+		while (true)
 		{
-			m_data->freeFrame.acquire(); // 获取生产帧
+			std::vector<image_t> nextImageIDs = mapper->FindNextImages(init_mapper_options);
+			if (nextImageIDs.empty())
+			{
+				break;
+			}
+			const image_t nextImageID = nextImageIDs.front();
+
 			reconstructionTimer.Restart();
 			const std::string nextImageName = m_data->DatabaseReadImage(nextImageID).Name();
+			bool success = false;
 			{
 				QWriteLocker locker(&(m_data->m_models_lock[0]));
 				if (!mapper->RegisterNextImage(init_mapper_options, nextImageID))
 				{
 					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 					LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
-					m_data->usedFrame.release(); // 重建失败，需要释放资源
-					continue;
 				}
+				else
+				{
+					success = true;
 
-				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-				registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
-				model->registerTimes.push_back(registerTime);
-				LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered successfully!";
+					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+					registerTime += reconstructionTimer.ElapsedMicroSeconds() / 1000;
+					model->registerTimes.push_back(registerTime);
+					LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered successfully!";
 
-				reconstructionTimer.Restart();
-				TriangulateImage(init_mapper_options, nextImageID, *mapper);
-				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
-				model->triangulateTimes.push_back(reconstructionTimer.ElapsedMicroSeconds() / 1000);
+					reconstructionTimer.Restart();
+					TriangulateImage(init_mapper_options, nextImageID, *mapper);
+					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+					model->triangulateTimes.push_back(reconstructionTimer.ElapsedMicroSeconds() / 1000);
 
-				reconstructionTimer.Restart();
-				LocalBundleAdjustment(init_mapper_options, nextImageID, *mapper);
-				ExtractColors(init_mapper_options, nextImageID, *model);
+					reconstructionTimer.Restart();
+					LocalBundleAdjustment(init_mapper_options, nextImageID, *mapper);
+					ExtractColors(init_mapper_options, nextImageID, *model);
 
-				model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
+				}
 			}
+
+			if (!success)
+			{
+				if (lastFailedImageID == nextImageID)
+				{
+					++sameFailCount;
+					if (sameFailCount >= 3)
+					{
+						LOG(WARNING) << "image " << nextImageName << " failed repeatedly, break to avoid dead loop.";
+						break;
+					}
+				}
+				else
+				{
+					lastFailedImageID = nextImageID;
+					sameFailCount = 1;
+				}
+				continue;
+			}
+			lastFailedImageID = kInvalidImageId;
+			sameFailCount = 0;
 
 			m_data->AddReconstructedImage(nextImageID);
 			emit registedSuccess(nextImageID);
-			m_data->usedFrame.release(); // 重建完毕，释放渲染帧
 		}
 		model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 	}
@@ -138,7 +167,6 @@ bool ReconstructTask::Reconstruct(bool init)
 		int itNum = 0;
 		for (size_t nextImageID : orderedNextImageIDs)
 		{
-			m_data->freeFrame.acquire(); // 获取生产帧
 			reconstructionTimer.Restart();
 			const std::string nextImageName = m_data->DatabaseReadImage(nextImageID).Name();
 			{
@@ -147,9 +175,6 @@ bool ReconstructTask::Reconstruct(bool init)
 				{
 					model->reconstructTime += (reconstructionTimer.ElapsedMicroSeconds() / 1000);
 					LOG(INFO) << "[model " << (modelID + 1) << "] image " << nextImageName << " registered failed!";
-					m_data->usedFrame.release(); // 重建失败，需要释放资源
-					m_data->usedFrame.acquire();
-					m_data->freeFrame.release();
 					continue;
 				}
 
@@ -191,9 +216,16 @@ bool ReconstructTask::Reconstruct(bool init)
 				}
 			}
 #endif
+			{
+				if (model->NumRegImages() >= start &&
+					(model->NumRegImages() - start) % step == 0 &&
+					!m_data->m_feedback_lock) {
+					QReadLocker locker(&(m_data->m_models_lock[0]));
+					m_data->setRawData(std::make_shared<RawData>(CopyReconstruction(*model)));
+				}
+			}
 			m_data->AddReconstructedImage(nextImageID);
 			emit registedSuccess(nextImageID);
-			m_data->usedFrame.release(); // 重建完毕，释放渲染帧
 		}
 	}
 	{
@@ -206,8 +238,6 @@ bool ReconstructTask::Reconstruct(bool init)
 bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& options, Reconstruction& model, IncrementalMapper& mapper)
 {
 	LOG(INFO) << "Finding good initial image pair...";
-
-	m_data->freeFrame.acquire(); // 获取生产帧
 
 	image_t initImageID1 = std::numeric_limits<image_t>::max();
 	image_t initImageID2 = std::numeric_limits<image_t>::max();
@@ -249,7 +279,6 @@ bool ReconstructTask::InitializeEmptyModel(const IncrementalMapper::Options& opt
 	m_data->AddReconstructedImage(initImageID1);
 	m_data->AddReconstructedImage(initImageID2);
 	emit registedInitialImagePair(initImageID1, initImageID2);
-	m_data->usedFrame.release(); // 释放渲染帧
 	return true;
 }
 

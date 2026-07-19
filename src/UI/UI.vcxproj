@@ -61,7 +61,7 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>python310.lib;Base.lib;Estimator.lib;Geometry.lib;Scene.lib;Feature.lib;Workflow.lib;SIFTGPU.lib;VLFeat.lib;cublas.lib;cublasLt.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;cufft.lib;cufftw.lib;cufilt.lib;curand.lib;cusolver.lib;cusolverMg.lib;cusparse.lib;nppc.lib;nppial.lib;nppicc.lib;nppidei.lib;nppif.lib;nppig.lib;nppim.lib;nppist.lib;nppisu.lib;nppitc.lib;npps.lib;nvblas.lib;nvjpeg.lib;nvml.lib;nvptxcompiler_static.lib;nvrtc-builtins_static.lib;nvrtc.lib;nvrtc_static.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
