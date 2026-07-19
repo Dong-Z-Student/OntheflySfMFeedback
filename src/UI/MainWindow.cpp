@@ -213,6 +213,9 @@ void MainWindow::CreateToolbar() {
 	reconstructToolBar->setMovable(false);
 
 	feedbackToolBar = addToolBar(tr("Feedback"));
+	feedbackToolBar->addAction(showMeshAction);
+	feedbackToolBar->addAction(showQualityAction);
+	feedbackToolBar->addAction(showGuidePathAction);
 	feedbackToolBar->setIconSize(QSize(16, 16));
 	feedbackToolBar->setMovable(false);
 }

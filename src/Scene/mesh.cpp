@@ -1,6 +1,7 @@
 ﻿#include "../Base/TimerProfiler.h"
 #include "dynamic_graph_cut.h"
 #include "mesh.h"
+#include "PathPlanner.h"
 #include "rawio.h"
 #include "ray_tetra_host.h"
 #include <algorithm>
@@ -402,6 +403,7 @@ bool GenerateMeshModel(
 	QualityAssessment(raw, mesh, weights);
 	auto colors = generateColorsWithQuantiles(weights, quantiles);
 	GenerateRenderData(mesh, colors, renderData);
+	GeneratePredictivePath(raw, mesh, weights, quantiles, renderData);
 	return true;
 }
 

@@ -42,6 +42,7 @@
     <ClInclude Include="Image.h" />
     <ClInclude Include="IO.h" />
     <ClInclude Include="mesh.h" />
+	<ClInclude Include="PathPlanner.h" />
     <ClInclude Include="Point2D.h" />
     <ClInclude Include="Point3D.h" />
     <ClInclude Include="Projection.h" />
@@ -69,6 +70,7 @@
     <ClCompile Include="IO.cpp" />
     <ClCompile Include="maxflow.cpp" />
     <ClCompile Include="mesh.cpp" />
+	<ClCompile Include="PathPlanner.cpp" />
     <ClCompile Include="Point3D.cpp" />
     <ClCompile Include="Projection.cpp" />
     <ClCompile Include="rawio.cpp" />

@@ -87,6 +87,9 @@
     <ClInclude Include="mesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
+	<ClInclude Include="PathPlanner.h">
+	  <Filter>头文件</Filter>
+	</ClInclude>
     <ClInclude Include="rawio.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -158,6 +161,9 @@
     <ClCompile Include="mesh.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+	<ClCompile Include="PathPlanner.cpp">
+	  <Filter>源文件</Filter>
+	</ClCompile>
     <ClCompile Include="rawio.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
