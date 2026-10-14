@@ -96,6 +96,7 @@
     <UseInteloneTBB>true</UseInteloneTBB>
     <UseInteloneMKL>Parallel</UseInteloneMKL>
   </PropertyGroup>
+  <Import Project="$(MSBuildProjectDirectory)\..\..\local.windows.early.props" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="LocalWindowsSetup-early" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -271,6 +272,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <Import Project="$(MSBuildProjectDirectory)\..\..\local.windows.late.props" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="LocalWindowsSetup-late" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

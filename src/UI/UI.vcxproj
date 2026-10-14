@@ -21,6 +21,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <UseInteloneTBB>true</UseInteloneTBB>
   </PropertyGroup>
+  <Import Project="$(MSBuildProjectDirectory)\..\..\local.windows.early.props" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="LocalWindowsSetup-early" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')">
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
@@ -152,6 +153,7 @@
   <ItemGroup>
     <None Include="cpp.hint" />
   </ItemGroup>
+  <Import Project="$(MSBuildProjectDirectory)\..\..\local.windows.late.props" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="LocalWindowsSetup-late" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
     <Import Project="$(QtMsBuild)\qt.targets" />

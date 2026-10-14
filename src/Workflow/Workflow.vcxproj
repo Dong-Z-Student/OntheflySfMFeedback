@@ -136,6 +136,7 @@
     <UseInteloneTBB>true</UseInteloneTBB>
     <UseInteloneMKL>Parallel</UseInteloneMKL>
   </PropertyGroup>
+  <Import Project="$(MSBuildProjectDirectory)\..\..\local.windows.early.props" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="LocalWindowsSetup-early" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(QtMsBuild)\qt_defaults.props" Condition="Exists('$(QtMsBuild)\qt_defaults.props')" />
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='debug2|Win32'" />
@@ -331,6 +332,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <Import Project="$(MSBuildProjectDirectory)\..\..\local.windows.late.props" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="LocalWindowsSetup-late" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />
   <ImportGroup Label="ExtensionTargets">

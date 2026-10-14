@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Imported before Microsoft.Cpp.targets, after project-specific properties and metadata. -->
+  <PropertyGroup Label="LocalWindowsSetup">
+    <UseInteloneTBB>false</UseInteloneTBB>
+    <UseInteloneMKL>No</UseInteloneMKL>
+    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestInstall>false</VcpkgManifestInstall>
+    <VcpkgManifestRoot>$(LocalSfMRoot)</VcpkgManifestRoot>
+    <VcpkgInstalledDir>$(LocalSfMRoot)vcpkg_installed\</VcpkgInstalledDir>
+    <VcpkgTriplet>x64-windows</VcpkgTriplet>
+    <VcpkgHostTriplet>x64-windows</VcpkgHostTriplet>
+    <OutDir>E:\sfm\runtime\Release\</OutDir>
+    <IntDir>E:\sfm\build\obj\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>$(LocalPythonRoot)include;$(LocalPythonRoot)Lib\site-packages\numpy\core\include;$(LocalTbbRoot)include;$(LocalCudaRoot)include;$(LocalSfMRoot)vcpkg_installed\x64-windows\include;$(LocalSfMRoot)vcpkg_installed\x64-windows\include\eigen3;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OutDir);$(LocalPythonRoot)libs;$(LocalTbbRoot)lib\intel64\vc14;$(LocalCudaRoot)lib\x64;$(LocalSfMRoot)vcpkg_installed\x64-windows\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(LocalPythonRoot)include;$(LocalPythonRoot)Lib\site-packages\numpy\core\include;$(LocalTbbRoot)include;$(LocalCudaRoot)include;$(LocalSfMRoot)vcpkg_installed\x64-windows\include;$(LocalSfMRoot)vcpkg_installed\x64-windows\include\eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <CudaCompile>
+      <AdditionalIncludeDirectories>$(LocalCudaRoot)include;$(LocalTbbRoot)include;$(LocalSfMRoot)vcpkg_installed\x64-windows\include;$(LocalSfMRoot)vcpkg_installed\x64-windows\include\eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </CudaCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(OutDir);$(LocalPythonRoot)libs;$(LocalTbbRoot)lib\intel64\vc14;$(LocalCudaRoot)lib\x64;$(LocalSfMRoot)vcpkg_installed\x64-windows\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OutDir);$(LocalSfMRoot)vcpkg_installed\x64-windows\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(MSBuildProjectName)'=='Base' Or '$(MSBuildProjectName)'=='Geometry' Or '$(MSBuildProjectName)'=='Scene' Or '$(MSBuildProjectName)'=='Estimator' Or '$(MSBuildProjectName)'=='Feature' Or '$(MSBuildProjectName)'=='Workflow' Or '$(MSBuildProjectName)'=='UI'">
+    <ClCompile>
+      <ForcedIncludeFiles>$(MSBuildThisFileDirectory)local.glog-compat.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(MSBuildProjectName)'=='UI'">
+    <Link>
+      <AdditionalDependencies>tbb12.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

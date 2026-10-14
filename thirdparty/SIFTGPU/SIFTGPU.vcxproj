@@ -85,9 +85,10 @@
     <PlatformToolset>v143</PlatformToolset>
     <UseInteloneMKL>Parallel</UseInteloneMKL>
   </PropertyGroup>
+  <Import Project="$(MSBuildProjectDirectory)\..\..\local.windows.early.props" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="LocalWindowsSetup-early" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.8.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.2.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -118,7 +119,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WINDOWS;COLMAP_OPENMP_ENABLED;COLMAP_CGAL_ENABLED;COLMAP_CUDA_ENABLED;COLMAP_GUI_ENABLED;COLMAP_OPENGL_ENABLED;COLMAP_GPU_ENABLED;GLOG_NO_ABBREVIATED_SEVERITIES;GL_GLEXT_PROTOTYPES;NOMINMAX;SIFTGPU_NO_DEVIL;CUDA_SIFTGPU_ENABLED;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /external:I "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.2/include"</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "E:/sfm/OntheflySfMFeedback/vcpkg_installed/x64-windows/include" /external:I "D:/CUDA/v12.2/include"</AdditionalOptions>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -145,7 +146,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;_WINDOWS;GL_GLEXT_PROTOTYPES;NOMINMAX;SIFTGPU_NO_DEVIL;CUDA_SIFTGPU_ENABLED;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /external:I "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.2/include"</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "E:/sfm/OntheflySfMFeedback/vcpkg_installed/x64-windows/include" /external:I "D:/CUDA/v12.2/include"</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <SDLCheck>false</SDLCheck>
       <DebugInformationFormat>None</DebugInformationFormat>
@@ -178,7 +179,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;_WINDOWS;COLMAP_OPENMP_ENABLED;COLMAP_CGAL_ENABLED;COLMAP_CUDA_ENABLED;COLMAP_GUI_ENABLED;COLMAP_OPENGL_ENABLED;COLMAP_GPU_ENABLED;GLOG_NO_ABBREVIATED_SEVERITIES;GL_GLEXT_PROTOTYPES;NOMINMAX;SIFTGPU_NO_DEVIL;CUDA_SIFTGPU_ENABLED;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/vcpkg/installed/x64-windows/include" /external:I "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.2/include"</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "E:/sfm/OntheflySfMFeedback/vcpkg_installed/x64-windows/include" /external:I "D:/CUDA/v12.2/include"</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <SDLCheck>false</SDLCheck>
       <DebugInformationFormat>None</DebugInformationFormat>
@@ -204,8 +205,9 @@
       <AdditionalOptions>-forward-unknown-to-host-compiler -Wno-deprecated-gpu-targets %(AdditionalOptions)</AdditionalOptions>
     </CudaLink>
   </ItemDefinitionGroup>
+  <Import Project="$(MSBuildProjectDirectory)\..\..\local.windows.late.props" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="LocalWindowsSetup-late" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.8.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.2.targets" />
   </ImportGroup>
 </Project>
