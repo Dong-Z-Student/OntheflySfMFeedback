@@ -1,0 +1,30 @@
+; Reference template, not an author-supplied configuration.
+; Copy to E:/sfm/runtime/settings.ini after editing the paths.
+; Start UI.exe with working directory E:/sfm/runtime/Release.
+[SfM]
+useFocalLength=false
+useFactor=0.704
+cameraModel=SIMPLE_RADIAL
+
+[Pipeline]
+AutoRunImages=true
+AutoExportModel=false
+AutoExportFrame=10
+InitialImagesNum=20
+
+[Python]
+PythonHome=E:/sfm/envs/feedback310
+PythonWorkspace=E:/sfm/OntheflySfMFeedback/scripts/pyscripts
+GlobalFeatureModel=E:/sfm/models/netvlad
+
+[Feedback]
+; Counts registered images, not points. Author default is 4000.
+; With 40/10, the first scheduling threshold is 50 registered images.
+StartCreateMesh=40
+Step=10
+
+[Test]
+ModelFolder=E:/sfm/data/test_models
+Start=80
+Step=10
+End=110
