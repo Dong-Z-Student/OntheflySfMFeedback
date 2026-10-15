@@ -35,6 +35,22 @@
 
 完整逐步记录、故障原因和每一步通过标准见`SETUP_LOG.zh-CN.md`。辅助脚本位于仓库的`tools/windows-local-setup`目录。
 
+各次操作的详细说明保存在[steps目录](steps)，通过测试的Python/Conda/vcpkg版本清单保存在[tested-environment目录](tested-environment)。历史记录中的本机证据链接已标记为本机归档；照片、模型和构建日志没有随本目录上传。
+
+### 在新机器上恢复辅助文件
+
+以下以与本次相同的盘符目录为例。在新机器或新的工作目录中，先把仓库内的辅助包复制到原脚本约定的位置，再阅读对应步骤。原有机器已经完成这些操作，无须覆盖其配置。
+
+```powershell
+Copy-Item -LiteralPath 'E:\sfm\OntheflySfMFeedback\tools\windows-local-setup' -Destination 'E:\sfm\setup' -Recurse
+Copy-Item -LiteralPath 'E:\sfm\OntheflySfMFeedback\tools\windows-local-setup\triplets' -Destination 'E:\sfm\triplets' -Recurse
+Copy-Item -LiteralPath 'E:\sfm\OntheflySfMFeedback\tools\windows-local-setup\overlay-ports' -Destination 'E:\sfm\overlay-ports' -Recurse
+```
+
+GMP overlay来自固定vcpkg基线的GMP 6.3.0#2端口，仅更新Autoconf 2.71的MSYS2包装修订3→4和对应SHA512；其许可保存在`tools/windows-local-setup/overlay-ports/LICENSE.vcpkg.txt`。安装依赖时同时传入`--overlay-triplets=E:\sfm\triplets --overlay-ports=E:\sfm\overlay-ports`，详见[故障修复说明](steps/GMP下载修复说明.md)。压缩工具包需从说明中的官方地址下载，Git中只保存配方与校验值。
+
+这些工具按本次机器的目录编写，并非自动适配任意路径的安装器。请先检查两个`.props`文件、`configure_windows_projects.py`、`check_windows_build_settings.py`和冻结脚本中的目录。`QtMsBuild`模板已改为按当前用户的`LocalAppData`定位；其余参考路径仍是`E:\sfm`、`E:\Qt`及`D:\CUDA`。已验证仓库根目录的配置保留在原提交中。
+
 ## 已验证结果
 
 - 九个工程全部编译与链接成功，生成UI.exe。

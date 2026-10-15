@@ -1,0 +1,175 @@
+blas:x64-windows                                  2023-04-14#3        Metapackage for packages which provide BLAS
+boost-accumulators:x64-windows                    1.88.0              Boost accumulators module
+boost-algorithm:x64-windows                       1.88.0              Boost algorithm module
+boost-align:x64-windows                           1.88.0              Boost align module
+boost-any:x64-windows                             1.88.0              Boost any module
+boost-array:x64-windows                           1.88.0              Boost array module
+boost-assert:x64-windows                          1.88.0              Boost assert module
+boost-atomic:x64-windows                          1.88.0              Boost atomic module
+boost-bimap:x64-windows                           1.88.0              Boost bimap module
+boost-bind:x64-windows                            1.88.0              Boost bind module
+boost-callable-traits:x64-windows                 1.88.0              Boost callable_traits module
+boost-chrono:x64-windows                          1.88.0              Boost chrono module
+boost-circular-buffer:x64-windows                 1.88.0              Boost circular_buffer module
+boost-cmake:x64-windows                           1.88.0              Boost cmake module
+boost-compute:x64-windows                         1.88.0              Boost compute module
+boost-concept-check:x64-windows                   1.88.0              Boost concept_check module
+boost-config:x64-windows                          1.88.0              Boost config module
+boost-container-hash:x64-windows                  1.88.0              Boost container_hash module
+boost-container:x64-windows                       1.88.0#1            Boost container module
+boost-conversion:x64-windows                      1.88.0              Boost conversion module
+boost-core:x64-windows                            1.88.0              Boost core module
+boost-crc:x64-windows                             1.88.0              Boost crc module
+boost-date-time:x64-windows                       1.88.0              Boost date_time module
+boost-describe:x64-windows                        1.88.0              Boost describe module
+boost-detail:x64-windows                          1.88.0              Boost detail module
+boost-dynamic-bitset:x64-windows                  1.88.0              Boost dynamic_bitset module
+boost-endian:x64-windows                          1.88.0              Boost endian module
+boost-exception:x64-windows                       1.88.0              Boost exception module
+boost-filesystem:x64-windows                      1.88.0              Boost filesystem module
+boost-foreach:x64-windows                         1.88.0              Boost foreach module
+boost-format:x64-windows                          1.88.0              Boost format module
+boost-function-types:x64-windows                  1.88.0              Boost function_types module
+boost-function:x64-windows                        1.88.0              Boost function module
+boost-functional:x64-windows                      1.88.0              Boost functional module
+boost-fusion:x64-windows                          1.88.0              Boost fusion module
+boost-geometry:x64-windows                        1.88.0              Boost geometry module
+boost-graph:x64-windows                           1.88.0              Boost graph module
+boost-headers:x64-windows                         1.88.0              Boost headers module
+boost-heap:x64-windows                            1.88.0              Boost heap module
+boost-integer:x64-windows                         1.88.0              Boost integer module
+boost-interval:x64-windows                        1.88.0              Boost interval module
+boost-intrusive:x64-windows                       1.88.0              Boost intrusive module
+boost-io:x64-windows                              1.88.0              Boost io module
+boost-iostreams:x64-windows                       1.88.0              Boost iostreams module
+boost-iostreams[bzip2]:x64-windows                                    Support bzip2 filters
+boost-iostreams[lzma]:x64-windows                                     Support LZMA/xz filters
+boost-iostreams[zlib]:x64-windows                                     Support zlib filters
+boost-iostreams[zstd]:x64-windows                                     Support zstd filters
+boost-iterator:x64-windows                        1.88.0              Boost iterator module
+boost-lambda:x64-windows                          1.88.0              Boost lambda module
+boost-lexical-cast:x64-windows                    1.88.0              Boost lexical_cast module
+boost-logic:x64-windows                           1.88.0              Boost logic module
+boost-math:x64-windows                            1.88.0              Boost math module
+boost-move:x64-windows                            1.88.0              Boost move module
+boost-mp11:x64-windows                            1.88.0              Boost mp11 module
+boost-mpl:x64-windows                             1.88.0              Boost mpl module
+boost-multi-array:x64-windows                     1.88.0              Boost multi_array module
+boost-multi-index:x64-windows                     1.88.0              Boost multi_index module
+boost-multiprecision:x64-windows                  1.88.0              Boost multiprecision module
+boost-numeric-conversion:x64-windows              1.88.0              Boost numeric_conversion module
+boost-optional:x64-windows                        1.88.0              Boost optional module
+boost-parameter:x64-windows                       1.88.0              Boost parameter module
+boost-phoenix:x64-windows                         1.88.0              Boost phoenix module
+boost-polygon:x64-windows                         1.88.0              Boost polygon module
+boost-pool:x64-windows                            1.88.0              Boost pool module
+boost-predef:x64-windows                          1.88.0              Boost predef module
+boost-preprocessor:x64-windows                    1.88.0              Boost preprocessor module
+boost-program-options:x64-windows                 1.88.0              Boost program_options module
+boost-property-map:x64-windows                    1.88.0              Boost property_map module
+boost-property-tree:x64-windows                   1.88.0              Boost property_tree module
+boost-proto:x64-windows                           1.88.0              Boost proto module
+boost-ptr-container:x64-windows                   1.88.0              Boost ptr_container module
+boost-qvm:x64-windows                             1.88.0              Boost qvm module
+boost-random:x64-windows                          1.88.0              Boost random module
+boost-range:x64-windows                           1.88.0              Boost range module
+boost-ratio:x64-windows                           1.88.0              Boost ratio module
+boost-rational:x64-windows                        1.88.0              Boost rational module
+boost-regex:x64-windows                           1.88.0              Boost regex module
+boost-scope:x64-windows                           1.88.0              Boost scope module
+boost-serialization:x64-windows                   1.88.0              Boost serialization module
+boost-smart-ptr:x64-windows                       1.88.0              Boost smart_ptr module
+boost-spirit:x64-windows                          1.88.0              Boost spirit module
+boost-static-assert:x64-windows                   1.88.0              Boost static_assert module
+boost-system:x64-windows                          1.88.0              Boost system module
+boost-thread:x64-windows                          1.88.0              Boost thread module
+boost-throw-exception:x64-windows                 1.88.0              Boost throw_exception module
+boost-tokenizer:x64-windows                       1.88.0              Boost tokenizer module
+boost-tti:x64-windows                             1.88.0              Boost tti module
+boost-tuple:x64-windows                           1.88.0              Boost tuple module
+boost-type-index:x64-windows                      1.88.0              Boost type_index module
+boost-type-traits:x64-windows                     1.88.0              Boost type_traits module
+boost-typeof:x64-windows                          1.88.0              Boost typeof module
+boost-ublas:x64-windows                           1.88.0              Boost ublas module
+boost-uninstall:x64-windows                       1.88.0              Internal vcpkg port used to uninstall Boost
+boost-units:x64-windows                           1.88.0              Boost units module
+boost-unordered:x64-windows                       1.88.0              Boost unordered module
+boost-utility:x64-windows                         1.88.0              Boost utility module
+boost-uuid:x64-windows                            1.88.0              Boost uuid module
+boost-variant2:x64-windows                        1.88.0              Boost variant2 module
+boost-variant:x64-windows                         1.88.0              Boost variant module
+boost-winapi:x64-windows                          1.88.0              Boost winapi module
+boost-xpressive:x64-windows                       1.88.0              Boost xpressive module
+bzip2:x64-windows                                 1.0.8#6             bzip2 is a freely available, patent free, high-q...
+bzip2[tool]:x64-windows                                               Builds bzip2 executable
+ceres:x64-windows                                 2.2.0#4             non-linear optimization package
+ceres[cuda]:x64-windows                                               Support for CUDA based dense solvers
+ceres[lapack]:x64-windows                                             Use Lapack in Ceres
+ceres[schur]:x64-windows                                              Enable fixed-size Schur specializations in Ceres
+ceres[suitesparse]:x64-windows                                        SuiteSparse support for Ceres
+cgal:x64-windows                                  6.0.1               The Computational Geometry Algorithms Library (C...
+cuda:x64-windows                                  10.1#13             A parallel computing platform and programming model
+egl-registry:x64-windows                          2024-01-25          EGL API and Extension Registry
+eigen3:x64-windows                                3.4.1-250818        C++ template library for linear algebra: matrice...
+faiss:x64-windows                                 1.8.0               Faiss is a library for efficient similarity sear...
+flann:x64-windows                                 2022-10-28          Fast Library for Approximate Nearest Neighbors
+freeimage:x64-windows                             3.18.0#27           Support library for graphics image formats
+gflags:x64-windows                                2.2.2#9             A C++ library that implements commandline flags ...
+gklib:x64-windows                                 2025-07-06          General helper libraries for KarypisLab.
+glew:x64-windows                                  2.2.0#6             The OpenGL Extension Wrangler Library (GLEW) is ...
+glog:x64-windows                                  0.7.1               C++ implementation of the Google logging module
+gmp:x64-windows                                   6.3.0#2             The GNU Multiple Precision Arithmetic Library
+imath:x64-windows                                 3.2.0               Imath is a C++ and Python library of 2D and 3D v...
+jasper:x64-windows                                4.2.8               Open source implementation of the JPEG-2000 Part...
+jxrlib:x64-windows                                2019.10.9#7         Open source implementation of the jpegxr image f...
+lapack-reference:x64-windows                      3.12.1              LAPACK - Linear Algebra PACKage
+lapack-reference[blas-select]:x64-windows                             Use external optimized BLAS
+lapack-reference[noblas]:x64-windows                                  Use external optimized BLAS
+lapack:x64-windows                                2023-06-10#2        Metapackage for packages which provide LAPACK
+lcms:x64-windows                                  2.17                Little CMS.
+libdeflate:x64-windows                            1.24                libdeflate is a library for fast, whole-buffer D...
+libdeflate[compression]:x64-windows                                   Support compression
+libdeflate[decompression]:x64-windows                                 Support decompression
+libdeflate[gzip]:x64-windows                                          Support the gzip format
+libdeflate[zlib]:x64-windows                                          Support the zlib format
+libjpeg-turbo:x64-windows                         3.1.1               libjpeg-turbo is a JPEG image codec that uses SI...
+liblzma:x64-windows                               5.8.1               Compression library with an API similar to that ...
+libpng:x64-windows                                1.6.50              libpng is a library implementing an interface fo...
+libraw:x64-windows                                0.21.4              raw image decoder library
+libwebp:x64-windows                               1.6.0#1             WebP codec: library to encode and decode images ...
+libwebp[libwebpmux]:x64-windows                                       Build the libwebpmux library
+libwebp[nearlossless]:x64-windows                                     Enable near-lossless encoding
+libwebp[simd]:x64-windows                                             Enable any SIMD optimization.
+libwebp[unicode]:x64-windows                                          Build Unicode executables. (Adds definition UNIC...
+lz4:x64-windows                                   1.10.0              Lossless compression algorithm, providing compre...
+metis:x64-windows                                 2025-07-04          Serial Graph Partitioning and Fill-reducing Matr...
+mpfr:x64-windows                                  4.2.2               The MPFR library is a C library for multiple-pre...
+openblas:x64-windows                              0.3.29              OpenBLAS is an optimized BLAS library based on G...
+openexr:x64-windows                               3.3.5               OpenEXR is a high dynamic-range (HDR) image file...
+opengl-registry:x64-windows                       2024-02-10#1        OpenGL, OpenGL ES, and OpenGL ES-SC API and Exte...
+opengl:x64-windows                                2022-12-04#3        Open Graphics Library (OpenGL)[3][4][5] is a cro...
+openjpeg:x64-windows                              2.5.3               OpenJPEG is an open-source JPEG 2000 codec writt...
+sqlite3:x64-windows                               3.50.4              SQLite is a software library that implements a s...
+sqlite3[json1]:x64-windows                                            Enable JSON functionality for sqlite3
+suitesparse-amd:x64-windows                       3.3.3               AMD: Routines for permuting sparse matrices prio...
+suitesparse-camd:x64-windows                      3.3.3               AMD: Routines for permuting sparse matrices prio...
+suitesparse-ccolamd:x64-windows                   3.3.4               CCOLAMD: Routines for constrained column approxi...
+suitesparse-cholmod:x64-windows                   5.3.0               CHOLMOD: Routines for factorizing sparse symmetr...
+suitesparse-cholmod[matrixops]:x64-windows                            Build MatrixOps module
+suitesparse-cholmod[partition]:x64-windows                            Build Partition module
+suitesparse-cholmod[supernodal]:x64-windows                           Build SuperNodal module
+suitesparse-colamd:x64-windows                    3.3.4               COLAMD: Routines for column approximate minimum ...
+suitesparse-config:x64-windows                    7.8.3               Configuration for SuiteSparse libraries
+suitesparse-spqr:x64-windows                      4.3.4               SPQR: Multithreaded, multifrontal, rank-revealin...
+tiff:x64-windows                                  4.7.0               A library that supports the manipulation of TIFF...
+tiff[jpeg]:x64-windows                                                Support JPEG compression in TIFF image files
+tiff[lzma]:x64-windows                                                Support LZMA compression in TIFF image files
+tiff[zip]:x64-windows                                                 Support ZIP/deflate compression in TIFF image files
+vcpkg-boost:x64-windows                           2025-03-29
+vcpkg-cmake-config:x64-windows                    2024-05-23
+vcpkg-cmake-get-vars:x64-windows                  2025-05-29
+vcpkg-cmake:x64-windows                           2024-04-23
+vcpkg-gfortran:x64-windows                        3#3                 Metaport to install gfortran dependencies from m...
+vcpkg-tool-meson:x64-windows                      1.9.0               Meson build system
+zlib:x64-windows                                  1.3.1               A compression library
+zstd:x64-windows                                  1.5.7               Zstandard - Fast real-time compression algorithm

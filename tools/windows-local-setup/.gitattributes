@@ -1,0 +1,2 @@
+# Upstream patch context includes significant leading/trailing whitespace.
+overlay-ports/gmp/*.patch -whitespace

@@ -1,3 +1,5 @@
+<!-- 历史验收记录：原运行证据存于本机，文中的状态随记录时点变化。详细步骤见steps目录。 -->
+
 # OntheflySfMFeedback 环境配置与功能复现记录
 
 首次记录：2026-10-13 20:51（Asia/Shanghai）。最近核查：2026-10-14 22:55。
@@ -6,7 +8,7 @@
 
 项目：[IRIS-LAB-whu/OntheflySfMFeedback](https://github.com/IRIS-LAB-whu/OntheflySfMFeedback)。
 
-当前已下载源码：`<工作记录目录>\OntheflySfMFeedback`。
+当前已下载源码：`<原工作记录目录>\OntheflySfMFeedback`。
 
 正式构建源码：`E:\sfm\OntheflySfMFeedback`。用户已于21:01–21:02复制源码，助手于21:05只读复核通过。本地配置分支：`local/windows-setup`。
 
@@ -14,7 +16,7 @@
 
 上游源码基线：`e2f511042edb93db4b0c375527ea7ecc6d0ef794`。已验证的本机配置提交：`f3d023b30e34164b840d8534fde05b9fa1988ec7`。
 
-完整参考指南：[本地配置与 Git 入门指南](<E:/101研0/on th fly SFM/OntheflySfMFeedback_本地配置与Git入门指南.md>)。本文件负责逐步验收及版本记录；安装细节与异常处理可交叉查看指南。下方命令默认在 PowerShell/Anaconda PowerShell Prompt 中执行。
+完整参考指南：本地配置与 Git 入门指南（本机归档，见相邻步骤说明）。本文件负责逐步验收及版本记录；安装细节与异常处理可交叉查看指南。下方命令默认在 PowerShell/Anaconda PowerShell Prompt 中执行。
 
 ## 使用规则
 
@@ -171,7 +173,7 @@
 | OpenBLAS | 0.3.29 |
 | vcpkg-cmake / vcpkg-cmake-config | 2024-04-23 / 2024-05-23 |
 
-完整149端口版本表：[CSV快照](<E:/101研0/on th fly SFM/feedback_local_setup/S08-vcpkg-installed-20261014.csv>)。含功能、依赖与状态的原始安装账本：[status快照](<E:/101研0/on th fly SFM/feedback_local_setup/S08-vcpkg-status-20261014.txt>)；原账本SHA256：3ABA3F4FB04343225E8B2503D2DAC67EE0CE43BA8B959EACC470D9FD778E5089。cuda端口显示10.1#13是端口配方版本，不据此更改实际Toolkit12.2记录。后续VS/MSBuild须保留triplet和GMP overlay路径以采用相同配方。
+完整149端口版本表：CSV快照（本机归档，见相邻步骤说明）。含功能、依赖与状态的原始安装账本：status快照（本机归档，见相邻步骤说明）；原账本SHA256：3ABA3F4FB04343225E8B2503D2DAC67EE0CE43BA8B959EACC470D9FD778E5089。cuda端口显示10.1#13是端口配方版本，不据此更改实际Toolkit12.2记录。后续VS/MSBuild须保留triplet和GMP overlay路径以采用相同配方。
 
 ### 2.5 S10模型独立运行记录（2026-10-14 18:48）
 
@@ -220,7 +222,7 @@ C3失败与修复准备（2026-10-14 19:54）：用户首次Base日志首错为g
 
 修复准备：新增local.glog-compat.h，仅包围第三方glog头文件的解析时禁用C4996，之后pop恢复；更新local.windows.late.props，对7个src工程的ClCompile增加强制包含，保持/sdl及依赖版本。SIFTGPU/VLFeat不加此项，算法C++文件不改。配置部署脚本已同步纳入兼容头，新安装/复制配置会带上它。正式仓库当前仍未应用此修复，Base.lib不存在。
 
-验证：最小MSBuild同配置编译，旧表退出1并重现glog C4996；新表退出0、对象已生成，仍包含/sdl和/FI；额外调用方测试仍将调用方自身C4996报为错误（预期退出2）。测试产物全部在原工作区validation\glog-sdl-probe，未自动编译正式Base。应用/验收步骤见[glog局部修复](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C3-glog兼容修复.md>)；重试日志S11C-Base-retry1-build.log，只有完整Base退出0和非空产物才完成C3。
+验证：最小MSBuild同配置编译，旧表退出1并重现glog C4996；新表退出0、对象已生成，仍包含/sdl和/FI；额外调用方测试仍将调用方自身C4996报为错误（预期退出2）。测试产物全部在原工作区validation\glog-sdl-probe，未自动编译正式Base。应用/验收步骤见glog局部修复（本机归档，见相邻步骤说明）；重试日志S11C-Base-retry1-build.log，只有完整Base退出0和非空产物才完成C3。
 
 C3正式重试验收（2026-10-14 20:02）：用户重试80警告/0错误、退出0；助手复核S11C-Base-retry1-build.log和Base.lib，大小29458872字节，时间2026-10-14 19:59:23；SHA256=0468D3FFC3F40DCE4FEF844D151C4324ABA289483147B015B517E1E7CCF73EDE。实际cl仍为MSVC14.36.32532、CRT /MD，命令保留/sdl且包含/FI本地glog兼容头；局部修复已通过完整Base编译。其余warning保留，未全局关闭检查。
 
@@ -263,7 +265,7 @@ S12-A文件验收通过。核查时无UI进程，S12B-UI-stderr.log尚不存在�
 
 加载对照：在独立PowerShell工具进程中用LoadLibraryExW flags=0x1100读取_ctypes.pyd，仅注册Python根目录时失败/Win32Error126；额外通过AddDllDirectory注册Conda Library\bin后成功/Win32Error0。测试后移除临时目录注册并释放加载句柄，未改变用户UI进程或系统环境。该对照支持DLL搜索路径问题，但不代替完整内嵌模型加载验证。依据[Python3.10 DLL目录说明](https://docs.python.org/3.10/library/os.html#os.add_dll_directory)及[微软LoadLibraryEx说明](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw)，PATH存在不保证Python扩展依赖可解析。
 
-准备方案：关闭当前UI，复制此环境的ffi-8.dll到UI.exe同目录，校验SHA256一致后以原启动环境重试。应用目录包含在LOAD_LIBRARY_SEARCH_DEFAULT_DIRS中。此轮仅补充运行文件，不更改C++/Python算法源码或包版本；助手未执行正式复制、关闭UI或启动重试。首次stderr/stdout快照保存在feedback_local_setup，重试日志采用S12B-retry1-UI-stderr.log及对应stdout，保留首次记录。操作见[S12-B ffi修复](<E:/101研0/on th fly SFM/feedback_local_setup/S12-B-ctypes与ffi运行库修复.md>)。
+准备方案：关闭当前UI，复制此环境的ffi-8.dll到UI.exe同目录，校验SHA256一致后以原启动环境重试。应用目录包含在LOAD_LIBRARY_SEARCH_DEFAULT_DIRS中。此轮仅补充运行文件，不更改C++/Python算法源码或包版本；助手未执行正式复制、关闭UI或启动重试。首次stderr/stdout快照保存在feedback_local_setup，重试日志采用S12B-retry1-UI-stderr.log及对应stdout，保留首次记录。操作见S12-B ffi修复（本机归档，见相邻步骤说明）。
 
 ### 2.10 S12-B重试模型加载成功（2026-10-14 21:11–21:15）
 
@@ -279,7 +281,7 @@ GUI确认：只读进程查询Responding=True，但未取得用于确认窗口�
 
 代下载shell操作未获用户批准；当前工作区数据目录没有压缩包，助手未通过其他工具重试下载。提供官方浏览器下载链接，目标E:\sfm\setup\south-building.zip；准备inspect_sfm_archive.py，校验官方大小、全ZIP成员CRC并记录本地SHA256、实际照片数/目录。脚本语法检查通过，实际数据验证尚待用户下载后执行。不预先认定照片数或把本地hash当作作者发布hash。
 
-下一步按[S13-A照片准备说明](<E:/101研0/on th fly SFM/feedback_local_setup/S13-A-照片准备说明.md>)下载与验收，之后根据实际ZIP结构解压并建立trial02。公开样例用于功能试跑，不据此认定论文UAV数据及定量指标复现完成。
+下一步按S13-A照片准备说明（本机归档，见相邻步骤说明）下载与验收，之后根据实际ZIP结构解压并建立trial02。公开样例用于功能试跑，不据此认定论文UAV数据及定量指标复现完成。
 
 ### 2.12 S13-A已有South Building源照片验收（2026-10-14 21:35）
 
@@ -293,7 +295,7 @@ trial02当前不存在，助手未复制照片或写入该目录；GUI进程2764
 
 用户确认上一轮复制/校验符合通过标准；助手复核E:\sfm\setup\S13A-trial02-images.json，128张图全部解码，128个不同内容，3072x2304，总233850173字节，reference_matches=true。清单SHA256=5183A51BCA95F895C68491E1C27BD9D5ED644260B27AF8227F98150B095E8855，与源目录一致。报告快照feedback_local_setup\S13A-trial02-images-passed-20261014.json。
 
-正式副本目录实际128文件、大小一致，result目录存在且为空，trial02.db不存在；UI进程27640仍在运行，当前日志只有S12模型初始化成功三行。S13-A通过；当前准备按[S13-B首次运行说明](<E:/101研0/on th fly SFM/feedback_local_setup/S13-B-trial02首次SfM运行.md>)执行Project→New Project、设置Database/Images、Save，再Transmit→Start Receive一次。
+正式副本目录实际128文件、大小一致，result目录存在且为空，trial02.db不存在；UI进程27640仍在运行，当前日志只有S12模型初始化成功三行。S13-A通过；当前准备按S13-B首次运行说明（本机归档，见相邻步骤说明）执行Project→New Project、设置Database/Images、Save，再Transmit→Start Receive一次。
 
 运行证据待补充：Initialization successful、后续registered successfully、模型相机/点云及已注册Images/Points计数。不得据输入照片128张推断最终注册数或算法结果；尚未点击运行，不标记S13完整通过。
 
@@ -303,33 +305,33 @@ trial02当前不存在，助手未复制照片或写入该目录；GUI进程2764
 
 日志同时包含8条非空`[Path planning]`结果，对应注册计数达到50、60、70、80、90、100、110、120时的反馈调度。末次为low-quality faces=3000、clusters=20、candidates=928、selected viewpoints=60、path segments=59。这里3000是进入规划的低质量面数量，不能当作整个网格总面数；60/59证明本轮已经算出候选视点与连接路径，但仍需GUI开关的显示对照完成S14。
 
-证据快照：[运行日志](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/trial02/S13-trial02-runtime-20261014.log>)、[S13主窗口截图](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/trial02/S13-sfm-128images-31039points.png>)。E:\sfm\data\trial02\result仍为空；当前尚未Export Project。源码中的`OutputMeshPly`只有定义、没有调用点，因此当前无`runtime\output`目录并不构成S13/S14计算失败，导出另在S15验收。
+证据快照：运行日志（本机归档，见相邻步骤说明）、S13主窗口截图（本机归档，见相邻步骤说明）。E:\sfm\data\trial02\result仍为空；当前尚未Export Project。源码中的`OutputMeshPly`只有定义、没有调用点，因此当前无`runtime\output`目录并不构成S13/S14计算失败，导出另在S15验收。
 
 ### 2.15 S14-A网格显示验收（2026-10-14 22:12）
 
-用户勾选Show Mesh后，Model Viewer清楚显示绿色三角面和边，界面仍可正常使用，S14-A通过。证据：[Show Mesh截图](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/trial02/S14A-show-mesh-pass.png>)，SHA256=D1D9F0913132487B378FD0CB6AB72E7317A8029E46A6AFFB8C4D4D01B45BC5CC。
+用户勾选Show Mesh后，Model Viewer清楚显示绿色三角面和边，界面仍可正常使用，S14-A通过。证据：Show Mesh截图（本机归档，见相邻步骤说明），SHA256=D1D9F0913132487B378FD0CB6AB72E7317A8029E46A6AFFB8C4D4D01B45BC5CC。
 
 截图中的建筑主体已有连续表面，但顶部和场景边界存在明显跨越空白区域的长三角形，网格几何质量只记为“功能可用、质量较粗”。源码对稀疏SfM点执行Delaunay构建/更新和图割提取表面；当前`FilterScene`只按量化坐标合并重复点与重复射线，没有看到面边长、三角形尺度或场景外延的后处理裁剪。因此这种结果与本轮稀疏点分布及在线网格方法相符，不能把Show Mesh显示成功等同于可交付的高质量稠密网格。当前不改算法参数，先完成原功能链的显示验收。
 
 ### 2.16 S14-B质量显示验收（2026-10-14 22:18）
 
-用户同时勾选Show Mesh和Show Quality后，网格面由统一底色切换为明显的蓝、白、红分区着色，绿色网格边仍可见，界面保持正常，S14-B通过。证据：[Show Quality截图](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/trial02/S14B-show-quality-pass.png>)，SHA256=9A00A8A458874FA39DE2FADDE0DC58F2037EC6EFE1E76D1DAC3E334264975BE5。
+用户同时勾选Show Mesh和Show Quality后，网格面由统一底色切换为明显的蓝、白、红分区着色，绿色网格边仍可见，界面保持正常，S14-B通过。证据：Show Quality截图（本机归档，见相邻步骤说明），SHA256=9A00A8A458874FA39DE2FADDE0DC58F2037EC6EFE1E76D1DAC3E334264975BE5。
 
 源码按每个面的质量分数排名映射颜色：低分位由蓝色向白色过渡，高分位由白色向红色过渡；质量分数由平均观测轨迹量和反向归一化重投影误差按0.8/0.2组合。本图证明质量数据已生成并传入渲染；颜色属于本模型内部的相对分位显示，不应直接解释为绝对误差单位或与其他模型横向等值比较。
 
 ### 2.17 S14-C引导路径显示验收（2026-10-14 22:24）
 
-用户勾选Show Guide Path后，Model Viewer中清楚出现紫红色规划视点、橙色相邻路径段和绿色观察方向，界面保持正常，S14-C通过。画面与源码的视点/路径/方向颜色定义吻合，也与末次日志60个selected viewpoints、59个path segments相互印证。证据：[Show Guide Path截图](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/trial02/S14C-show-guide-path-pass.png>)，SHA256=2A20F6BB01820B7517616A3E0083270AA3F87AAF5F98E218790F36601AE64424。
+用户勾选Show Guide Path后，Model Viewer中清楚出现紫红色规划视点、橙色相邻路径段和绿色观察方向，界面保持正常，S14-C通过。画面与源码的视点/路径/方向颜色定义吻合，也与末次日志60个selected viewpoints、59个path segments相互印证。证据：Show Guide Path截图（本机归档，见相邻步骤说明），SHA256=2A20F6BB01820B7517616A3E0083270AA3F87AAF5F98E218790F36601AE64424。
 
-至此S14的计算及三项显示全部通过。该路径是规划结果的可视化证据，并不表示已连接或控制真实无人机。当前转入[S15导出与结果检查](<E:/101研0/on th fly SFM/feedback_local_setup/S15-导出与结果检查.md>)；导出前result目录仍为空。
+至此S14的计算及三项显示全部通过。该路径是规划结果的可视化证据，并不表示已连接或控制真实无人机。当前转入S15导出与结果检查（本机归档，见相邻步骤说明）；导出前result目录仍为空。
 
 ### 2.18 S15导出验收（2026-10-14 22:31）
 
 用户执行Project → Export Project后运行自动检查，所有项目均为OK，Result: PASS、退出码0。trial02.db为103288832字节且SQLite integrity=ok；数据库包含128行images、128行keypoints、128行descriptors、3372行matches和1178行two_view_geometries。文本模型头部记录128张注册影像和31039个三维点，调试文件同样为(128,128)。
 
-导出核心文件均非空：Log.txt 127337字节、match_matrix.bmp 11059254字节；二进制模型cameras/images/points3D分别64/14576944/2999757字节；文本模型分别197/22381484/4357479字节；images_info.txt 45068字节、model_info.txt 4908字节。证据：[S15检查报告](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/trial02/S15-trial02-export-pass.json>)、[模型统计](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/trial02/S15-model_info.txt>)、[逐影像统计](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/trial02/S15-images_info.txt>)。
+导出核心文件均非空：Log.txt 127337字节、match_matrix.bmp 11059254字节；二进制模型cameras/images/points3D分别64/14576944/2999757字节；文本模型分别197/22381484/4357479字节；images_info.txt 45068字节、model_info.txt 4908字节。证据：S15检查报告（本机归档，见相邻步骤说明）、模型统计（本机归档，见相邻步骤说明）、逐影像统计（本机归档，见相邻步骤说明）。
 
-检查后出现trial02.db-shm（32768字节）和trial02.db-wal（0字节），时间与Python SQLite检查一致；数据库完整性仍为ok。检查器已改用`mode=ro&immutable=1`，以后复查不会再创建此类旁文件。本轮不自动删除已产生文件，S16结果清单会如实记录。S15通过；当前进入[S16环境固化](<E:/101研0/on th fly SFM/feedback_local_setup/S16-A-环境冻结快照.md>)。
+检查后出现trial02.db-shm（32768字节）和trial02.db-wal（0字节），时间与Python SQLite检查一致；数据库完整性仍为ok。检查器已改用`mode=ro&immutable=1`，以后复查不会再创建此类旁文件。本轮不自动删除已产生文件，S16结果清单会如实记录。S15通过；当前进入S16环境固化（本机归档，见相邻步骤说明）。
 
 ### 2.19 S16-A首次冻结检查（2026-10-14 22:38）
 
@@ -341,21 +343,21 @@ trial02当前不存在，助手未复制照片或写入该目录；GUI进程2764
 
 用户重跑修复后的脚本，输出vcpkg entries=175、file hashes=32、Result: PASS、退出0。助手复核S16-freeze-report.json：passed=true、vcpkg_entry_count=175、hashed_file_count=32；versions.json分别记录项目使用的VS2022 17.13.35828.75和机器最新检测版本18.6.11806.211，Qt5.12.12、CUDA12.2.140、RTX4060/617.42、Python3.10.22及vcpkg工具版本均完整。pip check仍为No broken requirements found。
 
-Git复核显示local/windows-setup仍指向基线e2f511042edb，工作区只含9个已验证vcxproj修改及local.windows.early.props、local.windows.late.props、local.glog-compat.h三个新文件；`git diff --check`无错误。Git身份Dong Zhu/<已配置的Git提交邮箱>已配置。S16-A通过，证据快照位于[freeze证据目录](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/freeze/S16-freeze-report.json>)；当前按[S16-B Git本地提交](<E:/101研0/on th fly SFM/feedback_local_setup/S16-B-Git本地提交.md>)建立可回退节点。
+Git复核显示local/windows-setup仍指向基线e2f511042edb，工作区只含9个已验证vcxproj修改及local.windows.early.props、local.windows.late.props、local.glog-compat.h三个新文件；`git diff --check`无错误。Git身份Dong Zhu/<Git提交邮箱>已配置。S16-A通过，证据快照位于freeze证据目录（本机归档，见相邻步骤说明）；当前按S16-B Git本地提交（本机归档，见相邻步骤说明）建立可回退节点。
 
 ### 2.21 S16-B本地提交验收（2026-10-14 22:50）
 
 用户精确暂存9个vcxproj和3个本机配置文件；`git diff --cached --check`退出0，暂存统计为12 files changed、115 insertions、7 deletions。LF将在Git以后接触工作副本时转换为CRLF的提示符合Windows换行策略，未形成diff-check错误。
 
-本地提交成功：f3d023b30e34164b840d8534fde05b9fa1988ec7，主题`chore(windows): record verified local build configuration`，分支仍为local/windows-setup，提交者Dong Zhu <<已配置的Git提交邮箱>>，时间2026-10-14T22:48:05+08:00；提交后`git status --short`为空、退出0。助手只读复核与用户输出一致。在该时点，冻结快照仍记录提交前基线e2f5110，因此随后按2.22重跑冻结脚本以捕获f3d023b、干净工作区及HEAD补丁。
+本地提交成功：f3d023b30e34164b840d8534fde05b9fa1988ec7，主题`chore(windows): record verified local build configuration`，分支仍为local/windows-setup，提交者Dong Zhu <<Git提交邮箱>>，时间2026-10-14T22:48:05+08:00；提交后`git status --short`为空、退出0。助手只读复核与用户输出一致。在该时点，冻结快照仍记录提交前基线e2f5110，因此随后按2.22重跑冻结脚本以捕获f3d023b、干净工作区及HEAD补丁。
 
 ### 2.22 S16最终冻结与全流程完成（2026-10-14 22:55）
 
 用户在提交后重跑冻结脚本，所有检查均为`[OK]`，`Result: PASS`且退出码为0。冻结报告记录source_commit=f3d023b30e34164b840d8534fde05b9fa1988ec7、source_branch=local/windows-setup、source_worktree_clean=true、source_status_entry_count=0、vcpkg_entry_count=175、hashed_file_count=32、passed=true；`source-head.patch`存在。
 
-助手只读复核最终仓库HEAD、分支和工作区状态与报告一致，并将最终快照同步到[freeze证据目录](<E:/101研0/on th fly SFM/feedback_local_setup/evidence/freeze/S16-freeze-report.json>)。其中`source-head.patch`为20014字节、`source-head-summary.txt`为772字节、`file-hashes.csv`为4382字节。至此，本机环境、九工程完整构建、内嵌Python/NetVLAD、128张影像增量SfM、Feedback三项显示、结果导出以及Git可回退节点全部通过。
+助手只读复核最终仓库HEAD、分支和工作区状态与报告一致，并将最终快照同步到freeze证据目录（本机归档，见相邻步骤说明）。其中`source-head.patch`为20014字节、`source-head-summary.txt`为772字节、`file-hashes.csv`为4382字节。至此，本机环境、九工程完整构建、内嵌Python/NetVLAD、128张影像增量SfM、Feedback三项显示、结果导出以及Git可回退节点全部通过。
 
-本轮完成的是软件功能复现。论文中的定量精度指标、重复性统计、真实无人机传输与飞控闭环仍属于后续独立实验；本次网格存在长三角形，质量结论维持“功能可用、几何较粗”。源码学习从[S17源码学习路线](<E:/101研0/on th fly SFM/feedback_local_setup/S17-源码学习路线.md>)继续。
+本轮完成的是软件功能复现。论文中的定量精度指标、重复性统计、真实无人机传输与飞控闭环仍属于后续独立实验；本次网格存在长三角形，质量结论维持“功能可用、几何较粗”。源码学习从S17源码学习路线（本机归档，见相邻步骤说明）继续。
 
 ## 三、S02 操作存档：建立短路径源码（已完成）
 
@@ -372,11 +374,11 @@ Test-Path -LiteralPath 'E:\sfm\OntheflySfMFeedback'
 ```powershell
 if (Test-Path -LiteralPath 'E:\sfm\OntheflySfMFeedback') { throw '目标目录已存在，请先检查该目录，不执行覆盖复制。' }
 New-Item -ItemType Directory -Force -Path 'E:\sfm'
-Copy-Item -LiteralPath '<工作记录目录>\OntheflySfMFeedback' -Destination 'E:\sfm\OntheflySfMFeedback' -Recurse -Force
+Copy-Item -LiteralPath '<原工作记录目录>\OntheflySfMFeedback' -Destination 'E:\sfm\OntheflySfMFeedback' -Recurse -Force
 Set-Location -LiteralPath 'E:\sfm\OntheflySfMFeedback'
 git switch -c local/windows-setup
 New-Item -ItemType Directory -Force -Path 'E:\sfm\setup'
-Copy-Item -Path '<工作记录目录>\feedback_local_setup\*' -Destination 'E:\sfm\setup'
+Copy-Item -Path '<原工作记录目录>\feedback_local_setup\*' -Destination 'E:\sfm\setup'
 ```
 
 若目标原本存在，不执行覆盖复制，先检查它的 Git 信息；如果分支已经存在，使用 git switch local/windows-setup，不重复 -c。
@@ -653,7 +655,7 @@ $taskVggHash.ToLowerInvariant().StartsWith('397923af')
 
 VGG文件应非空，SHA256前缀检查True。官方提供的文件名使用hash前缀，此处不虚构完整官方SHA256；用户返回实际完整hash后记录。文件正确加载和整体模型输出仍在S10验证。[torchvision0.17.2官方VGG16定义](https://github.com/pytorch/vision/blob/v0.17.2/torchvision/models/vgg.py)。
 
-如果Drive资源不可获取或S10不兼容，可使用已准备的[模型资源询问草稿](<E:/101研0/on th fly SFM/feedback_local_setup/模型资源询问草稿.md>)在新项目Issues自行询问；助手未发送。询问中包含固定源码提交、文件名及PCA的scikit-learn/joblib版本需求。
+如果Drive资源不可获取或S10不兼容，可使用已准备的模型资源询问草稿（本机归档，见相邻步骤说明）在新项目Issues自行询问；助手未发送。询问中包含固定源码提交、文件名及PCA的scikit-learn/joblib版本需求。
 
 四个文件获取齐全后检验：
 
@@ -740,7 +742,7 @@ clone成功但尚未checkout时，目录暂时只有.git是--no-checkout的正�
 
 ```powershell
 New-Item -ItemType Directory -Force -Path 'E:\sfm\triplets'
-Copy-Item -LiteralPath '<工作记录目录>\feedback_local_setup\x64-windows.cmake.example' -Destination 'E:\sfm\triplets\x64-windows.cmake'
+Copy-Item -LiteralPath '<原工作记录目录>\feedback_local_setup\x64-windows.cmake.example' -Destination 'E:\sfm\triplets\x64-windows.cmake'
 Get-Content -LiteralPath 'E:\sfm\triplets\x64-windows.cmake'
 ```
 
@@ -877,7 +879,7 @@ Test-Path 'E:\sfm\OntheflySfMFeedback\vcpkg_installed\x64-windows\include\eigen3
 * 修复只替换portfile.cmake的Autoconf下载URL和SHA512两行；保留WANT_AUTOCONF=2.71及全部GMP补丁/版本。未换成2.72，因为原端口说明该版本存在dumpbin检测问题。
 * 已准备文件：原工作区feedback_local_setup\overlay-ports\gmp（9个文件）及feedback_local_setup\downloads\autoconf2.71-2.71-4-any.pkg.tar.zst。
 
-使用[vcpkg官方overlay机制](https://learn.microsoft.com/en-us/vcpkg/concepts/overlay-ports)，本机覆盖GMP构建配方，其余端口仍来自项目固定基线。具体复制、校验、重试命令见[本轮修复说明](<E:/101研0/on th fly SFM/feedback_local_setup/GMP下载修复说明.md>)。完成复制后，在原安装命令增加--overlay-ports='E:\sfm\overlay-ports'，并保持CUDA、工具集、缓存及并发设置。后续项目构建也要沿用此overlay路径，S11配置时核查。
+使用[vcpkg官方overlay机制](https://learn.microsoft.com/en-us/vcpkg/concepts/overlay-ports)，本机覆盖GMP构建配方，其余端口仍来自项目固定基线。具体复制、校验、重试命令见本轮修复说明（本机归档，见相邻步骤说明）。完成复制后，在原安装命令增加--overlay-ports='E:\sfm\overlay-ports'，并保持CUDA、工具集、缓存及并发设置。后续项目构建也要沿用此overlay路径，S11配置时核查。
 
 检验：缓存包SHA256匹配；overlay portfile引用2.71-4及上述SHA512；安装输出确认GMP使用本地overlay；完整install退出0且全部请求包完成才将S08-B标为通过。准备文件和哈希已验证，尚未执行GMP实际构建。保留已有安装及缓存；此故障不要求升级整个manifest基线。
 
@@ -895,7 +897,7 @@ S08-B最终验收（2026-10-14 18:24）：用户最新结果完整成功、退�
 (Get-FileHash -LiteralPath 'E:\sfm\setup\oneapi-tbb-2021.9.0-win.zip' -Algorithm SHA256).Hash -eq '0C4D96EDD0469CC93F611F94365EC07F3A0DD529B96D4E6CEAC378DE63920B1C'
 ```
 
-应为True再解压。资源管理器解压后，先新建E:\sfm\onetbb，再将SDK中包含include、lib、redist的那层目录内容复制进去，使include直接位于根目录。也可按[本轮S09操作说明](<E:/101研0/on th fly SFM/feedback_local_setup/S09-oneTBB配置说明.md>)自动解压并整理目录。本次2021.9.0 Windows ZIP实际使用redist保存DLL，先前写bin是通用布局假设，现已按实际文件更正。
+应为True再解压。资源管理器解压后，先新建E:\sfm\onetbb，再将SDK中包含include、lib、redist的那层目录内容复制进去，使include直接位于根目录。也可按本轮S09操作说明（本机归档，见相邻步骤说明）自动解压并整理目录。本次2021.9.0 Windows ZIP实际使用redist保存DLL，先前写bin是通用布局假设，现已按实际文件更正。
 
 2026-10-14 18:32核查：用户已下载并解压；ZIP SHA256 True。实际SDK根为E:\sfm\setup\oneapi-tbb-2021.9.0-win\oneapi-tbb-2021.9.0，桌面x64 Release库位于lib\intel64\vc14\tbb12.lib，DLL位于redist\intel64\vc14\tbb12.dll。目标onetbb尚不存在，当前需要新建并复制这一层内容，避免把整个外层解压目录放进去。S09尚未标为完成。
 
@@ -916,7 +918,7 @@ S09验收结果（2026-10-14 18:37）：用户创建onetbb并复制SDK，三个�
 
 操作：创建E:\sfm\runtime\Release和E:\sfm\data\trial01\images，将setup中的settings.ini.example复制为E:\sfm\runtime\settings.ini。助手确认模板与原工作区版本hash一致；PythonHome=E:/sfm/envs/feedback310、PythonWorkspace=E:/sfm/OntheflySfMFeedback/scripts/pyscripts、GlobalFeatureModel=E:/sfm/models/netvlad均与当前路径匹配。INI是参考模板而非作者配置。
 
-复制最新check_environment.py到setup。本轮增加模型加载阶段提示、描述子有限值与非零范数检查，语法已通过；完整模型测试待真实照片。本次runtime\settings.ini尚不存在，不覆盖已有用户配置。完整操作与预期输出见[S10配置与模型验证说明](<E:/101研0/on th fly SFM/feedback_local_setup/S10-配置与模型验证说明.md>)。
+复制最新check_environment.py到setup。本轮增加模型加载阶段提示、描述子有限值与非零范数检查，语法已通过；完整模型测试待真实照片。本次runtime\settings.ini尚不存在，不覆盖已有用户配置。完整操作与预期输出见S10配置与模型验证说明（本机归档，见相邻步骤说明）。
 
 准备一张正常可打开的真实JPG照片，复制为E:\sfm\data\trial01\images\00001.jpg。若用PNG保留.png并同步修改测试命令中的文件名。本步骤仅验证模型提取，完整SfM数据实验仍在S13。
 
@@ -934,31 +936,31 @@ S10最终验收（2026-10-14 18:48）：用户完整模型测试PASS、退出0�
 
 ### S11：工程修正与编译（当前步骤，分A/B/C验收）
 
-S11-A已通过：用户替换CUDA四导入为12.2，diff恰为两个工程各两行替换，五项Qt/CUDA文件检查True；截图显示9项目全部加载，无不可用/卸载标记。未出现重定向对话框不影响加载验收；工具栏Release/x64在B应用后再次确认。操作留档见[S11-A说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-A工程加载准备.md>)。
+S11-A已通过：用户替换CUDA四导入为12.2，diff恰为两个工程各两行替换，五项Qt/CUDA文件检查True；截图显示9项目全部加载，无不可用/卸载标记。未出现重定向对话框不影响加载验收；工具栏Release/x64在B应用后再次确认。操作留档见S11-A说明（本机归档，见相邻步骤说明）。
 
-S11-B已通过：用户在正式仓库应用local.windows.early.props、local.windows.late.props并完成九工程配置检查，均PASS、退出0，助手复核日志/JSON和两个props hash。Git差异与预期一致，完整证据见2.6；操作留档见[S11-B说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-B公共工程配置.md>)。早期属性表固定工具/SDK/Qt/CUDA/vcpkg根目录，后期补充头文件、库、UI tbb12.lib及OutDir/IntDir；只对Release/x64生效。C++算法文件未改。
+S11-B已通过：用户在正式仓库应用local.windows.early.props、local.windows.late.props并完成九工程配置检查，均PASS、退出0，助手复核日志/JSON和两个props hash。Git差异与预期一致，完整证据见2.6；操作留档见S11-B说明（本机归档，见相邻步骤说明）。早期属性表固定工具/SDK/Qt/CUDA/vcpkg根目录，后期补充头文件、库、UI tbb12.lib及OutDir/IntDir；只对Release/x64生效。C++算法文件未改。
 
 B验证准备：已在原工作区validation\S11B-projects副本应用配置，并用本机MSBuild运行九项目/getProperty检查，全部[OK]、PASS、退出0；MSVC及VCToolsInstallDir=14.36.32532、SDK及头文件=26100、Qt UI/Workflow根目录正确、CUDA D盘12.2、vcpkg正式安装目录正确、统一输出E:\sfm\runtime\Release与各项目独立IntDir。完整报告存于feedback_local_setup\validation\S11B-checked。没有运行构建目标，也未对正式E:\sfm仓库执行B修改。
 
 S08完整依赖已安装验收，B设置VcpkgManifestInstall=false使VS使用现有库；vcpkg集成/链接保持开启，overlay安装参数保留，后续改依赖时先显式执行S08安装命令。独立TBB按头文件/库手动接入；遗留Intel TBB/MKL集成关闭。正式B已通过，可进入C。
 
-S11-C1已通过：用户生成成功、36警告/0错误、退出0，助手复核非空SIFTGPU.lib及实际cl/nvcc工具路径。操作留档见[SIFTGPU首次编译说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C1-SIFTGPU编译.md>)，完整证据见2.7。
+S11-C1已通过：用户生成成功、36警告/0错误、退出0，助手复核非空SIFTGPU.lib及实际cl/nvcc工具路径。操作留档见SIFTGPU首次编译说明（本机归档，见相邻步骤说明），完整证据见2.7。
 
-S11-C2已通过：用户生成成功、0警告/0错误、退出0，助手复核VLFeat.lib大小3322520字节、时间与日志相符，并记录源码版本0.9.20。操作留档见[VLFeat首次编译说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C2-VLFeat编译.md>)，证据见2.7。
+S11-C2已通过：用户生成成功、0警告/0错误、退出0，助手复核VLFeat.lib大小3322520字节、时间与日志相符，并记录源码版本0.9.20。操作留档见VLFeat首次编译说明（本机归档，见相邻步骤说明），证据见2.7。
 
-S11-C3已通过：首次glog C4996失败后，用户应用局部兼容头及属性表，正式Base重试80警告/0错误、退出0，Base.lib非空且时间相符。实际编译仍有/sdl及/FI修复头，详情见2.7和[glog局部修复说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C3-glog兼容修复.md>)。
+S11-C3已通过：首次glog C4996失败后，用户应用局部兼容头及属性表，正式Base重试80警告/0错误、退出0，Base.lib非空且时间相符。实际编译仍有/sdl及/FI修复头，详情见2.7和glog局部修复说明（本机归档，见相邻步骤说明）。
 
-S11-C4已通过：Geometry生成35警告/0错误、退出0，助手复核非空库及本轮时间。证据见2.7，操作留档见[Geometry首次编译说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C4-Geometry编译.md>)。
+S11-C4已通过：Geometry生成35警告/0错误、退出0，助手复核非空库及本轮时间。证据见2.7，操作留档见Geometry首次编译说明（本机归档，见相邻步骤说明）。
 
-S11-C5已通过：Scene生成741警告/0错误、退出0，助手复核178690940字节静态库及CUDA12.2实际命令。警告与证据见2.7，操作留档见[Scene首次编译说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C5-Scene编译.md>)。
+S11-C5已通过：Scene生成741警告/0错误、退出0，助手复核178690940字节静态库及CUDA12.2实际命令。警告与证据见2.7，操作留档见Scene首次编译说明（本机归档，见相邻步骤说明）。
 
-S11-C6已通过：用户确认上一步正确完成；助手复核Estimator108警告/0错误、54.49秒和185752884字节静态库。证据见2.7，操作留档见[Estimator首次编译说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C6-Estimator编译.md>)。
+S11-C6已通过：用户确认上一步正确完成；助手复核Estimator108警告/0错误、54.49秒和185752884字节静态库。证据见2.7，操作留档见Estimator首次编译说明（本机归档，见相邻步骤说明）。
 
-S11-C7已通过：用户确认上一步正确完成；助手复核Feature156警告/0错误、4.07秒和29944734字节静态库。证据见2.7，操作留档见[Feature首次编译说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C7-Feature编译.md>)。内嵌Python运行验证需之后GUI完整启动。
+S11-C7已通过：用户确认上一步正确完成；助手复核Feature156警告/0错误、4.07秒和29944734字节静态库。证据见2.7，操作留档见Feature首次编译说明（本机归档，见相邻步骤说明）。内嵌Python运行验证需之后GUI完整启动。
 
-S11-C8已通过：用户确认上一步正确完成；助手复核Workflow1433警告/0错误、69.99秒和265410444字节静态库，日志包含moc生成源编译。证据见2.7，操作留档见[Workflow首次编译说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C8-Workflow编译.md>)。
+S11-C8已通过：用户确认上一步正确完成；助手复核Workflow1433警告/0错误、69.99秒和265410444字节静态库，日志包含moc生成源编译。证据见2.7，操作留档见Workflow首次编译说明（本机归档，见相邻步骤说明）。
 
-S11-C9已通过：UI549警告/0错误、退出0，助手复核5773312字节exe及日志。八个静态库与UI.exe均已生成，S11构建完成；证据见2.7，操作留档见[UI首次编译与链接说明](<E:/101研0/on th fly SFM/feedback_local_setup/S11-C9-UI编译与链接.md>)。DLL部署与首次启动在S12进行。
+S11-C9已通过：UI549警告/0错误、退出0，助手复核5773312字节exe及日志。八个静态库与UI.exe均已生成，S11构建完成；证据见2.7，操作留档见UI首次编译与链接说明（本机归档，见相邻步骤说明）。DLL部署与首次启动在S12进行。
 
 操作：指南第10节逐项修正。Release/x64，统一MSVC14.36、SDK、CUDA12.2构建定制、Qt5套件、Python/NumPy/TBB/manifest路径；保留继承目录。统一OutDir为E:\sfm\runtime\Release\，分模块构建。
 
@@ -974,7 +976,7 @@ Get-Item 'E:\sfm\runtime\Release\SIFTGPU.lib','E:\sfm\runtime\Release\VLFeat.lib
 
 ### S12：部署与启动
 
-当前：S12完整通过：A文件验收、B内嵌模型加载和用户GUI确认均完成，证据见2.8、2.10和2.11。失败与修复历史见2.9和[ffi运行库修复说明](<E:/101研0/on th fly SFM/feedback_local_setup/S12-B-ctypes与ffi运行库修复.md>)。原始启动操作见[S12部署与首次启动说明](<E:/101研0/on th fly SFM/feedback_local_setup/S12-部署与首次启动.md>)。
+当前：S12完整通过：A文件验收、B内嵌模型加载和用户GUI确认均完成，证据见2.8、2.10和2.11。失败与修复历史见2.9和ffi运行库修复说明（本机归档，见相邻步骤说明）。原始启动操作见S12部署与首次启动说明（本机归档，见相邻步骤说明）。
 
 操作：A使用Qt5.12.12的windeployqt确认部署，复制本项目环境的python310.dll与独立SDK的tbb12.dll，检查INI及文件/hash；B设置本次进程的Python/CUDA/vcpkg路径及Qt插件路径，固定工作目录E:\sfm\runtime\Release，启动并采集日志。不修改系统PATH，不在部署阶段改算法源码。
 
@@ -991,7 +993,7 @@ Test-Path '.\platforms\qwindows.dll'
 
 ### S13：本地照片 SfM
 
-trial02已完成首次SfM运行，128张图全部注册并得到31039个三维点，证据见2.14及[S13-B trial02首次运行说明](<E:/101研0/on th fly SFM/feedback_local_setup/S13-B-trial02首次SfM运行.md>)。GUI数据库导出路径为E:\sfm\data\trial02\result\trial02.db，图像路径为E:\sfm\data\trial02\images。旧测试图和原COLMAP数据保留。以下trial01操作是早期通用计划，正式新实验以trial02专属说明为准。
+trial02已完成首次SfM运行，128张图全部注册并得到31039个三维点，证据见2.14及S13-B trial02首次运行说明（本机归档，见相邻步骤说明）。GUI数据库导出路径为E:\sfm\data\trial02\result\trial02.db，图像路径为E:\sfm\data\trial02\images。旧测试图和原COLMAP数据保留。以下trial01操作是早期通用计划，正式新实验以trial02专属说明为准。
 
 操作：先准备建议80–120张清晰、有重叠的静态场景照片；数量是试跑建议，不是算法硬性最低要求。创建新result目录；GUI New Project，选择新的不存在的trial01.db和images目录；Save后Start Receive。
 
@@ -1003,19 +1005,19 @@ trial02已完成首次SfM运行，128张图全部注册并得到31039个三维�
 
 操作：首轮模板采用StartCreateMesh=40、Step=10；实际首个调度点为50张注册影像。本轮已完成50至120张之间的8次Feedback计算。保持Track Model勾选，先只勾选Show Mesh；确认后再勾选Show Quality；最后勾选Show Guide Path，并通过开关前后对照判断新增显示内容。
 
-检验：8条路径规划日志已经证明反馈任务实际完成，且本轮路径不为空。分别检查是否有非空网格、质量着色、引导路径；当前截图中的红色相机是已注册相机，不能单独作为规划路径显示证据。显示操作及通过标准见[S14 Feedback显示验证](<E:/101研0/on th fly SFM/feedback_local_setup/S14-Feedback显示验证.md>)。
+检验：8条路径规划日志已经证明反馈任务实际完成，且本轮路径不为空。分别检查是否有非空网格、质量着色、引导路径；当前截图中的红色相机是已注册相机，不能单独作为规划路径显示证据。显示操作及通过标准见S14 Feedback显示验证（本机归档，见相邻步骤说明）。
 
 通过标准：各目标功能有本轮证据或明确可解释的场景条件；截图/日志对应同一轮数据。记录每次反馈注册数、耗时、显示结果。GUI路径显示不等于真实飞控执行。
 
 ### S15：导出
 
-操作：本轮回放、重建和Feedback已结束，在GUI选择Project → Export Project一次。导出线程使用New Project时指定的E:\sfm\data\trial02\result\trial02.db，不再弹出路径选择；等待日志出现`Export database completed!`和源码原样拼写的`Export mdoels completed!`，再进行文件检查。完整说明见[S15导出与结果检查](<E:/101研0/on th fly SFM/feedback_local_setup/S15-导出与结果检查.md>)。
+操作：本轮回放、重建和Feedback已结束，在GUI选择Project → Export Project一次。导出线程使用New Project时指定的E:\sfm\data\trial02\result\trial02.db，不再弹出路径选择；等待日志出现`Export database completed!`和源码原样拼写的`Export mdoels completed!`，再进行文件检查。完整说明见S15导出与结果检查（本机归档，见相邻步骤说明）。
 
 检验：
 
 ```powershell
 & 'E:\sfm\envs\feedback310\python.exe' -u `
-  '<工作记录目录>\feedback_local_setup\check_trial_export.py' `
+  '<原工作记录目录>\feedback_local_setup\check_trial_export.py' `
   --result 'E:\sfm\data\trial02\result' `
   --database-name 'trial02.db' `
   --expected-images 128 `
@@ -1027,7 +1029,7 @@ trial02已完成首次SfM运行，128张图全部注册并得到31039个三维�
 
 ### S16：固化环境
 
-操作及检验：先关闭UI以刷新所有日志，按[S16-A环境冻结快照](<E:/101研0/on th fly SFM/feedback_local_setup/S16-A-环境冻结快照.md>)生成固定目录。脚本保存Python/Conda/vcpkg依赖、工具版本、Git HEAD/状态/差异补丁、本机属性表、INI、模型hash和导出结果hash；它不提交或删除文件。
+操作及检验：先关闭UI以刷新所有日志，按S16-A环境冻结快照（本机归档，见相邻步骤说明）生成固定目录。脚本保存Python/Conda/vcpkg依赖、工具版本、Git HEAD/状态/差异补丁、本机属性表、INI、模型hash和导出结果hash；它不提交或删除文件。
 
 ```powershell
 conda activate 'E:\sfm\envs\feedback310'
